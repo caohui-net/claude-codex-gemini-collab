@@ -32,6 +32,27 @@ For handoff, use the script directly:
 python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target>"
 ```
 
+## Workspace Resolution
+
+All commands support `--base-dir` to specify the collaboration workspace root explicitly:
+
+```bash
+python3 scripts/collab_status.py --base-dir /path/to/workspace
+```
+
+**Non-init commands** (status, validate, task, etc.):
+1. Use `--base-dir` if specified
+2. Search upward for `.omc/collaboration/`
+3. Fail with diagnostic if not found
+
+**Init command**:
+1. Use `--base-dir` if specified
+2. Reuse existing upward `.omc/collaboration/` (avoids nested state)
+3. Use git root if inside git repo
+4. Fall back to current directory
+
+This allows running commands from any nested directory within a workspace.
+
 ## Requirements
 
 - Python 3.8+

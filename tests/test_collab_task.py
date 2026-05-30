@@ -121,6 +121,23 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(self.event_count(), 2)
         self.assertFalse(self.lock_exists())
 
+    def test_claim_rejects_malformed_state_without_appending(self):
+        """Test claim validates state.json before appending event."""
+        self.write_events([make_event(1, "task_created", status="task_open")])
+
+        # Corrupt state.json
+        state_file = self.collab_dir / "state.json"
+        state_file.write_text("{bad json}")
+        before_count = self.event_count()
+
+        # Attempt claim should fail
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
     def test_release_lock_owner_validation_keeps_lock_on_mismatch(self):
         lock_dir = self.collab_dir / "locks" / "journal.lock"
         lock_dir.mkdir(parents=True)

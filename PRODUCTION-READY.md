@@ -34,13 +34,26 @@ Phase 1b closeout成功完成，所有pre-production blockers已修复。项目�
 - 添加.gitignore，清理__pycache__
 - 初始化repo collaboration state
 
+### Priority 2a: Path Resolution (2026-05-30)
+- 添加--base-dir flag支持
+- 实现upward .omc/collaboration/ search
+- Git root fallback for init
+- 12个新测试（路径解析和嵌套目录）
+- Production-ready (Codex审查通过)
+
+### Priority 2b: Transaction Hardening (2026-05-30)
+- claim_task()使用统一验证（read_state/write_state_atomically）
+- create_task()并发安全（task ID从event ID生成）
+- status报告event log corruption
+- 1个新回归测试（claim malformed state）
+
 ---
 
 ## 最终验证
 
 ### 测试结果
 ```
-Ran 14 tests in 0.185s
+Ran 31 tests in 0.317s
 OK
 ```
 
@@ -67,22 +80,24 @@ Working tree clean
 - [x] 所有P0问题已修正
 - [x] 所有P0.5问题已修正
 - [x] 所有pre-production blockers已修复
-- [x] 14个单元测试通过
+- [x] 31个单元测试通过
 - [x] validate在repo自身通过
 - [x] 文档与实现一致
 - [x] 工作树干净
 - [x] 代码已推送到GitHub
 - [x] .gitignore配置正确
-- [x] 无已知bugs
+- [x] Priority 2a完成（路径解析）
+- [x] Priority 2b完成（事务强化）
 
 ---
 
 ## 代码质量指标
 
 **测试覆盖：** 全面
-- 13个功能测试
+- 30个功能测试
 - 1个CLI smoke test
 - 覆盖所有关键场景和边界条件
+- 包含路径解析、并发安全、事务强化测试
 
 **代码健壮性：** 优秀
 - 防御性编程到位
@@ -137,6 +152,8 @@ Working tree clean
 - P0.5：11个测试
 - Bug fix：13个测试
 - Pre-production：14个测试
+- Priority 2a：27个测试
+- Priority 2b：31个测试
 
 ---
 

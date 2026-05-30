@@ -6,7 +6,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from collab_event import append_event, acquire_lock, release_lock
+from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 ACTIVE_CLAIM_STATUSES = {
@@ -100,17 +100,32 @@ def create_task(base_dir, description):
     base = Path(base_dir).resolve()
     collab_dir = base / ".omc" / "collaboration"
 
-    # Generate task ID
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
-    existing = list((collab_dir / "tasks").glob(f"TASK-{timestamp}-*.md"))
-    task_num = len(existing) + 1
-    task_id = f"TASK-{timestamp}-{task_num:02d}"
+    # Acquire lock to ensure atomic task ID generation
+    if not acquire_lock(collab_dir, "claude", "none", "create task"):
+        print("❌ Failed to acquire journal lock")
+        return 1
 
-    # Prepare task document
-    # Sanitize description for filename (remove path separators and special chars)
-    safe_desc = description[:30].replace('/', '-').replace('\\', '-').replace(' ', '-').lower()
-    task_file = collab_dir / "tasks" / f"{task_id}-{safe_desc}.md"
-    task_content = f"""---
+    try:
+        events_file = collab_dir / "events.jsonl"
+        state_file = collab_dir / "state.json"
+
+        # Validate state before creating task
+        try:
+            events = read_events(events_file)
+            state = read_state(state_file)
+        except ValueError as e:
+            print(f"❌ Validation failed: {e}")
+            return 1
+
+        # Generate task ID from next event ID (concurrency-safe)
+        next_id = max((e.get('id', 0) for e in events), default=0) + 1
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+        task_id = f"TASK-{timestamp}-{next_id:02d}"
+
+        # Prepare task document
+        safe_desc = description[:30].replace('/', '-').replace('\\', '-').replace(' ', '-').lower()
+        task_file = collab_dir / "tasks" / f"{task_id}-{safe_desc}.md"
+        task_content = f"""---
 task_id: {task_id}
 owner: claude
 assignee: none
@@ -134,20 +149,44 @@ priority: normal
 - [ ] Task completed as described
 """
 
-    # Append event first
-    result = append_event(base_dir, "task_created", "claude", task_id,
-                          f"Created task: {description}", [str(task_file)])
+        # Create event
+        event = {
+            "id": next_id,
+            "type": "task_created",
+            "agent": "claude",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "summary": f"Created task: {description}",
+            "task_id": task_id,
+            "artifacts": [str(task_file)],
+            "status": "task_open"
+        }
 
-    if result != 0:
-        print(f"❌ Failed to create task: event append failed")
-        return result
+        # Append event
+        with events_file.open('a') as f:
+            f.write(json.dumps(event) + '\n')
 
-    # Write task file only after successful event append
-    task_file.write_text(task_content)
+        # Update state atomically
+        state["last_event_id"] = next_id
+        state["status"] = "task_open"
+        state["current_task"] = task_id
+        state["updated_at"] = event["timestamp"]
 
-    print(f"✓ Task created: {task_id}")
-    print(f"✓ File: {task_file}")
-    return 0
+        write_state_atomically(collab_dir, "claude", state)
+
+        # Write task file only after successful event append
+        task_file.write_text(task_content)
+
+        print(f"✓ Event {next_id} appended: task_created")
+        print(f"✓ State updated: status=task_open, last_event_id={next_id}")
+        print(f"✓ Task created: {task_id}")
+        print(f"✓ File: {task_file}")
+        return 0
+
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return 1
+    finally:
+        release_lock(collab_dir, agent="claude")
 
 def claim_task(base_dir, task_id, agent="claude"):
     """Claim task atomically."""
@@ -160,7 +199,15 @@ def claim_task(base_dir, task_id, agent="claude"):
 
     try:
         events_file = collab_dir / "events.jsonl"
-        events = read_events(events_file)
+        state_file = collab_dir / "state.json"
+
+        # Validate state BEFORE appending event
+        try:
+            events = read_events(events_file)
+            state = read_state(state_file)
+        except ValueError as e:
+            print(f"❌ Validation failed: {e}")
+            return 1
 
         allowed, reason, owner = can_claim(events, task_id, agent)
         if not allowed:
@@ -187,18 +234,14 @@ def claim_task(base_dir, task_id, agent="claude"):
         with events_file.open('a') as f:
             f.write(json.dumps(event) + '\n')
 
-        # Update state
-        state_file = collab_dir / "state.json"
-        state = json.loads(state_file.read_text())
+        # Update state atomically
         state["last_event_id"] = next_id
         state["status"] = "in_progress"
         state["current_task"] = task_id
         state["active_agent"] = agent
         state["updated_at"] = event["timestamp"]
 
-        temp_file = collab_dir / f"state.json.tmp.{agent}"
-        temp_file.write_text(json.dumps(state, indent=2) + '\n')
-        temp_file.replace(state_file)
+        write_state_atomically(collab_dir, agent, state)
 
         print(f"✓ Task {task_id} claimed by {agent}")
         print(f"✓ Event {next_id} appended: task_claimed")
