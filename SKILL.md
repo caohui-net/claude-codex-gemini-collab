@@ -33,6 +33,11 @@ English examples:
 - discuss the implementation (general conversation)
 - 帮我review一下 (may be code review)
 
+**Graded trigger behavior:**
+- Read-only (auto-execute): `status`, `validate`
+- Mutating (requires clear intent): `task`, `claim`, `complete`
+- High-risk (requires slash command): `repair`, handoff
+
 **Slash command always takes priority:** `/claude-codex-gemini-collab` or aliases `/collab`, `/ccg`
 
 ## Commands
@@ -79,6 +84,21 @@ English examples:
   - Used by `/oh-my-claudecode:ask` skill
 
 **Important:** These are separate concerns. Collaboration state is fixed and protocol-defined. Dialogue artifacts are advisory skill outputs with dynamic storage.
+
+**Workspace root resolution (for collaboration state):**
+
+Resolution order:
+1. `--base-dir` explicit specification
+2. Upward search for `.omc/collaboration/`
+3. Upward search for git root
+4. Upward search for project markers (package.json, etc.)
+5. Global directory fallback
+
+**Global index:**
+- `~/.omc/collaboration/index.json` records workspace locations
+- Not source of truth, only for discovery assistance
+
+**Principle:** Workspace root is dynamic, internal structure is fixed.
 
 ## Implementation
 
