@@ -47,7 +47,14 @@ def resolve_existing_base_dir(base_dir=None, start_dir=None):
     Raises: ValueError if not found
     """
     if base_dir:
-        return Path(base_dir).resolve()
+        resolved = Path(base_dir).resolve()
+        collab_dir = resolved / ".omc" / "collaboration"
+        if not collab_dir.exists() or not collab_dir.is_dir():
+            raise ValueError(
+                f"No .omc/collaboration directory found at {resolved}. "
+                "Run init or use a valid --base-dir."
+            )
+        return resolved
 
     found = find_upward_collaboration(start_dir)
     if found:

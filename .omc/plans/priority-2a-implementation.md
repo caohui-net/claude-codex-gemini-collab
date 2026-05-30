@@ -80,14 +80,20 @@ def add_base_dir_arg(parser):
 - [x] Init inside nested dir with existing state above
 - [x] Init avoids creating nested state
 
+### 5. Production-Readiness Fixes (Post-Codex Review)
+- [x] Add --base-dir validation in `resolve_existing_base_dir()`
+- [x] Add test for --base-dir validation behavior
+- [x] Add test for git-root init behavior
+- [x] Add test for nested CLI command execution
+
 ## Verification
 
 - [x] All 18 existing tests pass
-- [x] New tests pass (9 new tests added)
-- [x] Total: 27/27 tests passing
+- [x] New tests pass (12 new tests added)
+- [x] Total: 30/30 tests passing
 - [ ] Manual smoke test from nested directory
 - [x] SKILL.md matches implementation
-- [ ] Codex review of implementation
+- [x] Codex review completed - 2 issues identified and fixed
 
 ## Deferred (Not in Priority 2a)
 

@@ -101,6 +101,38 @@ class CollabPathsTests(unittest.TestCase):
         self.assertEqual(result, self.base)
         self.assertEqual(source, "cwd")
 
+    def test_resolve_existing_base_dir_validates_explicit_path(self):
+        """Test resolve_existing_base_dir rejects invalid --base-dir."""
+        wrong_path = self.base / "wrong"
+        wrong_path.mkdir()
+
+        with self.assertRaises(ValueError) as ctx:
+            resolve_existing_base_dir(str(wrong_path))
+        self.assertIn("No .omc/collaboration directory found at", str(ctx.exception))
+
+    def test_resolve_init_base_dir_uses_git_root(self):
+        """Test resolve_init_base_dir uses git root when available."""
+        subprocess.run(["git", "init"], cwd=self.base, capture_output=True)
+
+        nested = self.base / "src" / "components"
+        nested.mkdir(parents=True)
+
+        result, source = resolve_init_base_dir(None, nested)
+        self.assertEqual(result, self.base)
+        self.assertEqual(source, "git")
+
+    def test_nested_cli_command_execution(self):
+        """Test CLI command works from nested directory."""
+        collab_dir = self.base / ".omc" / "collaboration"
+        collab_dir.mkdir(parents=True)
+        init_collaboration(self.base, "test")
+
+        nested = self.base / "src" / "components"
+        nested.mkdir(parents=True)
+
+        result = resolve_existing_base_dir(None, nested)
+        self.assertEqual(result, self.base)
+
 
 if __name__ == "__main__":
     unittest.main()
