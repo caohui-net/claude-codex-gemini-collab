@@ -7,6 +7,92 @@ from datetime import datetime, timezone
 from pathlib import Path
 from collab_event import append_event, acquire_lock, release_lock
 
+ACTIVE_CLAIM_STATUSES = {
+    "claimed",
+    "in_progress",
+    "waiting",
+    "blocked",
+    "timeout_candidate",
+}
+ACTIVE_CLAIM_EVENT_TYPES = {
+    "task_claimed",
+    "handoff_requested",
+    "blocked",
+}
+TERMINAL_CLAIM_STATUSES = {
+    "completed",
+    "cancelled",
+}
+
+def get_task_id(event):
+    """Return task_id from top-level field, falling back to details.task_id."""
+    details = event.get("details")
+    if not isinstance(details, dict):
+        details = {}
+    return event.get("task_id") or details.get("task_id")
+
+def read_events(events_file):
+    """Read events.jsonl and fail on malformed lines or duplicate ids."""
+    events = []
+    seen_ids = set()
+    if not events_file.exists() or events_file.stat().st_size == 0:
+        return events
+
+    for line_no, line in enumerate(events_file.read_text().splitlines(), 1):
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"events.jsonl line {line_no} malformed: {e}")
+
+        event_id = event.get("id")
+        if event_id in seen_ids:
+            raise ValueError(f"events.jsonl has duplicate event id: {event_id}")
+        seen_ids.add(event_id)
+        events.append(event)
+
+    return events
+
+def get_active_owner(events, task_id):
+    """Return active task owner from the event log, or None if open/terminal."""
+    for event in reversed(events):
+        if get_task_id(event) != task_id:
+            continue
+
+        if event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES:
+            return None
+
+        if event.get("status") in ACTIVE_CLAIM_STATUSES:
+            return event.get("agent") or "unknown"
+
+        if event.get("type") in ACTIVE_CLAIM_EVENT_TYPES:
+            return event.get("agent") or "unknown"
+
+    return None
+
+def can_claim(events, task_id, agent):
+    """Return (can_claim, reason, owner) for an atomic claim attempt."""
+    task_exists = any(
+        event.get("type") == "task_created" and get_task_id(event) == task_id
+        for event in events
+    )
+    if not task_exists:
+        return False, f"Task {task_id} not found", None
+
+    for event in reversed(events):
+        if get_task_id(event) == task_id and (
+            event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES
+        ):
+            return False, f"Task {task_id} already completed", None
+
+    owner = get_active_owner(events, task_id)
+    if owner is None:
+        return True, "Task is open", None
+    if owner == agent:
+        return True, "Same agent (idempotent)", owner
+    return False, f"Task {task_id} already claimed by {owner}", owner
+
 def create_task(base_dir, description):
     """Create new collaboration task."""
     base = Path(base_dir).resolve()
@@ -63,20 +149,18 @@ def claim_task(base_dir, task_id, agent="claude"):
         return 1
 
     try:
-        # Check task not already claimed
         events_file = collab_dir / "events.jsonl"
-        events = []
-        if events_file.exists() and events_file.stat().st_size > 0:
-            for line in events_file.read_text().strip().split('\n'):
-                if line:
-                    event = json.loads(line)
-                    events.append(event)
-                    if (event.get('task_id') == task_id and
-                        event.get('type') in ['task_claimed', 'in_progress'] and
-                        event.get('status') not in ['completed', 'cancelled']):
-                        release_lock(collab_dir)
-                        print(f"❌ Task {task_id} already claimed by {event.get('agent')}")
-                        return 1
+        events = read_events(events_file)
+
+        allowed, reason, owner = can_claim(events, task_id, agent)
+        if not allowed:
+            print(f"❌ {reason}")
+            return 1
+
+        if owner == agent:
+            print(f"✓ Task {task_id} already claimed by {agent}")
+            print("✓ No new event appended")
+            return 0
 
         # Append claim event atomically while holding lock
         next_id = max((e.get('id', 0) for e in events), default=0) + 1
@@ -106,15 +190,15 @@ def claim_task(base_dir, task_id, agent="claude"):
         temp_file.write_text(json.dumps(state, indent=2) + '\n')
         temp_file.replace(state_file)
 
-        release_lock(collab_dir)
         print(f"✓ Task {task_id} claimed by {agent}")
         print(f"✓ Event {next_id} appended: task_claimed")
         return 0
 
     except Exception as e:
-        release_lock(collab_dir)
         print(f"❌ Error: {e}")
         return 1
+    finally:
+        release_lock(collab_dir, agent=agent, task_id=task_id)
 
 def complete_task(base_dir, task_id, agent="claude"):
     """Mark task completed."""

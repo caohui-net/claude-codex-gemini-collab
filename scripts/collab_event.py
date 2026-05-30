@@ -3,6 +3,7 @@
 
 import json
 import os
+import shutil
 import sys
 import time
 from datetime import datetime, timezone
@@ -41,12 +42,38 @@ def acquire_lock(collab_dir, agent, task_id, reason):
     (lock_dir / "owner.json").write_text(json.dumps(owner, indent=2))
     return True
 
-def release_lock(collab_dir):
-    """Release journal lock."""
+def release_lock(collab_dir, agent=None, task_id=None):
+    """Release journal lock, optionally verifying the lock owner first."""
     lock_dir = collab_dir / "locks" / "journal.lock"
-    if lock_dir.exists():
-        import shutil
-        shutil.rmtree(lock_dir)
+    if not lock_dir.exists():
+        return
+
+    if agent is not None or task_id is not None:
+        owner_file = lock_dir / "owner.json"
+        if not owner_file.exists():
+            raise ValueError(f"Lock {lock_dir} has no owner.json - cannot verify owner")
+
+        try:
+            owner = json.loads(owner_file.read_text())
+        except (json.JSONDecodeError, OSError) as e:
+            raise ValueError(
+                f"Lock {lock_dir} has malformed owner.json: {e}. "
+                "Cannot release. Use collab_validate.py repair."
+            )
+
+        if agent is not None and owner.get("agent") != agent:
+            raise ValueError(
+                f"Lock {lock_dir} held by agent={owner.get('agent')!r}, "
+                f"cannot release by agent={agent!r}"
+            )
+
+        if task_id is not None and owner.get("task_id") != task_id:
+            raise ValueError(
+                f"Lock {lock_dir} held for task={owner.get('task_id')!r}, "
+                f"cannot release for task={task_id!r}"
+            )
+
+    shutil.rmtree(lock_dir)
 
 def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, details=None):
     """Append event atomically with journal lock."""
