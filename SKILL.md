@@ -1,5 +1,7 @@
 ---
 name: claude-codex-gemini-collab
+displayName: Multi-Agent Collab
+aliases: [collab, ccg, tricollab]
 description: Claude-Codex-Gemini collaboration protocol operations - init, task management, state validation
 version: 0.3.0
 ---
@@ -10,10 +12,28 @@ Provides deterministic operations for Claude-Codex-Gemini tri-model collaboratio
 
 ## When to Use
 
-- User requests Claude-Codex-Gemini collaboration setup
-- User wants to create/manage collaboration tasks
-- User needs to check collaboration state
-- User mentions "multi-model collaboration", "handoff to codex/gemini", "collaboration status"
+**Trigger on strong intent phrases (collaboration object + action verb):**
+
+Chinese examples:
+- 让Claude和Codex一起讨论
+- 启动多模型协作
+- 交给Codex/Gemini处理
+- 创建协作任务
+- 查看协作状态
+
+English examples:
+- start Claude Codex collaboration
+- handoff to Codex
+- create a collaboration task
+- check collaboration status
+- multi-model discussion
+
+**Do NOT trigger on:**
+- 我们讨论一下X (general conversation)
+- discuss the implementation (general conversation)
+- 帮我review一下 (may be code review)
+
+**Slash command always takes priority:** `/claude-codex-gemini-collab` or aliases `/collab`, `/ccg`
 
 ## Commands
 
@@ -43,6 +63,22 @@ Provides deterministic operations for Claude-Codex-Gemini tri-model collaboratio
 - Print error message with details
 - Return non-zero exit code
 - Suggest repair command if applicable
+
+## Directory Structure
+
+**Collaboration state (fixed location):**
+- `.omc/collaboration/` - Protocol-defined collaboration state
+  - `state.json`, `events.jsonl` - Event-sourced state
+  - `tasks/`, `artifacts/`, `locks/` - Workflow data
+  - `protocol.md` - Protocol documentation
+
+**Dialogue artifacts (dynamic location):**
+- `.omc/artifacts/ask/` - Codex/Gemini response artifacts
+  - Location varies: project root when in project, `~/.omc/artifacts/ask/default/` otherwise
+  - Not part of collaboration protocol state
+  - Used by `/oh-my-claudecode:ask` skill
+
+**Important:** These are separate concerns. Collaboration state is fixed and protocol-defined. Dialogue artifacts are advisory skill outputs with dynamic storage.
 
 ## Implementation
 

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-05-30T18:33:00Z",
+  "last_updated": "2026-05-30T19:31:00Z",
   "completed": [
     "项目从claude-codex-collab重命名为claude-codex-gemini-collab",
     "从graduation-leave-system迁移讨论artifacts和计划文档",
@@ -17,21 +17,25 @@
     "Claude修复所有4个blockers（repair() crash, handoff docs, __pycache__, repo state）",
     "Pre-production hardening验证通过（14个测试，0.185秒）",
     "创建PRODUCTION-READY.md最终确认文档",
-    "Phase 1b closeout完成 - 项目production-ready"
+    "Phase 1b closeout完成 - 项目production-ready",
+    "技能设计讨论（4个提案）- Claude和Codex批判性分析",
+    "达成设计共识 - 三层命名、分层目录、强意图触发、动态root",
+    "Priority 1实施完成 - SKILL.md更新（三层命名、触发短语、目录澄清）"
   ],
   "pending": [],
   "future_work": [
-    "Phase 2功能扩展（可选）：多agent并发、事件回放、性能优化"
+    "Priority 2: 实施动态root解析、分层技能目录、版本锁定",
+    "Priority 3: 自然语言触发（依赖平台）、跨平台支持（.agent/）"
   ],
   "evidence": [
     "最终测试：14个单元测试通过，0.185秒",
     "validate通过：repo自身通过验证",
-    "所有代码已推送到GitHub",
-    "工作树干净，无未提交变更",
-    "总代码变更：+2656/-74行",
-    "5次提交，所有已推送"
+    "SKILL.md frontmatter更新：displayName + aliases添加成功",
+    "SKILL.md When to Use更新：强意图触发短语（中英文）",
+    "SKILL.md Directory Structure新增：协作状态vs对话内容澄清",
+    "Tasks #16, #17, #18全部完成并验证"
   ],
-  "next_focus": "项目完成，production-ready",
+  "next_focus": "Priority 1完成。可选：Priority 2实施或保持当前production-ready状态",
   "project_status": "production_ready",
   "suggested_skills": [],
   "artifacts": {
@@ -44,6 +48,8 @@
     "Phase 1b closeout确认": ".omc/collaboration/artifacts/20260530-1800-claude-confirms-phase1b-closeout.md",
     "P0.5分析": ".omc/collaboration/artifacts/20260530-1814-claude-p0-5-analysis-critical-bug.md",
     "完成总结": ".omc/collaboration/artifacts/20260530-1822-phase1b-completion-summary.md",
+    "设计讨论共识": ".omc/collaboration/artifacts/20260530-1925-design-discussion-consensus.md",
+    "Priority 1实施完成": ".omc/collaboration/artifacts/20260530-1931-priority1-implementation-complete.md",
     "项目状态": ".omc/collaboration/PROJECT-STATUS.md",
     "生产就绪确认": "PRODUCTION-READY.md",
     "plan": ".omc/plans/step2-phase1-next-steps.md"
