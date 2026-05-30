@@ -35,8 +35,8 @@ English examples:
 
 **Graded trigger behavior:**
 - Read-only (auto-execute): `status`, `validate`
-- Mutating (requires clear intent): `task`, `claim`, `complete`
-- High-risk (requires slash command): `repair`, handoff
+- Mutating (requires clear intent): `task`, `claim`, `complete`, handoff
+- High-risk (requires slash command): `repair`
 
 **Slash command always takes priority:** `/claude-codex-gemini-collab` or aliases `/collab`, `/ccg`
 
