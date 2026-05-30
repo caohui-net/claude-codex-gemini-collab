@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Validate and repair collaboration state."""
 
+import argparse
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 import shutil
+from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 COMMAND_NAME = "/claude-codex-gemini-collab"
 
@@ -182,8 +184,17 @@ def repair(base_dir="."):
     return 0
 
 if __name__ == "__main__":
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "validate"
-    if cmd == "repair":
-        sys.exit(repair())
-    else:
-        sys.exit(validate())
+    parser = argparse.ArgumentParser(description="Validate or repair collaboration state")
+    add_base_dir_arg(parser)
+    parser.add_argument("command", nargs="?", default="validate", choices=["validate", "repair"])
+    args = parser.parse_args()
+
+    try:
+        base = resolve_existing_base_dir(args.base_dir)
+        if args.command == "repair":
+            sys.exit(repair(base))
+        else:
+            sys.exit(validate(base))
+    except ValueError as e:
+        print(f"❌ {e}")
+        sys.exit(1)

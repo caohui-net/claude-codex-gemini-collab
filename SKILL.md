@@ -87,16 +87,16 @@ English examples:
 
 **Workspace root resolution (for collaboration state):**
 
-Resolution order:
+**Non-init commands** (status, validate, task, etc.):
 1. `--base-dir` explicit specification
 2. Upward search for `.omc/collaboration/`
-3. Upward search for git root
-4. Upward search for project markers (package.json, etc.)
-5. Global directory fallback
+3. Fail with diagnostic if not found
 
-**Global index:**
-- `~/.omc/collaboration/index.json` records workspace locations
-- Not source of truth, only for discovery assistance
+**Init command**:
+1. `--base-dir` explicit specification
+2. Existing upward `.omc/collaboration/` (reuse, avoid nested state)
+3. Git root (if inside git repo)
+4. Current working directory
 
 **Principle:** Workspace root is dynamic, internal structure is fixed.
 

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Atomic event operations for collaboration protocol."""
 
+import argparse
 import json
 import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 COMMAND_NAME = "/claude-codex-gemini-collab"
 
@@ -234,14 +236,20 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         release_lock(collab_dir, agent=agent)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
-        print("Usage: collab_event.py <type> <agent> <task_id> <summary> [artifacts_json]")
+    parser = argparse.ArgumentParser(description="Append event to collaboration log")
+    add_base_dir_arg(parser)
+    parser.add_argument("event_type", help="Event type")
+    parser.add_argument("agent", help="Agent name")
+    parser.add_argument("task_id", help="Task ID (or 'none')")
+    parser.add_argument("summary", help="Event summary")
+    parser.add_argument("artifacts", nargs="?", help="Artifacts JSON")
+    args = parser.parse_args()
+
+    try:
+        base = resolve_existing_base_dir(args.base_dir)
+        task_id = None if args.task_id == "none" else args.task_id
+        artifacts = json.loads(args.artifacts) if args.artifacts else None
+        sys.exit(append_event(base, args.event_type, args.agent, task_id, args.summary, artifacts))
+    except ValueError as e:
+        print(f"❌ {e}")
         sys.exit(1)
-
-    event_type = sys.argv[1]
-    agent = sys.argv[2]
-    task_id = sys.argv[3] if sys.argv[3] != "none" else None
-    summary = sys.argv[4]
-    artifacts = json.loads(sys.argv[5]) if len(sys.argv) > 5 else None
-
-    sys.exit(append_event(".", event_type, agent, task_id, summary, artifacts))

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Display current collaboration state."""
 
+import argparse
 import json
 import sys
 from datetime import datetime
 from pathlib import Path
+from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 def show_status(base_dir="."):
     """Display collaboration status."""
@@ -86,4 +88,13 @@ def show_status(base_dir="."):
     return 0
 
 if __name__ == "__main__":
-    sys.exit(show_status())
+    parser = argparse.ArgumentParser(description="Display collaboration status")
+    add_base_dir_arg(parser)
+    args = parser.parse_args()
+
+    try:
+        base = resolve_existing_base_dir(args.base_dir)
+        sys.exit(show_status(base))
+    except ValueError as e:
+        print(f"❌ {e}")
+        sys.exit(1)

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Task lifecycle operations."""
 
+import argparse
 import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from collab_event import append_event, acquire_lock, release_lock
+from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 ACTIVE_CLAIM_STATUSES = {
     "claimed",
@@ -214,19 +216,21 @@ def complete_task(base_dir, task_id, agent="claude"):
                        f"Completed task {task_id}")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: collab_task.py <create|claim|complete> [args...]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Task lifecycle operations")
+    add_base_dir_arg(parser)
+    parser.add_argument("command", choices=["create", "claim", "complete"])
+    parser.add_argument("task_arg", help="Task description (create) or task ID (claim/complete)")
+    parser.add_argument("agent", nargs="?", default="claude", help="Agent name (claim/complete)")
+    args = parser.parse_args()
 
-    cmd = sys.argv[1]
-    if cmd == "create" and len(sys.argv) >= 3:
-        sys.exit(create_task(".", sys.argv[2]))
-    elif cmd == "claim" and len(sys.argv) >= 3:
-        agent = sys.argv[3] if len(sys.argv) > 3 else "claude"
-        sys.exit(claim_task(".", sys.argv[2], agent))
-    elif cmd == "complete" and len(sys.argv) >= 3:
-        agent = sys.argv[3] if len(sys.argv) > 3 else "claude"
-        sys.exit(complete_task(".", sys.argv[2], agent))
-    else:
-        print("Invalid command")
+    try:
+        base = resolve_existing_base_dir(args.base_dir)
+        if args.command == "create":
+            sys.exit(create_task(base, args.task_arg))
+        elif args.command == "claim":
+            sys.exit(claim_task(base, args.task_arg, args.agent))
+        elif args.command == "complete":
+            sys.exit(complete_task(base, args.task_arg, args.agent))
+    except ValueError as e:
+        print(f"❌ {e}")
         sys.exit(1)

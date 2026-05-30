@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Initialize Claude-Codex collaboration directory structure."""
 
+import argparse
 import json
 import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from collab_paths import resolve_init_base_dir, add_base_dir_arg
 
-def init_collaboration(base_dir="."):
+def init_collaboration(base_dir=".", source="cwd"):
     """Initialize collaboration directory structure."""
     base = Path(base_dir).resolve()
     collab_dir = base / ".omc" / "collaboration"
@@ -60,9 +62,15 @@ See full protocol documentation for details.
 """)
 
     print(f"✓ Collaboration directory initialized: {collab_dir}")
+    print(f"✓ Base directory: {base} (source: {source})")
     print(f"✓ Created: state.json, events.jsonl, protocol.md")
     print(f"✓ Created subdirectories: tasks/, artifacts/, locks/")
     return 0
 
 if __name__ == "__main__":
-    sys.exit(init_collaboration())
+    parser = argparse.ArgumentParser(description="Initialize collaboration directory")
+    add_base_dir_arg(parser)
+    args = parser.parse_args()
+
+    base, source = resolve_init_base_dir(args.base_dir)
+    sys.exit(init_collaboration(base, source))

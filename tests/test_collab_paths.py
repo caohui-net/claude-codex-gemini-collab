@@ -1,0 +1,106 @@
+import contextlib
+import io
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from collab_paths import (
+    find_upward_collaboration,
+    find_git_root,
+    resolve_existing_base_dir,
+    resolve_init_base_dir,
+)
+from collab_init import init_collaboration
+
+
+class CollabPathsTests(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.base = Path(self.tmpdir.name)
+
+    def tearDown(self):
+        self.tmpdir.cleanup()
+
+    def test_find_upward_collaboration_from_root(self):
+        """Test finding .omc/collaboration from repo root."""
+        collab_dir = self.base / ".omc" / "collaboration"
+        collab_dir.mkdir(parents=True)
+
+        found = find_upward_collaboration(self.base)
+        self.assertEqual(found, self.base)
+
+    def test_find_upward_collaboration_from_nested(self):
+        """Test finding .omc/collaboration from nested directory."""
+        collab_dir = self.base / ".omc" / "collaboration"
+        collab_dir.mkdir(parents=True)
+
+        nested = self.base / "src" / "components"
+        nested.mkdir(parents=True)
+
+        found = find_upward_collaboration(nested)
+        self.assertEqual(found, self.base)
+
+    def test_find_upward_collaboration_not_found(self):
+        """Test finding .omc/collaboration when it doesn't exist."""
+        found = find_upward_collaboration(self.base)
+        self.assertIsNone(found)
+
+    def test_resolve_existing_base_dir_with_explicit_base(self):
+        """Test resolve_existing_base_dir with --base-dir."""
+        collab_dir = self.base / ".omc" / "collaboration"
+        collab_dir.mkdir(parents=True)
+
+        result = resolve_existing_base_dir(str(self.base))
+        self.assertEqual(result, self.base)
+
+    def test_resolve_existing_base_dir_upward_search(self):
+        """Test resolve_existing_base_dir finds parent state."""
+        collab_dir = self.base / ".omc" / "collaboration"
+        collab_dir.mkdir(parents=True)
+
+        nested = self.base / "src" / "components"
+        nested.mkdir(parents=True)
+
+        result = resolve_existing_base_dir(None, nested)
+        self.assertEqual(result, self.base)
+
+    def test_resolve_existing_base_dir_fails_when_not_found(self):
+        """Test resolve_existing_base_dir raises ValueError when not found."""
+        with self.assertRaises(ValueError) as ctx:
+            resolve_existing_base_dir(None, self.base)
+        self.assertIn("No .omc/collaboration directory found", str(ctx.exception))
+
+    def test_resolve_init_base_dir_with_explicit_base(self):
+        """Test resolve_init_base_dir with --base-dir."""
+        result, source = resolve_init_base_dir(str(self.base))
+        self.assertEqual(result, self.base)
+        self.assertEqual(source, "--base-dir")
+
+    def test_resolve_init_base_dir_reuses_existing_state(self):
+        """Test resolve_init_base_dir reuses existing parent state (avoids nested)."""
+        collab_dir = self.base / ".omc" / "collaboration"
+        collab_dir.mkdir(parents=True)
+
+        nested = self.base / "src" / "components"
+        nested.mkdir(parents=True)
+
+        result, source = resolve_init_base_dir(None, nested)
+        self.assertEqual(result, self.base)
+        self.assertEqual(source, "existing")
+
+    def test_resolve_init_base_dir_falls_back_to_cwd(self):
+        """Test resolve_init_base_dir falls back to cwd when no git repo."""
+        result, source = resolve_init_base_dir(None, self.base)
+        self.assertEqual(result, self.base)
+        self.assertEqual(source, "cwd")
+
+
+if __name__ == "__main__":
+    unittest.main()
