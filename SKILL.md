@@ -134,7 +134,6 @@ python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to code
 
 - Appends `handoff_requested` event
 - Updates state to `waiting`
-- Outputs: "Next: /oh-my-claudecode:ask codex '<message>'"
 
 Does NOT auto-invoke codex/gemini (user must do manually via /oh-my-claudecode:ask).
 
@@ -161,7 +160,6 @@ python3 scripts/collab_validate.py repair
 - Backs up current files
 - Rebuilds state.json from events.jsonl
 - Removes stale locks
-- Creates repair artifact
 
 ## Notes
 

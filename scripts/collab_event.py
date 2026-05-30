@@ -180,7 +180,11 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
 
         # Validate handoff_requested: task must exist
         if event_type == "handoff_requested" and task_id:
-            task_exists = any(e.get('task_id') == task_id or e.get('details', {}).get('task_id') == task_id for e in events)
+            task_exists = any(
+                e.get('type') == 'task_created' and
+                (e.get('task_id') == task_id or e.get('details', {}).get('task_id') == task_id)
+                for e in events
+            )
             if not task_exists:
                 print(f"❌ Cannot handoff: task {task_id} not found in events")
                 return 1

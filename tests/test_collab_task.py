@@ -250,6 +250,36 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(events_file.read_text(), before)
         self.assertFalse(self.lock_exists())
 
+    def test_handoff_rejects_ghost_task(self):
+        # Ghost task: artifact_created mentions task_id but no task_created event
+        self.write_events([make_event(1, "artifact_created", task_id="TASK-GHOST", status="in_progress")])
+        events_file = self.collab_dir / "events.jsonl"
+        before = events_file.read_text()
+
+        # Try handoff for ghost task
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "handoff_requested", "claude", "TASK-GHOST", "handoff to codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(events_file.read_text(), before)
+        self.assertFalse(self.lock_exists())
+
+    def test_create_task_fails_on_malformed_events(self):
+        from collab_task import create_task
+
+        # Corrupt events.jsonl
+        events_file = self.collab_dir / "events.jsonl"
+        events_file.write_text("{bad json}\n")
+
+        # Try to create task
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = create_task(self.base, "test task")
+
+        # Should fail and not create orphan task file
+        self.assertEqual(result, 1)
+        task_files = list((self.collab_dir / "tasks").glob("*.md"))
+        self.assertEqual(len(task_files), 0)
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}

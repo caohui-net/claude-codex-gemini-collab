@@ -104,7 +104,7 @@ def create_task(base_dir, description):
     task_num = len(existing) + 1
     task_id = f"TASK-{timestamp}-{task_num:02d}"
 
-    # Create task document
+    # Prepare task document
     task_file = collab_dir / "tasks" / f"{task_id}-{description[:30].replace(' ', '-').lower()}.md"
     task_content = f"""---
 task_id: {task_id}
@@ -129,11 +129,17 @@ priority: normal
 
 - [ ] Task completed as described
 """
-    task_file.write_text(task_content)
 
-    # Append event
-    append_event(base_dir, "task_created", "claude", task_id,
-                 f"Created task: {description}", [str(task_file)])
+    # Append event first
+    result = append_event(base_dir, "task_created", "claude", task_id,
+                          f"Created task: {description}", [str(task_file)])
+
+    if result != 0:
+        print(f"❌ Failed to create task: event append failed")
+        return result
+
+    # Write task file only after successful event append
+    task_file.write_text(task_content)
 
     print(f"✓ Task created: {task_id}")
     print(f"✓ File: {task_file}")
