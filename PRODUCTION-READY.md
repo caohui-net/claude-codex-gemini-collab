@@ -73,9 +73,9 @@ OK
 ### Git状态
 ```
 Branch: master
-Latest commit: fix: Pre-production hardening (4 blockers resolved)
+Latest commit: 0548d55 fix: Priority 2b Hardening - unify event/state validation (P1, P2, P3)
 All changes pushed to remote
-Working tree clean
+Working tree: clean (tracked files)
 ```
 
 ---
@@ -152,6 +152,8 @@ Working tree clean
 3. fix: collab_validate empty events crash (P0.5 bug fix)
 4. docs: Phase 1b closeout completion summary
 5. fix: Pre-production hardening (4 blockers resolved)
+6. feat: implement Priority 2b - transaction and operational hardening
+7. fix: Priority 2b Hardening - unify event/state validation (P1, P2, P3)
 
 **测试演进：**
 - 初始：6个测试
