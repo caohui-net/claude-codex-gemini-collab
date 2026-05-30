@@ -2,12 +2,89 @@
 """Atomic event operations for collaboration protocol."""
 
 import json
-import os
 import shutil
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+COMMAND_NAME = "/claude-codex-gemini-collab"
+
+STATUS_MAP = {
+    "task_created": "task_open",
+    "task_claimed": "in_progress",
+    "handoff_requested": "waiting",
+    "completed": "completed",
+    "blocked": "blocked",
+    "independent_analysis_completed": "waiting_synthesis",
+    "synthesis_completed": "completed",
+}
+
+
+def read_events(events_file):
+    """Read and validate events.jsonl before normal writes."""
+    events = []
+    seen_ids = set()
+    if not events_file.exists():
+        raise ValueError("events.jsonl missing")
+    if events_file.stat().st_size == 0:
+        return events
+
+    for line_no, line in enumerate(events_file.read_text().splitlines(), 1):
+        if not line:
+            continue
+
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"events.jsonl line {line_no} malformed: {e}") from e
+
+        if not isinstance(event, dict):
+            raise ValueError(f"events.jsonl line {line_no} must be a JSON object")
+
+        event_id = event.get("id")
+        if not isinstance(event_id, int) or isinstance(event_id, bool):
+            raise ValueError(f"events.jsonl line {line_no} has invalid event id: {event_id!r}")
+        if event_id in seen_ids:
+            raise ValueError(f"events.jsonl has duplicate event id: {event_id}")
+        seen_ids.add(event_id)
+        events.append(event)
+
+    return events
+
+
+def read_state(state_file):
+    """Read and validate state.json before normal writes."""
+    if not state_file.exists():
+        raise ValueError("state.json missing")
+
+    try:
+        state = json.loads(state_file.read_text())
+    except json.JSONDecodeError as e:
+        raise ValueError(f"state.json malformed: {e}") from e
+
+    if not isinstance(state, dict):
+        raise ValueError("state.json must be a JSON object")
+
+    return state
+
+
+def write_state_atomically(collab_dir, agent, state):
+    """Write state through a validated temp file and atomic rename."""
+    state_file = collab_dir / "state.json"
+    temp_file = collab_dir / f"state.json.tmp.{agent}"
+    temp_file.write_text(json.dumps(state, indent=2) + '\n')
+
+    try:
+        written_state = json.loads(temp_file.read_text())
+    except json.JSONDecodeError as e:
+        temp_file.unlink(missing_ok=True)
+        raise ValueError(f"temporary state JSON malformed: {e}") from e
+
+    if not isinstance(written_state, dict):
+        temp_file.unlink(missing_ok=True)
+        raise ValueError("temporary state JSON must be an object")
+
+    temp_file.replace(state_file)
 
 def acquire_lock(collab_dir, agent, task_id, reason):
     """Acquire journal lock atomically using mkdir."""
@@ -24,7 +101,7 @@ def acquire_lock(collab_dir, agent, task_id, reason):
                 created = datetime.fromisoformat(owner.get('created_at', ''))
                 age = (datetime.now(timezone.utc) - created).total_seconds()
                 if age > 900:  # 15 minutes
-                    print(f"⚠️  Stale lock detected (age: {age:.0f}s). Run: /claude-codex-collab repair")
+                    print(f"⚠️  Stale lock detected (age: {age:.0f}s). Run: {COMMAND_NAME} repair")
                 else:
                     print(f"❌ Lock held by {owner.get('agent')} for task {owner.get('task_id')}")
             except:
@@ -90,13 +167,16 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         return 1
 
     try:
-        # Read and validate events.jsonl
+        # Read and validate events.jsonl/state.json before any write.
         events_file = collab_dir / "events.jsonl"
-        events = []
-        if events_file.exists() and events_file.stat().st_size > 0:
-            for line in events_file.read_text().strip().split('\n'):
-                if line:
-                    events.append(json.loads(line))
+        state_file = collab_dir / "state.json"
+        try:
+            events = read_events(events_file)
+            state = read_state(state_file)
+        except ValueError as e:
+            print(f"❌ Validation failed: {e}")
+            print(f"Run: {COMMAND_NAME} repair")
+            return 1
 
         # Compute next ID from log
         next_id = max((e.get('id', 0) for e in events), default=0) + 1
@@ -117,24 +197,13 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
             event["details"] = details
 
         # Determine status from event type
-        status_map = {
-            "task_created": "task_open",
-            "task_claimed": "in_progress",
-            "handoff_requested": "waiting",
-            "completed": "completed",
-            "blocked": "blocked",
-            "independent_analysis_completed": "waiting_synthesis",
-            "synthesis_completed": "completed"
-        }
-        event["status"] = status_map.get(event_type, "in_progress")
+        event["status"] = STATUS_MAP.get(event_type, "in_progress")
 
         # Append to events.jsonl
         with events_file.open('a') as f:
             f.write(json.dumps(event) + '\n')
 
         # Update state.json atomically
-        state_file = collab_dir / "state.json"
-        state = json.loads(state_file.read_text())
         state["last_event_id"] = next_id
         state["status"] = event["status"]
         state["updated_at"] = event["timestamp"]
@@ -143,10 +212,7 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         if event_type == "completed":
             state["active_agent"] = "none"
 
-        # Atomic write
-        temp_file = collab_dir / f"state.json.tmp.{agent}"
-        temp_file.write_text(json.dumps(state, indent=2) + '\n')
-        temp_file.replace(state_file)
+        write_state_atomically(collab_dir, agent, state)
 
         print(f"✓ Event {next_id} appended: {event_type}")
         print(f"✓ State updated: status={event['status']}, last_event_id={next_id}")
@@ -154,7 +220,7 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         return 0
 
     finally:
-        release_lock(collab_dir)
+        release_lock(collab_dir, agent=agent)
 
 if __name__ == "__main__":
     if len(sys.argv) < 5:

@@ -7,6 +7,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 import shutil
 
+COMMAND_NAME = "/claude-codex-gemini-collab"
+
+
+def parse_timestamp(value):
+    """Parse an ISO timestamp and normalize naive values to UTC."""
+    if not isinstance(value, str):
+        raise ValueError("timestamp must be a string")
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
 def validate(base_dir="."):
     """Validate collaboration state consistency."""
     base = Path(base_dir).resolve()
@@ -21,31 +34,57 @@ def validate(base_dir="."):
     # Validate events.jsonl
     events_file = collab_dir / "events.jsonl"
     events = []
-    if events_file.exists():
-        for i, line in enumerate(events_file.read_text().strip().split('\n'), 1):
+    if not events_file.exists():
+        issues.append("events.jsonl missing")
+    else:
+        seen_ids = set()
+        for i, line in enumerate(events_file.read_text().splitlines(), 1):
             if not line:
                 continue
             try:
                 event = json.loads(line)
-                events.append(event)
             except json.JSONDecodeError as e:
                 issues.append(f"Line {i} malformed: {e}")
+                continue
 
-    # Check duplicate IDs
-    ids = [e.get('id') for e in events]
-    if len(ids) != len(set(ids)):
-        issues.append(f"Duplicate event IDs detected")
+            if not isinstance(event, dict):
+                issues.append(f"Line {i} must be a JSON object")
+                continue
+
+            event_id = event.get('id')
+            if not isinstance(event_id, int) or isinstance(event_id, bool):
+                issues.append(f"Line {i} invalid event id: {event_id!r}")
+                continue
+
+            if event_id in seen_ids:
+                issues.append(f"Duplicate event ID detected: {event_id}")
+            seen_ids.add(event_id)
+            events.append(event)
 
     # Validate state.json
     state_file = collab_dir / "state.json"
-    try:
-        state = json.loads(state_file.read_text())
-    except json.JSONDecodeError as e:
-        issues.append(f"state.json malformed: {e}")
+    state = None
+    if not state_file.exists():
+        issues.append("state.json missing")
+    else:
+        try:
+            state = json.loads(state_file.read_text())
+        except json.JSONDecodeError as e:
+            issues.append(f"state.json malformed: {e}")
+        else:
+            if not isinstance(state, dict):
+                issues.append("state.json must be a JSON object")
+                state = None
+
+    if state is not None and (
+        not isinstance(state.get('last_event_id'), int)
+        or isinstance(state.get('last_event_id'), bool)
+    ):
+        issues.append(f"state.json last_event_id invalid: {state.get('last_event_id')!r}")
         state = None
 
     # Check state consistency
-    if state and events:
+    if state is not None:
         max_id = max(e.get('id', 0) for e in events)
         if state.get('last_event_id') != max_id:
             issues.append(f"Event ID mismatch: state={state.get('last_event_id')}, log max={max_id}")
@@ -58,19 +97,21 @@ def validate(base_dir="."):
             if owner_file.exists():
                 try:
                     owner = json.loads(owner_file.read_text())
-                    created = datetime.fromisoformat(owner.get('created_at', ''))
+                    if not isinstance(owner, dict):
+                        raise ValueError("owner.json must be a JSON object")
+                    created = parse_timestamp(owner.get('created_at', ''))
                     age = (datetime.now(timezone.utc) - created).total_seconds()
                     if age > 900:
                         issues.append(f"Stale lock: {lock.name} (age: {age:.0f}s)")
-                except:
-                    issues.append(f"Lock {lock.name} has malformed owner.json")
+                except (ValueError, TypeError, json.JSONDecodeError) as e:
+                    issues.append(f"Lock {lock.name} has malformed owner.json: {e}")
 
     # Report
     if issues:
         print(f"❌ Validation failed ({len(issues)} issues):")
         for issue in issues:
             print(f"  • {issue}")
-        print(f"\nRun: /claude-codex-collab repair")
+        print(f"\nRun: {COMMAND_NAME} repair")
         return 1
     else:
         print(f"✓ Validation passed")
@@ -83,6 +124,10 @@ def repair(base_dir="."):
     """Attempt to repair collaboration state."""
     base = Path(base_dir).resolve()
     collab_dir = base / ".omc" / "collaboration"
+
+    if not collab_dir.exists():
+        print("❌ Collaboration not initialized")
+        return 1
 
     print("🔧 Starting repair...")
 
@@ -112,7 +157,7 @@ def repair(base_dir="."):
         max_id = max(e.get('id', 0) for e in events)
 
         state = {
-            "workflow_id": "claude-codex-collab-mvp",
+            "workflow_id": "claude-codex-gemini-collab",
             "current_task": last_event.get('task_id'),
             "active_agent": last_event.get('agent') if last_event.get('status') != 'completed' else 'none',
             "status": last_event.get('status', 'unknown'),

@@ -1,6 +1,8 @@
 import contextlib
 import io
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -9,9 +11,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from collab_event import release_lock
+from collab_event import append_event, release_lock
 from collab_init import init_collaboration
 from collab_task import claim_task
+from collab_validate import validate
 
 
 def make_event(event_id, event_type, agent="claude", task_id="TASK-1", status=None, details=None):
@@ -132,6 +135,108 @@ class CollaborationTaskTests(unittest.TestCase):
 
         release_lock(self.collab_dir, agent="claude", task_id="TASK-1")
         self.assertFalse(lock_dir.exists())
+
+    def test_append_event_rejects_malformed_event_log_without_writing(self):
+        events_file = self.collab_dir / "events.jsonl"
+        events_file.write_text("{not json}\n")
+        before = events_file.read_text()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "completed", "codex", "TASK-1", "done")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(events_file.read_text(), before)
+        self.assertFalse(self.lock_exists())
+
+    def test_append_event_rejects_duplicate_ids_without_writing(self):
+        events = [
+            make_event(1, "task_created", status="task_open"),
+            make_event(1, "artifact_created", status="in_progress"),
+        ]
+        self.write_events(events)
+        events_file = self.collab_dir / "events.jsonl"
+        before = events_file.read_text()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "completed", "codex", "TASK-1", "done")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(events_file.read_text(), before)
+        self.assertFalse(self.lock_exists())
+
+    def test_append_event_rejects_missing_state_without_writing(self):
+        self.write_events([make_event(1, "task_created", status="task_open")])
+        (self.collab_dir / "state.json").unlink()
+        events_file = self.collab_dir / "events.jsonl"
+        before = events_file.read_text()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "completed", "codex", "TASK-1", "done")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(events_file.read_text(), before)
+        self.assertFalse(self.lock_exists())
+
+    def test_validate_missing_state_fails_gracefully(self):
+        (self.collab_dir / "state.json").unlink()
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = validate(self.base)
+
+        self.assertEqual(result, 1)
+        self.assertIn("state.json missing", output.getvalue())
+
+    def test_cli_smoke_init_create_claim_complete_validate(self):
+        with tempfile.TemporaryDirectory() as smoke_dir:
+            env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+
+            def run_script(*args):
+                return subprocess.run(
+                    [sys.executable, *args],
+                    cwd=smoke_dir,
+                    env=env,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+
+            init_result = run_script(str(ROOT / "scripts" / "collab_init.py"))
+            self.assertEqual(init_result.returncode, 0, init_result.stderr)
+
+            create_result = run_script(
+                str(ROOT / "scripts" / "collab_task.py"),
+                "create",
+                "Smoke test task",
+            )
+            self.assertEqual(create_result.returncode, 0, create_result.stderr)
+
+            smoke_collab_dir = Path(smoke_dir) / ".omc" / "collaboration"
+            events = [
+                json.loads(line)
+                for line in (smoke_collab_dir / "events.jsonl").read_text().splitlines()
+            ]
+            task_id = events[-1]["task_id"]
+
+            claim_result = run_script(
+                str(ROOT / "scripts" / "collab_task.py"),
+                "claim",
+                task_id,
+                "codex",
+            )
+            self.assertEqual(claim_result.returncode, 0, claim_result.stderr)
+
+            complete_result = run_script(
+                str(ROOT / "scripts" / "collab_task.py"),
+                "complete",
+                task_id,
+                "codex",
+            )
+            self.assertEqual(complete_result.returncode, 0, complete_result.stderr)
+
+            validate_result = run_script(str(ROOT / "scripts" / "collab_validate.py"))
+            self.assertEqual(validate_result.returncode, 0, validate_result.stdout + validate_result.stderr)
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ def init_collaboration(base_dir="."):
     state_file = collab_dir / "state.json"
     if not state_file.exists():
         state = {
-            "workflow_id": "claude-codex-collab-mvp",
+            "workflow_id": "claude-codex-gemini-collab",
             "current_task": None,
             "active_agent": "none",
             "status": "initialized",
@@ -50,9 +50,9 @@ def init_collaboration(base_dir="."):
             protocol_file.write_text(current_protocol.read_text())
         else:
             # Minimal protocol template
-            protocol_file.write_text("""# Claude-Codex Collaboration Protocol
+            protocol_file.write_text("""# Claude-Codex-Gemini Collaboration Protocol
 
-Version: 0.2
+Version: 0.3
 Status: active
 
 See full protocol documentation for details.

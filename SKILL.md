@@ -1,7 +1,7 @@
 ---
 name: claude-codex-gemini-collab
 description: Claude-Codex-Gemini collaboration protocol operations - init, task management, state validation
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Claude-Codex-Gemini Collaboration Skill
@@ -67,7 +67,7 @@ Creates:
 Runs read-only collaboration journal/state validation.
 
 ```bash
-bash .omc/collaboration/scripts/validate-journal.sh
+python3 scripts/collab_validate.py
 ```
 
 Checks:

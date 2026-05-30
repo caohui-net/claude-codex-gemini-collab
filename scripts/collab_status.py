@@ -12,7 +12,7 @@ def show_status(base_dir="."):
     collab_dir = base / ".omc" / "collaboration"
 
     if not collab_dir.exists():
-        print("❌ Collaboration not initialized. Run: /claude-codex-collab init")
+        print("❌ Collaboration not initialized. Run: /claude-codex-gemini-collab init")
         return 1
 
     # Read state
@@ -79,7 +79,7 @@ def show_status(base_dir="."):
         print(f"\n⚠️  Issues Detected:")
         for issue in issues:
             print(f"  • {issue}")
-        print(f"\nRun: /claude-codex-collab validate")
+        print(f"\nRun: /claude-codex-gemini-collab validate")
     else:
         print(f"\n✓ No issues detected")
 

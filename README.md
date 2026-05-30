@@ -53,4 +53,4 @@ cp -r . ~/.claude/skills/claude-codex-gemini-collab/
 
 ## Version
 
-0.2.0 - Tri-model support (Claude + Codex + Gemini)
+0.3.0 - Tri-model protocol with locked event/state validation
