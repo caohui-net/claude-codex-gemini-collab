@@ -1,7 +1,8 @@
 # Priority 2a Implementation Plan
 
-**Status:** Ready to implement
+**Status:** ✅ Complete and Production-Ready
 **Consensus:** Claude + Codex agreed (2026-05-30)
+**Completion:** 2026-05-30 (all fixes applied, Codex approved)
 
 ## Scope
 
@@ -91,9 +92,11 @@ def add_base_dir_arg(parser):
 - [x] All 18 existing tests pass
 - [x] New tests pass (12 new tests added)
 - [x] Total: 30/30 tests passing
-- [ ] Manual smoke test from nested directory
+- [x] Manual smoke test from nested directory (Codex verified)
 - [x] SKILL.md matches implementation
-- [x] Codex review completed - 2 issues identified and fixed
+- [x] Codex review completed - all issues fixed
+- [x] CLI-level nested test added per Codex feedback
+- [x] Production-ready: Codex approved
 
 ## Deferred (Not in Priority 2a)
 
