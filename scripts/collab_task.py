@@ -6,7 +6,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically, read_events
+from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically, read_events, validate_agent_id
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 ACTIVE_CLAIM_STATUSES = {
@@ -169,6 +169,13 @@ def claim_task(base_dir, task_id, agent="claude"):
     """Claim task atomically."""
     base = Path(base_dir).resolve()
     collab_dir = base / ".omc" / "collaboration"
+
+    # Validate agent before any operations
+    try:
+        validate_agent_id(agent)
+    except ValueError as e:
+        print(f"❌ Invalid agent ID: {e}")
+        return 1
 
     # Acquire lock
     if not acquire_lock(collab_dir, agent, task_id, "claim task"):

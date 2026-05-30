@@ -22,6 +22,17 @@ STATUS_MAP = {
 }
 
 
+def validate_agent_id(agent):
+    """Validate agent ID format to prevent path injection."""
+    if not agent or not isinstance(agent, str):
+        raise ValueError("agent must be a non-empty string")
+    if len(agent) > 64:
+        raise ValueError("agent ID too long (max 64 chars)")
+    if not all(c.isalnum() or c in '-_' for c in agent):
+        raise ValueError(f"agent ID contains invalid characters: {agent}")
+    return agent
+
+
 def read_events(events_file):
     """Read and validate events.jsonl before normal writes."""
     events = []
@@ -72,6 +83,7 @@ def read_state(state_file):
 
 def write_state_atomically(collab_dir, agent, state):
     """Write state through a validated temp file and atomic rename."""
+    validate_agent_id(agent)
     state_file = collab_dir / "state.json"
     temp_file = collab_dir / f"state.json.tmp.{agent}"
     temp_file.write_text(json.dumps(state, indent=2) + '\n')
@@ -163,6 +175,13 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         print("❌ Collaboration not initialized")
         return 1
 
+    # Validate agent before any operations
+    try:
+        validate_agent_id(agent)
+    except ValueError as e:
+        print(f"❌ Invalid agent ID: {e}")
+        return 1
+
     # Acquire lock
     if not acquire_lock(collab_dir, agent, task_id, f"append {event_type} event"):
         print("❌ Failed to acquire journal lock")
@@ -189,6 +208,17 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
             )
             if not task_exists:
                 print(f"❌ Cannot handoff: task {task_id} not found in events")
+                return 1
+
+        # Validate completed: task must exist
+        if event_type == "completed" and task_id:
+            task_exists = any(
+                e.get('type') == 'task_created' and
+                (e.get('task_id') == task_id or e.get('details', {}).get('task_id') == task_id)
+                for e in events
+            )
+            if not task_exists:
+                print(f"❌ Cannot complete: task {task_id} not found in events")
                 return 1
 
         # Compute next ID from log

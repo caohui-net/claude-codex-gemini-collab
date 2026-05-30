@@ -369,6 +369,69 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("state.json must be a JSON object", output.getvalue())
 
+    def test_claim_rejects_agent_with_path_separator(self):
+        """Test claim rejects agent with path separator (transaction gap fix)."""
+        self.write_events([make_event(1, "task_created", status="task_open")])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "bad/agent")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_claim_rejects_agent_with_backslash(self):
+        """Test claim rejects agent with backslash."""
+        self.write_events([make_event(1, "task_created", status="task_open")])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "bad\\agent")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_claim_rejects_empty_agent(self):
+        """Test claim rejects empty agent."""
+        self.write_events([make_event(1, "task_created", status="task_open")])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_claim_rejects_agent_too_long(self):
+        """Test claim rejects agent ID longer than 64 chars."""
+        self.write_events([make_event(1, "task_created", status="task_open")])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "a" * 65)
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_complete_rejects_nonexistent_task(self):
+        """Test complete rejects nonexistent task (ghost completion fix)."""
+        from collab_task import complete_task
+
+        self.write_events([make_event(1, "task_created", task_id="TASK-1", status="task_open")])
+        before_count = self.event_count()
+
+        # Try to complete nonexistent task
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = complete_task(self.base, "TASK-GHOST", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
