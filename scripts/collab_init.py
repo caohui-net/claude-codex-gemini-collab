@@ -41,15 +41,16 @@ def init_collaboration(base_dir="."):
     if not events_file.exists():
         events_file.touch()
 
-    # Copy protocol.md template
+    # Copy protocol.md from assets
     protocol_file = collab_dir / "protocol.md"
     if not protocol_file.exists():
-        # Copy from current protocol if exists, otherwise create minimal
-        current_protocol = collab_dir.parent.parent / ".omc" / "collaboration" / "protocol.md"
-        if current_protocol.exists():
-            protocol_file.write_text(current_protocol.read_text())
+        # Copy from assets/protocol.md
+        script_dir = Path(__file__).parent
+        assets_protocol = script_dir.parent / "assets" / "protocol.md"
+        if assets_protocol.exists():
+            protocol_file.write_text(assets_protocol.read_text())
         else:
-            # Minimal protocol template
+            # Fallback: minimal protocol template
             protocol_file.write_text("""# Claude-Codex-Gemini Collaboration Protocol
 
 Version: 0.3

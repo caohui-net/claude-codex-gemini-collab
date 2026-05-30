@@ -178,6 +178,13 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
             print(f"Run: {COMMAND_NAME} repair")
             return 1
 
+        # Validate handoff_requested: task must exist
+        if event_type == "handoff_requested" and task_id:
+            task_exists = any(e.get('task_id') == task_id or e.get('details', {}).get('task_id') == task_id for e in events)
+            if not task_exists:
+                print(f"❌ Cannot handoff: task {task_id} not found in events")
+                return 1
+
         # Compute next ID from log
         next_id = max((e.get('id', 0) for e in events), default=0) + 1
 

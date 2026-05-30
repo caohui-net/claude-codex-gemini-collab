@@ -237,6 +237,19 @@ class CollaborationTaskTests(unittest.TestCase):
         state = json.loads(state_file.read_text())
         self.assertEqual(state["last_event_id"], 1)
 
+    def test_handoff_validates_task_exists(self):
+        self.write_events([make_event(1, "task_created", task_id="TASK-1", status="task_open")])
+        events_file = self.collab_dir / "events.jsonl"
+        before = events_file.read_text()
+
+        # Try handoff for non-existent task
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "handoff_requested", "claude", "TASK-999", "handoff to codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(events_file.read_text(), before)
+        self.assertFalse(self.lock_exists())
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}

@@ -25,7 +25,11 @@ cp -r . ~/.claude/skills/claude-codex-gemini-collab/
 /claude-codex-gemini-collab init          # Initialize collaboration
 /claude-codex-gemini-collab task "..."    # Create task
 /claude-codex-gemini-collab status        # Check state
-/claude-codex-gemini-collab handoff <codex|gemini> <TASK-ID>
+```
+
+For handoff, use the script directly:
+```bash
+python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target>"
 ```
 
 ## Requirements

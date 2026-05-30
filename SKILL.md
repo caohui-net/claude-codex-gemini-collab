@@ -23,7 +23,6 @@ Provides deterministic operations for Claude-Codex-Gemini tri-model collaboratio
 /claude-codex-gemini-collab status
 /claude-codex-gemini-collab task "<description>"
 /claude-codex-gemini-collab claim <TASK-ID>
-/claude-codex-gemini-collab handoff <codex|gemini> <TASK-ID>
 /claude-codex-gemini-collab complete <TASK-ID>
 /claude-codex-gemini-collab repair
 ```
