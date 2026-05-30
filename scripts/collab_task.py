@@ -105,7 +105,9 @@ def create_task(base_dir, description):
     task_id = f"TASK-{timestamp}-{task_num:02d}"
 
     # Prepare task document
-    task_file = collab_dir / "tasks" / f"{task_id}-{description[:30].replace(' ', '-').lower()}.md"
+    # Sanitize description for filename (remove path separators and special chars)
+    safe_desc = description[:30].replace('/', '-').replace('\\', '-').replace(' ', '-').lower()
+    task_file = collab_dir / "tasks" / f"{task_id}-{safe_desc}.md"
     task_content = f"""---
 task_id: {task_id}
 owner: claude

@@ -280,6 +280,21 @@ class CollaborationTaskTests(unittest.TestCase):
         task_files = list((self.collab_dir / "tasks").glob("*.md"))
         self.assertEqual(len(task_files), 0)
 
+    def test_create_task_sanitizes_path_separators(self):
+        from collab_task import create_task
+
+        # Try to create task with path separators in description
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = create_task(self.base, "bad/path\\task")
+
+        # Should succeed and sanitize the filename
+        self.assertEqual(result, 0)
+        task_files = list((self.collab_dir / "tasks").glob("*.md"))
+        self.assertEqual(len(task_files), 1)
+        # Verify filename has no path separators
+        self.assertNotIn("/", task_files[0].name)
+        self.assertNotIn("\\", task_files[0].name)
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}

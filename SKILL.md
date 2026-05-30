@@ -40,9 +40,9 @@ Provides deterministic operations for Claude-Codex-Gemini tri-model collaboratio
 
 **On failure:**
 - Stop immediately
-- Create repair artifact in `.omc/collaboration/artifacts/`
-- Set `state.status = "needs_repair"` if possible
-- Report to user with recovery steps
+- Print error message with details
+- Return non-zero exit code
+- Suggest repair command if applicable
 
 ## Implementation
 

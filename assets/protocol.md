@@ -223,11 +223,11 @@ The lock owner MUST hold `journal.lock` for the full read-check-write-validation
 
 Agents MUST validate `events.jsonl` and `state.json` before using them for workflow decisions.
 
-If `state.json` is invalid but `events.jsonl` is valid, the agent MUST rebuild `state.json` from the valid log while holding `locks/journal.lock`. The rebuild MUST use the atomic state write procedure, and the agent MUST append a `state_rebuilt` event.
+If `state.json` is invalid but `events.jsonl` is valid, the agent MUST rebuild `state.json` from the valid log while holding `locks/journal.lock`. The rebuild MUST use the atomic state write procedure.
 
-If `events.jsonl` contains duplicate event ids, normal collaboration MUST stop. The agent MUST set `state.json.status` to `needs_repair` if state can be written safely, preserve the original log, and create a repair artifact describing the duplicate ids and proposed repair.
+If `events.jsonl` contains duplicate event ids, normal collaboration MUST stop. The agent MUST preserve the original log and report the error to the user.
 
-If `events.jsonl` contains a malformed JSONL line, normal collaboration MUST stop. The agent MUST preserve the original log, create a repair artifact describing the malformed line and proposed repair, and set `state.json.status` to `needs_repair` if state can be written safely.
+If `events.jsonl` contains a malformed JSONL line, normal collaboration MUST stop. The agent MUST preserve the original log and report the error to the user.
 
 Agents MUST NOT continue normal task claiming, handoff, or completion until the repair is complete.
 
