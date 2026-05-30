@@ -130,8 +130,15 @@ class CollabPathsTests(unittest.TestCase):
         nested = self.base / "src" / "components"
         nested.mkdir(parents=True)
 
-        result = resolve_existing_base_dir(None, nested)
-        self.assertEqual(result, self.base)
+        # Run actual CLI script from nested directory
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "collab_status.py")],
+            cwd=nested,
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("initialized", result.stdout)
 
 
 if __name__ == "__main__":
