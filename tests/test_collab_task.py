@@ -312,6 +312,63 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertNotIn("/", task_files[0].name)
         self.assertNotIn("\\", task_files[0].name)
 
+    def test_claim_rejects_boolean_event_id(self):
+        """Test claim rejects event with boolean id."""
+        events_file = self.collab_dir / "events.jsonl"
+        events_file.write_text('{"id": true, "type": "task_created", "agent": "claude", "timestamp": "x", "summary": "x", "task_id": "TASK-1", "status": "task_open"}\n')
+        (self.collab_dir / "state.json").write_text('{"workflow_id": "test", "current_task": null, "active_agent": "none", "status": "initialized", "last_event_id": 1, "updated_at": "x"}\n')
+        before_count = len(events_file.read_text().splitlines())
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(len(events_file.read_text().splitlines()), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_claim_rejects_string_event_id(self):
+        """Test claim rejects event with string id."""
+        events_file = self.collab_dir / "events.jsonl"
+        events_file.write_text('{"id": "1", "type": "task_created", "agent": "claude", "timestamp": "x", "summary": "x", "task_id": "TASK-1", "status": "task_open"}\n')
+        (self.collab_dir / "state.json").write_text('{"workflow_id": "test", "current_task": null, "active_agent": "none", "status": "initialized", "last_event_id": 1, "updated_at": "x"}\n')
+        before_count = len(events_file.read_text().splitlines())
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(len(events_file.read_text().splitlines()), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_claim_rejects_null_event_id(self):
+        """Test claim rejects event with null id."""
+        events_file = self.collab_dir / "events.jsonl"
+        events_file.write_text('{"id": null, "type": "task_created", "agent": "claude", "timestamp": "x", "summary": "x", "task_id": "TASK-1", "status": "task_open"}\n')
+        (self.collab_dir / "state.json").write_text('{"workflow_id": "test", "current_task": null, "active_agent": "none", "status": "initialized", "last_event_id": 1, "updated_at": "x"}\n')
+        before_count = len(events_file.read_text().splitlines())
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(len(events_file.read_text().splitlines()), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_status_handles_non_object_state_gracefully(self):
+        """Test status handles non-object state.json gracefully."""
+        from collab_status import show_status
+
+        # Write non-object state.json (integer)
+        state_file = self.collab_dir / "state.json"
+        state_file.write_text("123")
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = show_status(self.base)
+
+        self.assertEqual(result, 1)
+        self.assertIn("state.json must be a JSON object", output.getvalue())
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}

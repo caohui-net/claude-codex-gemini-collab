@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
-from collab_event import read_events
+from collab_event import read_events, read_state
 
 def show_status(base_dir="."):
     """Display collaboration status."""
@@ -20,14 +20,10 @@ def show_status(base_dir="."):
 
     # Read state
     state_file = collab_dir / "state.json"
-    if not state_file.exists():
-        print("❌ state.json not found")
-        return 1
-
     try:
-        state = json.loads(state_file.read_text())
-    except json.JSONDecodeError as e:
-        print(f"❌ state.json malformed: {e}")
+        state = read_state(state_file)
+    except ValueError as e:
+        print(f"❌ {e}")
         return 1
 
     # Read events

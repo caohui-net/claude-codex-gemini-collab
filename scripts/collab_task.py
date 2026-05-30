@@ -6,7 +6,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically
+from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically, read_events
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 ACTIVE_CLAIM_STATUSES = {
@@ -32,29 +32,6 @@ def get_task_id(event):
     if not isinstance(details, dict):
         details = {}
     return event.get("task_id") or details.get("task_id")
-
-def read_events(events_file):
-    """Read events.jsonl and fail on malformed lines or duplicate ids."""
-    events = []
-    seen_ids = set()
-    if not events_file.exists() or events_file.stat().st_size == 0:
-        return events
-
-    for line_no, line in enumerate(events_file.read_text().splitlines(), 1):
-        if not line:
-            continue
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"events.jsonl line {line_no} malformed: {e}")
-
-        event_id = event.get("id")
-        if event_id in seen_ids:
-            raise ValueError(f"events.jsonl has duplicate event id: {event_id}")
-        seen_ids.add(event_id)
-        events.append(event)
-
-    return events
 
 def get_active_owner(events, task_id):
     """Return active task owner from the event log, or None if open/terminal."""

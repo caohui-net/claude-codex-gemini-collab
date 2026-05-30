@@ -47,13 +47,18 @@ Phase 1b closeout成功完成，所有pre-production blockers已修复。项目�
 - status报告event log corruption
 - 1个新回归测试（claim malformed state）
 
+### Priority 2b Hardening Fix (2026-05-30)
+- 删除collab_task.py重复read_events()函数（P1）
+- collab_status.py使用read_state()替代json.loads()（P2）
+- 4个新回归测试（invalid event IDs, non-object state）
+
 ---
 
 ## 最终验证
 
 ### 测试结果
 ```
-Ran 31 tests in 0.317s
+Ran 35 tests in 0.549s
 OK
 ```
 
@@ -80,7 +85,7 @@ Working tree clean
 - [x] 所有P0问题已修正
 - [x] 所有P0.5问题已修正
 - [x] 所有pre-production blockers已修复
-- [x] 31个单元测试通过
+- [x] 35个单元测试通过
 - [x] validate在repo自身通过
 - [x] 文档与实现一致
 - [x] 工作树干净
@@ -88,16 +93,17 @@ Working tree clean
 - [x] .gitignore配置正确
 - [x] Priority 2a完成（路径解析）
 - [x] Priority 2b完成（事务强化）
+- [x] Priority 2b Hardening完成（统一验证）
 
 ---
 
 ## 代码质量指标
 
 **测试覆盖：** 全面
-- 30个功能测试
+- 34个功能测试
 - 1个CLI smoke test
 - 覆盖所有关键场景和边界条件
-- 包含路径解析、并发安全、事务强化测试
+- 包含路径解析、并发安全、事务强化、验证统一测试
 
 **代码健壮性：** 优秀
 - 防御性编程到位
@@ -154,6 +160,7 @@ Working tree clean
 - Pre-production：14个测试
 - Priority 2a：27个测试
 - Priority 2b：31个测试
+- Priority 2b Hardening：35个测试
 
 ---
 
