@@ -151,6 +151,8 @@ def repair(base_dir="."):
                     events.append(json.loads(line))
                 except:
                     pass
+        # Filter out scalar/non-dict events to avoid AttributeError
+        events = [e for e in events if isinstance(e, dict)]
 
     if events:
         last_event = events[-1]

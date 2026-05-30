@@ -125,7 +125,12 @@ python3 scripts/collab_task.py claim <TASK-ID>
 Prepares handoff to other agent (filesystem only).
 
 ```bash
-python3 scripts/collab_event.py handoff <TASK-ID> <codex|gemini>
+python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target-agent>"
+```
+
+Example:
+```bash
+python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to codex"
 ```
 
 - Appends `handoff_requested` event

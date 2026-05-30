@@ -214,6 +214,29 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("Event ID mismatch: state=1, log max=0", output.getvalue())
 
+    def test_repair_handles_scalar_events_gracefully(self):
+        from collab_validate import repair
+
+        # Write events.jsonl with scalar and valid events
+        events_file = self.collab_dir / "events.jsonl"
+        events_file.write_text('123\n{"id": 1, "type": "test", "status": "ok"}\n"string"\n')
+
+        # Write valid state.json
+        state_file = self.collab_dir / "state.json"
+        state_file.write_text('{"last_event_id": 0}')
+
+        # Run repair - should not crash
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = repair(self.base)
+
+        self.assertEqual(result, 0)
+        self.assertIn("Rebuilt state.json from 1 events", output.getvalue())
+
+        # Verify state was rebuilt correctly (only valid event counted)
+        state = json.loads(state_file.read_text())
+        self.assertEqual(state["last_event_id"], 1)
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
