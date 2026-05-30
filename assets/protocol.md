@@ -64,7 +64,7 @@ Field meanings:
 - `workflow_id`: stable collaboration workflow identifier.
 - `current_task`: active task id or `null`.
 - `active_agent`: `claude`, `codex`, or `none`.
-- `status`: compact workflow status such as `initialized`, `codex_ready`, `task_open`, `in_progress`, `blocked`, `needs_repair`, `completed`.
+- `status`: compact workflow status such as `initialized`, `codex_ready`, `task_open`, `in_progress`, `blocked`, `completed`.
 - `last_event_id`: numeric id of the last event written to `events.jsonl`.
 - `updated_at`: UTC ISO-8601 timestamp for the state update.
 
@@ -223,7 +223,7 @@ The lock owner MUST hold `journal.lock` for the full read-check-write-validation
 
 Agents MUST validate `events.jsonl` and `state.json` before using them for workflow decisions.
 
-If `state.json` is invalid but `events.jsonl` is valid, the agent MUST rebuild `state.json` from the valid log while holding `locks/journal.lock`. The rebuild MUST use the atomic state write procedure.
+If `state.json` is invalid but `events.jsonl` is valid, the repair tool rebuilds `state.json` from the valid log. The repair tool is a recovery operation that runs outside normal collaboration workflow and does not acquire locks, since locks themselves may be corrupted or stale when repair is needed.
 
 If `events.jsonl` contains duplicate event ids, normal collaboration MUST stop. The agent MUST preserve the original log and report the error to the user.
 
