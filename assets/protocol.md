@@ -72,7 +72,7 @@ State updates should be minimal and should not replace durable task or artifact 
 
 State write rules:
 
-- Any operation that writes `state.json` MUST hold `locks/journal.lock`.
+- Normal workflow operations that write `state.json` MUST hold `locks/journal.lock`. The repair tool is an exception and does not acquire locks.
 - Agents MUST write state updates to `.omc/collaboration/state.json.tmp.<agent>`.
 - Agents MUST validate the temporary file as well-formed JSON before publishing it.
 - Agents MUST atomically rename the validated temporary file into place with `mv`.
@@ -195,7 +195,7 @@ Remove locks after the protected write completes. If a stale lock is suspected, 
 
 ### Required Journal Lock
 
-Any operation that appends to `events.jsonl` or writes `state.json` MUST first acquire `.omc/collaboration/locks/journal.lock`.
+Normal workflow operations that append to `events.jsonl` or write `state.json` MUST first acquire `.omc/collaboration/locks/journal.lock`. The repair tool is an exception and does not acquire locks.
 
 Lock acquisition MUST use an atomic filesystem operation. Preferred command pattern:
 

@@ -163,7 +163,8 @@ python3 scripts/collab_validate.py repair
 
 ## Notes
 
-- Scripts use atomic operations (mkdir for locks, temp+rename for state)
+- Normal workflow scripts use atomic operations (mkdir for locks, temp+rename for state)
+- Repair tool is an exception: does not acquire locks or use temp+rename
 - All timestamps are UTC ISO-8601
 - Event IDs allocated from max(events.jsonl), not state.json
 - Filesystem must support atomic mkdir (local or NFSv4)
