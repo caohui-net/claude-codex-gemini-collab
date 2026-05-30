@@ -187,6 +187,33 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("state.json missing", output.getvalue())
 
+    def test_validate_initialized_empty_events_passes(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = validate(self.base)
+
+        self.assertEqual(result, 0)
+        self.assertIn("0 events valid", output.getvalue())
+
+    def test_validate_empty_events_with_valid_state_fails_gracefully(self):
+        (self.collab_dir / "events.jsonl").write_text("")
+        state = {
+            "workflow_id": "test",
+            "current_task": None,
+            "active_agent": "none",
+            "status": "in_progress",
+            "last_event_id": 1,
+            "updated_at": "2026-05-30T00:00:00+00:00",
+        }
+        (self.collab_dir / "state.json").write_text(json.dumps(state) + "\n")
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = validate(self.base)
+
+        self.assertEqual(result, 1)
+        self.assertIn("Event ID mismatch: state=1, log max=0", output.getvalue())
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}

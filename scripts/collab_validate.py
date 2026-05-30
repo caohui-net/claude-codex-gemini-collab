@@ -85,7 +85,7 @@ def validate(base_dir="."):
 
     # Check state consistency
     if state is not None:
-        max_id = max(e.get('id', 0) for e in events)
+        max_id = max((e.get('id', 0) for e in events), default=0)
         if state.get('last_event_id') != max_id:
             issues.append(f"Event ID mismatch: state={state.get('last_event_id')}, log max={max_id}")
 
