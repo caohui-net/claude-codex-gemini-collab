@@ -6,25 +6,8 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically, read_events, validate_agent_id, get_event_task_id, get_active_owner, is_terminal_event
+from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically, read_events, validate_agent_id, get_event_task_id, get_active_owner, TERMINAL_CLAIM_STATUSES
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
-
-ACTIVE_CLAIM_STATUSES = {
-    "claimed",
-    "in_progress",
-    "waiting",
-    "blocked",
-    "timeout_candidate",
-}
-ACTIVE_CLAIM_EVENT_TYPES = {
-    "task_claimed",
-    "handoff_requested",
-    "blocked",
-}
-TERMINAL_CLAIM_STATUSES = {
-    "completed",
-    "cancelled",
-}
 
 def can_claim(events, task_id, agent):
     """Return (can_claim, reason, owner) for an atomic claim attempt."""

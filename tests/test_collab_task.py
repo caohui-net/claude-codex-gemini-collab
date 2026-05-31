@@ -544,14 +544,19 @@ class CollaborationTaskTests(unittest.TestCase):
 
     def test_complete_validates_details_task_id(self):
         """Test complete validates when task_id only in details (P2 Task #27 fix)."""
-        from collab_task import complete_task
-
         self.write_events([make_event(1, "task_created", task_id="TASK-1", status="task_open")])
         before_count = self.event_count()
 
-        # Try to complete nonexistent task via details.task_id
+        # Try to complete nonexistent task via details.task_id bypass (task_id=None)
         with contextlib.redirect_stdout(io.StringIO()):
-            result = complete_task(self.base, "TASK-GHOST", "codex")
+            result = append_event(
+                self.base,
+                "completed",
+                "codex",
+                task_id=None,
+                summary="ghost completion",
+                details={"task_id": "TASK-GHOST"}
+            )
 
         self.assertEqual(result, 1)
         self.assertEqual(self.event_count(), before_count)
