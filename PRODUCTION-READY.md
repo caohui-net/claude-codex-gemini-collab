@@ -83,6 +83,19 @@ Phase 1b closeout成功完成，所有pre-production blockers已修复。项目�
   - 统一使用get_event_task_id()提取task_id
 - 3个新测试验证修复（test_complete_rejects_handoff_requested_ownership等）
 
+### Priority 2b Cleanup (2026-05-31)
+- Codex审查后的代码质量改进：
+  1. **修复test_complete_validates_details_task_id**
+     - 原测试未测试实际bypass（使用complete_task正常路径）
+     - 修复：直接调用append_event with task_id=None, details={"task_id": "TASK-GHOST"}
+     - 验证：现在正确测试P2 Task #27修复
+  2. **删除collab_task.py重复常量**
+     - 删除ACTIVE_CLAIM_STATUSES、ACTIVE_CLAIM_EVENT_TYPES、TERMINAL_CLAIM_STATUSES重复定义
+     - 从collab_event导入TERMINAL_CLAIM_STATUSES（can_claim使用）
+     - 删除未使用的is_terminal_event导入
+- 测试：47/47通过（35 task + 12 paths）
+- 代码行数：-12行（删除重复代码）
+
 ---
 
 ## 最终验证
