@@ -52,13 +52,24 @@ Phase 1b closeout成功完成，所有pre-production blockers已修复。项目�
 - collab_status.py使用read_state()替代json.loads()（P2）
 - 4个新回归测试（invalid event IDs, non-object state）
 
+### Priority 2b P2 Blocker Fixes (2026-05-30)
+- Agent parameter validation (transaction gap fix)
+  - validate_agent_id()函数防止路径注入
+  - append_event()和claim_task()操作前验证
+  - 5个新测试（path separator, backslash, empty, too long, unicode）
+- Lifecycle validation (ghost completion fix)
+  - append_event()验证completed事件的task存在性、终态检查、所有权验证
+  - get_event_task_id()辅助函数处理malformed details
+  - 3个新测试（ghost completion, double completion, non-owner completion）
+- Codex技术审查识别的2个P2 blockers已修复
+
 ---
 
 ## 最终验证
 
 ### 测试结果
 ```
-Ran 35 tests in 0.549s
+Ran 44 tests in 0.533s
 OK
 ```
 

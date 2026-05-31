@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import re
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -23,14 +24,23 @@ STATUS_MAP = {
 
 
 def validate_agent_id(agent):
-    """Validate agent ID format to prevent path injection."""
+    """Validate agent ID format to prevent path injection and ensure ASCII-only."""
     if not agent or not isinstance(agent, str):
         raise ValueError("agent must be a non-empty string")
-    if len(agent) > 64:
-        raise ValueError("agent ID too long (max 64 chars)")
-    if not all(c.isalnum() or c in '-_' for c in agent):
-        raise ValueError(f"agent ID contains invalid characters: {agent}")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", agent):
+        raise ValueError(f"agent ID must be ASCII alphanumeric/hyphens/underscores, 1-64 chars: {agent}")
     return agent
+
+
+def get_event_task_id(event):
+    """Safely extract task_id from event, handling malformed details."""
+    task_id = event.get("task_id")
+    if task_id:
+        return task_id
+    details = event.get("details")
+    if isinstance(details, dict):
+        return details.get("task_id")
+    return None
 
 
 def read_events(events_file):
@@ -202,23 +212,38 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         # Validate handoff_requested: task must exist
         if event_type == "handoff_requested" and task_id:
             task_exists = any(
-                e.get('type') == 'task_created' and
-                (e.get('task_id') == task_id or e.get('details', {}).get('task_id') == task_id)
+                e.get('type') == 'task_created' and get_event_task_id(e) == task_id
                 for e in events
             )
             if not task_exists:
                 print(f"❌ Cannot handoff: task {task_id} not found in events")
                 return 1
 
-        # Validate completed: task must exist
+        # Validate completed: task must exist, not be terminal, and agent must be owner
         if event_type == "completed" and task_id:
-            task_exists = any(
-                e.get('type') == 'task_created' and
-                (e.get('task_id') == task_id or e.get('details', {}).get('task_id') == task_id)
-                for e in events
-            )
-            if not task_exists:
+            task_created = False
+            task_terminal = False
+            current_owner = None
+
+            for e in events:
+                if e.get('type') == 'task_created' and get_event_task_id(e) == task_id:
+                    task_created = True
+                if get_event_task_id(e) == task_id:
+                    # Track terminal state
+                    if e.get('status') in ('completed', 'synthesis_completed'):
+                        task_terminal = True
+                    # Track current owner from claim/handoff events
+                    if e.get('type') in ('task_claimed', 'handoff_accepted'):
+                        current_owner = e.get('agent')
+
+            if not task_created:
                 print(f"❌ Cannot complete: task {task_id} not found in events")
+                return 1
+            if task_terminal:
+                print(f"❌ Cannot complete: task {task_id} already in terminal state")
+                return 1
+            if current_owner and current_owner != agent:
+                print(f"❌ Cannot complete: task {task_id} owned by {current_owner}, not {agent}")
                 return 1
 
         # Compute next ID from log

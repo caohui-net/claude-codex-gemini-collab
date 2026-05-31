@@ -417,6 +417,18 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(self.event_count(), before_count)
         self.assertFalse(self.lock_exists())
 
+    def test_claim_rejects_unicode_agent(self):
+        """Test claim rejects Unicode agent (ASCII-only validation)."""
+        self.write_events([make_event(1, "task_created", status="task_open")])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = claim_task(self.base, "TASK-1", "agent中文")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
     def test_complete_rejects_nonexistent_task(self):
         """Test complete rejects nonexistent task (ghost completion fix)."""
         from collab_task import complete_task
@@ -427,6 +439,68 @@ class CollaborationTaskTests(unittest.TestCase):
         # Try to complete nonexistent task
         with contextlib.redirect_stdout(io.StringIO()):
             result = complete_task(self.base, "TASK-GHOST", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_complete_handles_malformed_details_gracefully(self):
+        """Test complete handles malformed details without crashing."""
+        from collab_task import complete_task
+
+        # Create task with malformed details (string instead of dict)
+        events = [
+            {
+                "id": 1,
+                "type": "task_created",
+                "agent": "claude",
+                "timestamp": "2026-05-30T00:00:00+00:00",
+                "summary": "task created",
+                "task_id": "TASK-1",
+                "status": "task_open",
+                "details": "malformed string"  # Not a dict!
+            }
+        ]
+        self.write_events(events)
+
+        # Should complete successfully despite malformed details
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = complete_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 0)
+        self.assertFalse(self.lock_exists())
+
+    def test_complete_rejects_already_completed_task(self):
+        """Test complete rejects already-completed task (double completion fix)."""
+        from collab_task import complete_task
+
+        self.write_events([
+            make_event(1, "task_created", task_id="TASK-1", status="task_open"),
+            make_event(2, "completed", task_id="TASK-1", status="completed"),
+        ])
+        before_count = self.event_count()
+
+        # Try to complete already-completed task
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = complete_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_complete_rejects_non_owner_completion(self):
+        """Test complete rejects completion by non-owner (ownership validation fix)."""
+        from collab_task import complete_task
+
+        self.write_events([
+            make_event(1, "task_created", task_id="TASK-1", status="task_open"),
+            make_event(2, "task_claimed", agent="claude", task_id="TASK-1", status="in_progress"),
+        ])
+        before_count = self.event_count()
+
+        # Try to complete task owned by claude using codex
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = complete_task(self.base, "TASK-1", "codex")
 
         self.assertEqual(result, 1)
         self.assertEqual(self.event_count(), before_count)
