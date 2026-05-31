@@ -63,13 +63,33 @@ Phase 1b closeout成功完成，所有pre-production blockers已修复。项目�
   - 3个新测试（ghost completion, double completion, non-owner completion）
 - Codex技术审查识别的2个P2 blockers已修复
 
+### Priority 2b P2 Blocker Fixes - Round 2 (2026-05-31)
+- Codex第二次审查发现3个P2问题，已全部修复：
+  1. **Completion ownership weaker than claim** (P2)
+     - 问题：append_event()只从task_claimed/handoff_accepted追踪所有者
+     - 修复：提取get_active_owner()为共享helper，同时检查handoff_requested/blocked等active状态
+     - 验证：Codex确认handoff_requested + complete bypass已修复
+  2. **Terminal detection relies only on status** (P2/P3)
+     - 问题：只检查status，type="completed"但status缺失不被视为终态
+     - 修复：添加is_terminal_event() helper，同时检查type和status
+     - 验证：completed event missing status现在正确阻止第二次completion
+  3. **Ghost completion via details.task_id** (P2)
+     - 问题：task_id=None时，details.task_id绕过验证
+     - 修复：在validation前规范化effective_task_id
+     - 验证：details.task_id现在被正确验证
+- 代码重构：
+  - 将get_active_owner()、is_terminal_event()移至collab_event.py
+  - collab_task.py导入共享helpers，删除重复定义
+  - 统一使用get_event_task_id()提取task_id
+- 3个新测试验证修复（test_complete_rejects_handoff_requested_ownership等）
+
 ---
 
 ## 最终验证
 
 ### 测试结果
 ```
-Ran 44 tests in 0.533s
+Ran 47 tests in 0.920s
 OK
 ```
 

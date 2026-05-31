@@ -22,6 +22,23 @@ STATUS_MAP = {
     "synthesis_completed": "completed",
 }
 
+ACTIVE_CLAIM_STATUSES = {
+    "claimed",
+    "in_progress",
+    "waiting",
+    "blocked",
+    "timeout_candidate",
+}
+ACTIVE_CLAIM_EVENT_TYPES = {
+    "task_claimed",
+    "handoff_requested",
+    "blocked",
+}
+TERMINAL_CLAIM_STATUSES = {
+    "completed",
+    "cancelled",
+}
+
 
 def validate_agent_id(agent):
     """Validate agent ID format to prevent path injection and ensure ASCII-only."""
@@ -41,6 +58,31 @@ def get_event_task_id(event):
     if isinstance(details, dict):
         return details.get("task_id")
     return None
+
+
+def get_active_owner(events, task_id):
+    """Return active task owner from the event log, or None if open/terminal."""
+    for event in reversed(events):
+        if get_event_task_id(event) != task_id:
+            continue
+
+        if event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES:
+            return None
+
+        if event.get("status") in ACTIVE_CLAIM_STATUSES:
+            return event.get("agent") or "unknown"
+
+        if event.get("type") in ACTIVE_CLAIM_EVENT_TYPES:
+            return event.get("agent") or "unknown"
+
+    return None
+
+
+def is_terminal_event(event, task_id):
+    """Check if event represents terminal state for task."""
+    if get_event_task_id(event) != task_id:
+        return False
+    return event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES
 
 
 def read_events(events_file):
@@ -220,30 +262,30 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
                 return 1
 
         # Validate completed: task must exist, not be terminal, and agent must be owner
-        if event_type == "completed" and task_id:
+        # Normalize task_id from top-level or details (Task #27 fix)
+        effective_task_id = task_id or (details.get("task_id") if isinstance(details, dict) else None)
+        if event_type == "completed" and effective_task_id:
             task_created = False
             task_terminal = False
-            current_owner = None
 
             for e in events:
-                if e.get('type') == 'task_created' and get_event_task_id(e) == task_id:
+                if e.get('type') == 'task_created' and get_event_task_id(e) == effective_task_id:
                     task_created = True
-                if get_event_task_id(e) == task_id:
-                    # Track terminal state
-                    if e.get('status') in ('completed', 'synthesis_completed'):
-                        task_terminal = True
-                    # Track current owner from claim/handoff events
-                    if e.get('type') in ('task_claimed', 'handoff_accepted'):
-                        current_owner = e.get('agent')
+                # Check terminal state using both type and status (Task #26 fix)
+                if is_terminal_event(e, effective_task_id):
+                    task_terminal = True
 
             if not task_created:
-                print(f"❌ Cannot complete: task {task_id} not found in events")
+                print(f"❌ Cannot complete: task {effective_task_id} not found in events")
                 return 1
             if task_terminal:
-                print(f"❌ Cannot complete: task {task_id} already in terminal state")
+                print(f"❌ Cannot complete: task {effective_task_id} already in terminal state")
                 return 1
+
+            # Use get_active_owner() for consistent ownership check (Task #25 fix)
+            current_owner = get_active_owner(events, effective_task_id)
             if current_owner and current_owner != agent:
-                print(f"❌ Cannot complete: task {task_id} owned by {current_owner}, not {agent}")
+                print(f"❌ Cannot complete: task {effective_task_id} owned by {current_owner}, not {agent}")
                 return 1
 
         # Compute next ID from log

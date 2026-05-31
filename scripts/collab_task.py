@@ -6,7 +6,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically, read_events, validate_agent_id
+from collab_event import append_event, acquire_lock, release_lock, read_state, write_state_atomically, read_events, validate_agent_id, get_event_task_id, get_active_owner, is_terminal_event
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 
 ACTIVE_CLAIM_STATUSES = {
@@ -26,41 +26,17 @@ TERMINAL_CLAIM_STATUSES = {
     "cancelled",
 }
 
-def get_task_id(event):
-    """Return task_id from top-level field, falling back to details.task_id."""
-    details = event.get("details")
-    if not isinstance(details, dict):
-        details = {}
-    return event.get("task_id") or details.get("task_id")
-
-def get_active_owner(events, task_id):
-    """Return active task owner from the event log, or None if open/terminal."""
-    for event in reversed(events):
-        if get_task_id(event) != task_id:
-            continue
-
-        if event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES:
-            return None
-
-        if event.get("status") in ACTIVE_CLAIM_STATUSES:
-            return event.get("agent") or "unknown"
-
-        if event.get("type") in ACTIVE_CLAIM_EVENT_TYPES:
-            return event.get("agent") or "unknown"
-
-    return None
-
 def can_claim(events, task_id, agent):
     """Return (can_claim, reason, owner) for an atomic claim attempt."""
     task_exists = any(
-        event.get("type") == "task_created" and get_task_id(event) == task_id
+        event.get("type") == "task_created" and get_event_task_id(event) == task_id
         for event in events
     )
     if not task_exists:
         return False, f"Task {task_id} not found", None
 
     for event in reversed(events):
-        if get_task_id(event) == task_id and (
+        if get_event_task_id(event) == task_id and (
             event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES
         ):
             return False, f"Task {task_id} already completed", None

@@ -506,6 +506,57 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(self.event_count(), before_count)
         self.assertFalse(self.lock_exists())
 
+    def test_complete_rejects_handoff_requested_ownership(self):
+        """Test complete rejects when task has handoff_requested (P2 Task #25 fix)."""
+        from collab_task import complete_task
+
+        self.write_events([
+            make_event(1, "task_created", task_id="TASK-1", status="task_open"),
+            make_event(2, "handoff_requested", agent="claude", task_id="TASK-1", status="waiting"),
+        ])
+        before_count = self.event_count()
+
+        # Try to complete task with handoff_requested by claude using codex
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = complete_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_complete_rejects_completed_event_missing_status(self):
+        """Test complete detects terminal via type when status missing (P2 Task #26 fix)."""
+        from collab_task import complete_task
+
+        self.write_events([
+            make_event(1, "task_created", task_id="TASK-1", status="task_open"),
+            {"id": 2, "type": "completed", "agent": "claude", "timestamp": "2026-05-30T00:00:00+00:00", "summary": "done", "task_id": "TASK-1"},
+        ])
+        before_count = self.event_count()
+
+        # Try to complete already-completed task (status missing but type=completed)
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = complete_task(self.base, "TASK-1", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_complete_validates_details_task_id(self):
+        """Test complete validates when task_id only in details (P2 Task #27 fix)."""
+        from collab_task import complete_task
+
+        self.write_events([make_event(1, "task_created", task_id="TASK-1", status="task_open")])
+        before_count = self.event_count()
+
+        # Try to complete nonexistent task via details.task_id
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = complete_task(self.base, "TASK-GHOST", "codex")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
