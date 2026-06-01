@@ -85,6 +85,39 @@ python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to gemi
 python3 scripts/collab_event.py handoff_requested gemini TASK-2 "handoff to codex" --target-agent codex
 ```
 
+## Discussion Features
+
+Multi-agent discussion orchestration with consensus detection and state persistence.
+
+### Usage
+
+```bash
+# Start a discussion
+python3 scripts/collab_discuss.py discuss TASK-ID "topic" --participants codex,gemini
+
+# Check discussion status
+python3 scripts/collab_discuss.py status TASK-ID
+
+# Resume interrupted discussion
+python3 scripts/collab_discuss.py resume TASK-ID
+
+# View discussion history
+python3 scripts/collab_discuss.py history TASK-ID
+```
+
+### Consensus Semantics
+
+- **all_responded**: True when all required participants completed (not failed/skipped)
+- **consensus_reached**: True when all participants agree (consensus=true in responses)
+- **blocking_issues**: List of issues preventing consensus
+
+### Test Coverage
+
+- 5 core scenarios validated (see `scripts/test_all_responded.py`)
+- Recovery semantics tested (see `scripts/test_scan.py`)
+
+**Note:** Detailed protocol and architecture documentation will be added in Phase 4A.
+
 ## Recovery Features
 
 The discussion system supports crash recovery and resume capabilities.
