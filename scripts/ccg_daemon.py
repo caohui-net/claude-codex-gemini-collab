@@ -26,7 +26,20 @@ task_events: Dict[str, Deque[dict]] = {}  # Ring buffer of events per task
 daemon_root: Optional[Path] = None
 daemon_token: Optional[str] = None
 daemon_server = None
+audit_log_path: Optional[Path] = None
 MAX_EVENTS_PER_TASK = 100
+
+
+def write_audit_log(entry: dict):
+    """Write audit log entry."""
+    if not audit_log_path:
+        return
+
+    try:
+        with open(audit_log_path, 'a') as f:
+            f.write(json.dumps(entry) + '\n')
+    except Exception as e:
+        print(f"⚠️  Audit log write failed: {e}", file=sys.stderr)
 
 
 @asynccontextmanager
@@ -153,6 +166,18 @@ async def execute_task(task_id: str):
                 "exit_code": proc.returncode
             })
 
+            # Audit log
+            write_audit_log({
+                "task_id": task_id,
+                "timestamp": task["completed_at"],
+                "cmd": task_data.get("cmd", []),
+                "cwd": task_data.get("cwd", str(daemon_root)),
+                "status": "completed",
+                "exit_code": proc.returncode,
+                "duration_sec": (datetime.fromisoformat(task["completed_at"]) -
+                                datetime.fromisoformat(task["started_at"])).total_seconds()
+            })
+
         except asyncio.TimeoutError:
             # Timeout: SIGTERM → grace period → SIGKILL
             try:
@@ -166,11 +191,33 @@ async def execute_task(task_id: str):
             task["timeout_at"] = datetime.now(timezone.utc).isoformat()
             emit_event(task_id, "task_timeout", {"task_id": task_id})
 
+            # Audit log
+            write_audit_log({
+                "task_id": task_id,
+                "timestamp": task["timeout_at"],
+                "cmd": task_data.get("cmd", []),
+                "cwd": task_data.get("cwd", str(daemon_root)),
+                "status": "timeout",
+                "exit_code": -1,
+                "duration_sec": timeout
+            })
+
     except Exception as e:
         task["status"] = "failed"
         task["failed_at"] = datetime.now(timezone.utc).isoformat()
         task["error"] = str(e)
         emit_event(task_id, "task_failed", {"task_id": task_id, "error": str(e)})
+
+        # Audit log
+        write_audit_log({
+            "task_id": task_id,
+            "timestamp": task["failed_at"],
+            "cmd": task_data.get("cmd", []),
+            "cwd": task_data.get("cwd", str(daemon_root)),
+            "status": "failed",
+            "error": str(e),
+            "exit_code": -1
+        })
 
 
 def cleanup_old_tasks():
@@ -305,10 +352,14 @@ async def write_runtime_after_start(server, token):
 
 def main():
     """Start the daemon."""
-    global daemon_root, daemon_token, daemon_server
+    global daemon_root, daemon_token, daemon_server, audit_log_path
 
     # Set daemon root to current directory
     daemon_root = Path.cwd()
+
+    # Initialize audit log path
+    audit_log_path = daemon_root / ".omc" / "daemon-audit.log"
+    audit_log_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Register signal handlers
     signal.signal(signal.SIGINT, signal_handler)
