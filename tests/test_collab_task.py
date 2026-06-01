@@ -613,6 +613,95 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(self.event_count(), before_count + 1)
         self.assertFalse(self.lock_exists())
 
+    def test_handoff_rejects_terminal_task(self):
+        """Test handoff rejects terminal task (handoff lifecycle fix)."""
+        self.write_events([
+            make_event(1, "task_created", task_id="TASK-1", status="task_open"),
+            make_event(2, "completed", task_id="TASK-1", status="completed"),
+        ])
+        before_count = self.event_count()
+
+        # Try to handoff completed task
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(
+                self.base,
+                "handoff_requested",
+                "claude",
+                "TASK-1",
+                "handoff to codex",
+                details={"target_agent": "codex"}
+            )
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_collab_py_handoff_with_base_dir(self):
+        """Test collab.py handoff forwards --base-dir correctly."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+
+            # Initialize collaboration in temp dir
+            init_result = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "collab_init.py"), "--base-dir", tmp_dir],
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(init_result.returncode, 0, init_result.stderr)
+
+            # Create and claim task
+            create_result = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "collab_task.py"), "create", "test task", "--base-dir", tmp_dir],
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(create_result.returncode, 0, create_result.stderr)
+
+            # Get task ID
+            collab_dir = Path(tmp_dir) / ".omc" / "collaboration"
+            events = [
+                json.loads(line)
+                for line in (collab_dir / "events.jsonl").read_text().splitlines()
+            ]
+            task_id = events[-1]["task_id"]
+
+            # Claim task
+            claim_result = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "collab_task.py"), "claim", task_id, "claude", "--base-dir", tmp_dir],
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(claim_result.returncode, 0, claim_result.stderr)
+
+            # Test handoff with --base-dir
+            handoff_result = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "collab.py"), "handoff", "codex", task_id, "test handoff", "--base-dir", tmp_dir],
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(handoff_result.returncode, 0, handoff_result.stderr)
+
+            # Verify handoff event was created
+            events = [
+                json.loads(line)
+                for line in (collab_dir / "events.jsonl").read_text().splitlines()
+            ]
+            handoff_event = events[-1]
+            self.assertEqual(handoff_event["type"], "handoff_requested")
+            self.assertEqual(handoff_event["details"]["target_agent"], "codex")
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}

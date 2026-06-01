@@ -48,23 +48,45 @@ def main():
     if command == "handoff":
         # Special handling for handoff
         if len(args) < 2:
-            print("Usage: collab.py handoff <target-agent> <task-id> [message]")
+            print("Usage: collab.py handoff <target-agent> <task-id> [message] [--base-dir DIR]")
             return 1
-        target_agent, task_id = args[0], args[1]
-        message = args[2] if len(args) > 2 else f"handoff to {target_agent}"
+
+        # Extract --base-dir if present
+        base_dir = None
+        filtered_args = []
+        i = 0
+        while i < len(args):
+            if args[i] == "--base-dir" and i + 1 < len(args):
+                base_dir = args[i + 1]
+                i += 2
+            else:
+                filtered_args.append(args[i])
+                i += 1
+
+        if len(filtered_args) < 2:
+            print("Usage: collab.py handoff <target-agent> <task-id> [message] [--base-dir DIR]")
+            return 1
+
+        target_agent, task_id = filtered_args[0], filtered_args[1]
+        message = filtered_args[2] if len(filtered_args) > 2 else f"handoff to {target_agent}"
 
         # Get current owner from task state
         import json
         from pathlib import Path as P
+        from collab_paths import resolve_existing_base_dir
         try:
-            state_file = P(".omc/collaboration/state.json")
+            base = resolve_existing_base_dir(base_dir)
+            state_file = base / ".omc" / "collaboration" / "state.json"
             with open(state_file) as f:
                 state = json.load(f)
             requester = state.get("active_agent", "unknown")
-        except:
+        except Exception as e:
+            print(f"❌ Failed to read state: {e}")
             requester = "unknown"
 
         script_args = ["handoff_requested", requester, task_id, message, "--target-agent", target_agent]
+        if base_dir:
+            script_args.extend(["--base-dir", base_dir])
         script = "collab_event.py"
     elif command in script_map:
         script = script_map[command]

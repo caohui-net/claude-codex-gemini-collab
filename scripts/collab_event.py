@@ -272,6 +272,12 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
                 print(f"❌ Cannot handoff: task {task_id} not found in events")
                 return 1
 
+            # Check if task is already terminal
+            task_terminal = any(is_terminal_event(e, task_id) for e in events)
+            if task_terminal:
+                print(f"❌ Cannot handoff: task {task_id} already in terminal state")
+                return 1
+
             # Check if agent is current owner
             current_owner = get_active_owner(events, task_id)
             if current_owner and current_owner != agent:
