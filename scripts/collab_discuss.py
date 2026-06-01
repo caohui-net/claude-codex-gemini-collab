@@ -12,6 +12,11 @@ from typing import List, Dict, Optional
 from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from collab_state import (
+    init_task_state, load_task_state, save_task_state,
+    start_round, start_participant, complete_participant, fail_participant,
+    complete_round, get_pending_participants, get_task_state_file
+)
 
 
 def compress_history(events: List[Dict], task_id: str, max_recent: int = 2) -> str:
@@ -193,13 +198,94 @@ def run_history(base_dir: Path, task_id: str, format_type: str = "text", summary
     return 0
 
 
+def run_status(base_dir: Path, task_id: str) -> int:
+    """Show task status."""
+    task_state = load_task_state(base_dir, task_id)
+    if task_state is None:
+        print(f"❌ No state found for {task_id}")
+        return 1
+
+    print(f"📊 Task Status: {task_id}")
+    print(f"   Status: {task_state['status']}")
+    print(f"   Topic: {task_state['topic']}")
+    print(f"   Created: {task_state['created_at']}")
+
+    if task_state['status'] == 'completed':
+        print(f"   Completed: {task_state['completed_at']}")
+        print(f"   Consensus: {task_state['final_consensus']['reached']}")
+        print(f"   Decision: {task_state['final_consensus']['decision']}")
+        return 0
+
+    # Show rounds
+    print(f"\n📝 Rounds: {len(task_state['rounds'])}")
+    for r in task_state['rounds']:
+        print(f"   Round {r['round_number']}: {r['status']}")
+        for p in r['participants']:
+            status_icon = "✓" if p['status'] == 'completed' else "✗" if p['status'] == 'failed' else "⏳"
+            print(f"      {status_icon} {p['agent']}: {p['status']}")
+            if p['error']:
+                print(f"         Error: {p['error']['type']} - {p['error']['message']}")
+
+    # Show failures
+    if task_state['failures']:
+        print(f"\n⚠️  Failures: {len(task_state['failures'])}")
+        for f in task_state['failures'][-3:]:
+            print(f"   Round {f['round_number']}, {f['agent']}: {f['error_type']}")
+
+    return 0
+
+
+def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
+    """Resume interrupted discussion."""
+    task_state = load_task_state(base_dir, task_id)
+    if task_state is None:
+        print(f"❌ No state found for {task_id}")
+        return 1
+
+    status = task_state["status"]
+    if status == "completed":
+        print(f"✅ Task already completed")
+        print(f"   Consensus: {task_state['final_consensus']['reached']}")
+        print(f"   Decision: {task_state['final_consensus']['decision']}")
+        return 0
+
+    if status == "pending":
+        print(f"⚠️  Task not started yet. Use 'discuss' command instead.")
+        return 1
+
+    # Resume from current round
+    topic = task_state["topic"]
+    participants = task_state["participants"]
+    current_round = len(task_state["rounds"])
+
+    print(f"🔄 Resuming {task_id} from round {current_round}")
+
+    # Reset failed participants to pending if retry requested
+    if retry_failed and current_round <= len(task_state["rounds"]):
+        round_state = task_state["rounds"][current_round - 1]
+        retry_count = 0
+        for p in round_state["participants"]:
+            if p["status"] == "failed":
+                p["status"] = "pending"
+                p["error"] = None
+                retry_count += 1
+        if retry_count > 0:
+            save_task_state(base_dir, task_id, task_state)
+            print(f"   Retrying {retry_count} failed participant(s)")
+
+    # Continue discussion
+    return run_discussion(base_dir, task_id, topic, participants,
+                         max_rounds=3, timeout_sec=180, resume=True)
+
+
 def run_discussion(
     base_dir: Path,
     task_id: str,
     topic: str,
     participants: List[str],
     max_rounds: int = 3,
-    timeout_sec: int = 180
+    timeout_sec: int = 180,
+    resume: bool = False
 ) -> int:
     """Run multi-round discussion until consensus or max rounds."""
     discussion_start = time.time()
@@ -209,11 +295,19 @@ def run_discussion(
         print("❌ Collaboration not initialized")
         return 1
 
+    # Initialize or load task state
+    task_state = load_task_state(base_dir, task_id)
+    if task_state is None:
+        task_state = init_task_state(base_dir, task_id, topic, participants)
+        print(f"🛠️  [Skill: Collab] Starting discussion for {task_id}")
+    else:
+        print(f"🔄 [Skill: Collab] Resuming discussion for {task_id}")
+        print(f"   Status: {task_state['status']}, Rounds: {len(task_state['rounds'])}")
+
     # Read current state
     events = read_events(collab_dir / "events.jsonl")
     state = read_state(collab_dir / "state.json")
 
-    print(f"🛠️  [Skill: Collab] Starting discussion for {task_id}")
     print(f"💬 Topic: {topic}")
     print(f"👥 Participants: {', '.join(participants)}")
     print()
@@ -221,9 +315,21 @@ def run_discussion(
     artifacts_refs = []
     timing_log = []
 
-    for round_num in range(1, max_rounds + 1):
+    # Determine starting round
+    start_round = 1
+    if resume and len(task_state["rounds"]) > 0:
+        start_round = len(task_state["rounds"])
+        # Collect existing artifacts
+        for artifact in task_state["artifacts"]["files"]:
+            artifacts_refs.append(artifact)
+
+    for round_num in range(start_round, max_rounds + 1):
         round_start = time.time()
         print(f"⏳ [Round {round_num}] Starting...")
+
+        # Initialize round in state
+        task_state = start_round(task_state, round_num, participants)
+        save_task_state(base_dir, task_id, task_state)
 
         # Append round start event
         append_event(
@@ -246,8 +352,32 @@ def run_discussion(
             if agent == "claude":
                 continue  # Claude is orchestrator, not participant in this MVP
 
+            # Check if participant already completed (resume case)
+            skip_execution = False
+            if resume and round_num <= len(task_state["rounds"]):
+                round_state = task_state["rounds"][round_num - 1]
+                for p in round_state["participants"]:
+                    if p["agent"] == agent and p["status"] == "completed":
+                        print(f"✓ [{agent.capitalize()}] already completed (skipping)")
+                        if p["parsed_response"]:
+                            replies.append(AgentReply(
+                                exit_code=0,
+                                raw_text="",
+                                parsed=p["parsed_response"],
+                                elapsed_sec=0
+                            ))
+                        skip_execution = True
+                        break
+
+            if skip_execution:
+                continue
+
             print(f"⏳ [{agent.capitalize()}] analyzing...")
             agent_start = time.time()
+
+            # Mark participant as started
+            task_state = start_participant(task_state, round_num, agent)
+            save_task_state(base_dir, task_id, task_state)
 
             prompt = build_discussion_prompt(
                 topic, task_id, agent, round_num, history, artifacts_refs
@@ -270,19 +400,37 @@ def run_discussion(
             })
 
             if reply.exit_code != 0:
-                print(f"❌ {agent.capitalize()} failed: {reply.parsed.get('error', 'unknown')}")
+                error_msg = str(reply.parsed.get('error', 'unknown'))
+                print(f"❌ Participant execution failed")
+                print(f"   Task: {task_id} | Round: {round_num} | Agent: {agent}")
+                print(f"   Error: execution_failed - {error_msg}")
+                print(f"   State: {get_task_state_file(base_dir, task_id)}")
+                print(f"   Next: python3 scripts/collab_discuss.py status {task_id}")
+                print(f"         python3 scripts/collab_discuss.py resume {task_id} --retry-failed")
+                task_state = fail_participant(task_state, round_num, agent, "execution_failed", error_msg)
+                save_task_state(base_dir, task_id, task_state)
                 continue
 
             # Verify protocol compliance: response must use markers
             if "[RESPONSE_START]" not in reply.raw_text or "[RESPONSE_END]" not in reply.raw_text:
-                print(f"⚠️  {agent.capitalize()} violated output protocol (missing markers)")
+                print(f"❌ Protocol violation")
+                print(f"   Task: {task_id} | Round: {round_num} | Agent: {agent}")
+                print(f"   Error: format_error - missing [RESPONSE_START]/[RESPONSE_END] markers")
                 print(f"   Raw response: {reply.raw_text[:200]}...")
-                print(f"   Skipping this response")
+                print(f"   State: {get_task_state_file(base_dir, task_id)}")
+                print(f"   Next: python3 scripts/collab_discuss.py status {task_id}")
+                print(f"         python3 scripts/collab_discuss.py resume {task_id}")
+                task_state = fail_participant(task_state, round_num, agent, "format_error", "missing markers")
+                save_task_state(base_dir, task_id, task_state)
                 continue
 
             # Save artifact
             artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
             artifacts_refs.append(artifact_path)
+
+            # Mark participant as completed
+            task_state = complete_participant(task_state, round_num, agent, artifact_path, reply.parsed if isinstance(reply.parsed, dict) else {})
+            save_task_state(base_dir, task_id, task_state)
 
             # Extract summary from parsed response
             if isinstance(reply.parsed, dict):
@@ -310,6 +458,10 @@ def run_discussion(
 
         # Judge consensus
         consensus, blocking = judge_consensus(replies)
+
+        # Mark round as completed
+        task_state = complete_round(task_state, round_num, consensus, blocking)
+        save_task_state(base_dir, task_id, task_state)
 
         # Append round end event
         append_event(
@@ -379,6 +531,15 @@ if __name__ == "__main__":
     history_parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
     history_parser.add_argument("--summary", action="store_true", help="Show summary only")
 
+    # Resume subcommand
+    resume_parser = subparsers.add_parser("resume", help="Resume interrupted discussion")
+    resume_parser.add_argument("task_id", help="Task ID")
+    resume_parser.add_argument("--retry-failed", action="store_true", help="Retry failed participants")
+
+    # Status subcommand
+    status_parser = subparsers.add_parser("status", help="Show task status")
+    status_parser.add_argument("task_id", help="Task ID")
+
     args = parser.parse_args()
 
     # Handle legacy usage (no subcommand)
@@ -400,6 +561,10 @@ if __name__ == "__main__":
 
         if args.command == "history":
             sys.exit(run_history(base, args.task_id, args.format, args.summary))
+        elif args.command == "status":
+            sys.exit(run_status(base, args.task_id))
+        elif args.command == "resume":
+            sys.exit(run_resume(base, args.task_id, args.retry_failed))
         elif args.command == "discuss":
             participants = [p.strip() for p in args.participants.split(",")]
             sys.exit(run_discussion(base, args.task_id, args.topic, participants, args.max_rounds, args.timeout_sec))
