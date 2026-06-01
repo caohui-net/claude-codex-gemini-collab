@@ -15,6 +15,7 @@ COMMANDS = {
     "init": "Initialize collaboration",
     "task": "Task operations (create/claim/complete)",
     "handoff": "Handoff task to another agent",
+    "discuss": "Multi-agent discussion to consensus",
 }
 
 def show_help():
@@ -55,6 +56,7 @@ def main():
         "doctor": "collab_doctor.py",
         "init": "collab_init.py",
         "task": "collab_task.py",
+        "discuss": "collab_discuss.py",
     }
 
     if command == "handoff":

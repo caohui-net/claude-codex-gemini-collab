@@ -66,6 +66,7 @@ English examples:
 /claude-codex-gemini-collab task "<description>"
 /claude-codex-gemini-collab claim <TASK-ID>
 /claude-codex-gemini-collab complete <TASK-ID>
+/claude-codex-gemini-collab discuss <TASK-ID> "<topic>" [--participants codex,gemini] [--max-rounds 3]
 /claude-codex-gemini-collab repair
 ```
 
@@ -224,6 +225,32 @@ python3 scripts/collab_task.py complete <TASK-ID>
 - Appends `completed` event
 - Updates state
 - Sets active_agent to none
+
+### discuss
+
+Multi-agent discussion to reach consensus.
+
+```bash
+python3 scripts/collab_discuss.py <TASK-ID> "<topic>" --participants codex,gemini --max-rounds 3
+```
+
+Example:
+```bash
+python3 scripts/collab_discuss.py TASK-1 "Database schema design" --participants codex,gemini --max-rounds 3
+```
+
+Features:
+- Iterative multi-round discussion until consensus
+- Structured JSON responses (consensus, decision, blocking_issues)
+- Compressed history + artifact references for context
+- Auto-judgment with manual conclude fallback
+- Real-time emoji progress display
+
+Differs from `omc ask`:
+- Context-aware (bound to task, reads events.jsonl)
+- Multi-round iteration (not single Q&A)
+- Consensus-driven (structured agreement protocol)
+- Artifact integration (saves full discussion to files)
 
 ### repair
 

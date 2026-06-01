@@ -9,46 +9,15 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
-from collab_state import rebuild_state
+from collab_state import (
+    rebuild_state,
+    STATUS_MAP,
+    ACTIVE_CLAIM_STATUSES,
+    ACTIVE_CLAIM_EVENT_TYPES,
+    TERMINAL_CLAIM_STATUSES,
+)
 
 COMMAND_NAME = "/claude-codex-gemini-collab"
-
-STATUS_MAP = {
-    "claude_ready": "claude_ready",
-    "codex_ready": "codex_ready",
-    "gemini_ready": "gemini_ready",
-    "task_created": "task_open",
-    "task_claimed": "in_progress",
-    "handoff_requested": "handoff_pending",
-    "handoff_accepted": "in_progress",
-    "handoff_rejected": "in_progress",
-    "handoff_cancelled": "in_progress",
-    "handoff_timed_out": "in_progress",
-    "completed": "completed",
-    "blocked": "blocked",
-    "independent_analysis_completed": "waiting_synthesis",
-    "synthesis_completed": "completed",
-    "workflow_completed": "completed",
-}
-
-ACTIVE_CLAIM_STATUSES = {
-    "claimed",
-    "in_progress",
-    "waiting",
-    "blocked",
-    "timeout_candidate",
-    "handoff_pending",
-}
-ACTIVE_CLAIM_EVENT_TYPES = {
-    "task_claimed",
-    "handoff_requested",
-    "handoff_accepted",
-    "blocked",
-}
-TERMINAL_CLAIM_STATUSES = {
-    "completed",
-    "cancelled",
-}
 
 
 def validate_agent_id(agent):
