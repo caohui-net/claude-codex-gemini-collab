@@ -147,9 +147,23 @@ def parse_discussion_artifacts(base_dir: Path, task_id: str) -> List[Dict]:
         round_num = int(parts[round_idx][1:])
         agent = parts[round_idx + 1] if round_idx + 1 < len(parts) else "unknown"
 
-        # Parse JSON content
+        # Parse JSON content (handle marker-wrapped format)
         try:
-            content = json.loads(artifact_file.read_text())
+            raw_content = artifact_file.read_text()
+
+            # Extract JSON between [RESPONSE_START] and [RESPONSE_END] markers
+            start_marker = "[RESPONSE_START]"
+            end_marker = "[RESPONSE_END]"
+
+            if start_marker in raw_content and end_marker in raw_content:
+                start_idx = raw_content.index(start_marker) + len(start_marker)
+                end_idx = raw_content.index(end_marker)
+                json_content = raw_content[start_idx:end_idx].strip()
+            else:
+                # Fallback: try parsing entire content
+                json_content = raw_content
+
+            content = json.loads(json_content)
             results.append({
                 "round": round_num,
                 "agent": agent,
@@ -158,7 +172,7 @@ def parse_discussion_artifacts(base_dir: Path, task_id: str) -> List[Dict]:
                 "reasoning": content.get("reasoning", ""),
                 "blocking_issues": content.get("blocking_issues", [])
             })
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ValueError):
             continue
 
     return results
