@@ -182,8 +182,15 @@ def run_discussion(
             artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
             artifacts_refs.append(artifact_path)
 
+            # Extract summary from parsed response
+            if isinstance(reply.parsed, dict):
+                summary = reply.parsed.get("decision", "")
+                if not summary:
+                    summary = reply.raw_text[:100]
+            else:
+                summary = reply.raw_text[:100]
+
             # Append discussion message event
-            summary = reply.parsed.get("decision", reply.raw_text[:100]) if isinstance(reply.parsed, dict) else reply.raw_text[:100]
             append_event(
                 base_dir,
                 "discussion_message",

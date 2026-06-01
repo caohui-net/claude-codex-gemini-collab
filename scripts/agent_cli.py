@@ -19,6 +19,18 @@ class AgentReply:
     exit_code: int
 
 
+def strip_markdown_json(text: str) -> str:
+    """Strip markdown JSON code blocks."""
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    elif text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
+
 def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply:
     """Run Codex CLI in read-only mode."""
     start = time.time()
@@ -56,7 +68,8 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply
 
         response = '\n'.join(response_lines).strip()
 
-        # Try to parse as JSON
+        # Strip markdown blocks and parse JSON
+        response = strip_markdown_json(response)
         parsed = {}
         try:
             parsed = json.loads(response)
@@ -121,7 +134,14 @@ def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentRepl
         try:
             output = json.loads(result.stdout)
             response = output.get("response", "")
-            parsed = {"response": response, "stats": output.get("stats", {})}
+
+            # Strip markdown and parse inner JSON from response
+            response = strip_markdown_json(response)
+            try:
+                parsed = json.loads(response)
+            except json.JSONDecodeError:
+                parsed = {"raw": response}
+
         except json.JSONDecodeError:
             response = result.stdout
             parsed = {"raw": response}
