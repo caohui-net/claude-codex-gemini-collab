@@ -34,6 +34,8 @@ def check_version_consistency():
         print("  ✗ Version mismatch detected:")
         for path, version in versions.items():
             print(f"    {path}: {version}")
+        print("\n  💡 Fix: Run sync script to update all paths:")
+        print("     python3 scripts/sync_skill_install.py")
         return False
 
 def check_skill_overrides():
@@ -43,6 +45,8 @@ def check_skill_overrides():
     settings_path = Path(".claude/settings.local.json")
     if not settings_path.exists():
         print("  ⚠ .claude/settings.local.json not found")
+        print("\n  💡 Fix: Create settings file with:")
+        print('     echo \'{"skillOverrides": {"ccg": "off"}}\' > .claude/settings.local.json')
         return False
 
     with open(settings_path) as f:
@@ -50,6 +54,8 @@ def check_skill_overrides():
 
     if "skillOverrides" not in settings:
         print("  ✗ No skillOverrides configured")
+        print("\n  💡 Fix: Add to .claude/settings.local.json:")
+        print('     {"skillOverrides": {"ccg": "off"}}')
         return False
 
     if "ccg" in settings["skillOverrides"]:
@@ -58,6 +64,8 @@ def check_skill_overrides():
         return True
     else:
         print("  ⚠ OMC ccg not overridden (may conflict)")
+        print("\n  💡 Fix: Add to skillOverrides in .claude/settings.local.json:")
+        print('     "ccg": "off"')
         return False
 
 def check_yaml_syntax():

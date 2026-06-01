@@ -129,6 +129,83 @@ This allows running commands from any nested directory within a workspace.
     └── collab_validate.py # Validation/repair
 ```
 
+## Troubleshooting
+
+### Skill not activating after restart
+
+**Symptoms:** Claude still uses `omc ask` instead of the skill.
+
+**Diagnosis:**
+```bash
+python3 scripts/collab_doctor.py
+```
+
+**Common issues:**
+
+1. **Version mismatch across paths**
+   ```bash
+   # Re-sync all paths
+   python3 scripts/sync_skill_install.py
+   ```
+
+2. **skillOverrides not configured**
+   ```bash
+   # Check configuration
+   cat .claude/settings.local.json | grep skillOverrides
+   
+   # If missing, add:
+   # {"skillOverrides": {"ccg": "off"}}
+   ```
+
+3. **Session not restarted**
+   - Exit Claude Code completely
+   - Restart and test with: `/collab status`
+
+4. **YAML syntax error in SKILL.md**
+   ```bash
+   # Verify frontmatter
+   head -20 SKILL.md
+   ```
+
+### Permission errors during sync
+
+**Symptoms:** `sync_skill_install.py` fails with permission denied.
+
+**Fix:**
+```bash
+# Ensure directories exist and are writable
+mkdir -p ~/.claude/skills/claude-codex-gemini-collab
+mkdir -p ~/.omc/skills/claude-codex-gemini-collab
+chmod -R u+w ~/.claude/skills ~/.omc/skills
+```
+
+### settings.local.json doesn't exist
+
+**Fix:**
+```bash
+# Create with skillOverrides
+cat > .claude/settings.local.json << 'EOF'
+{
+  "skillOverrides": {
+    "ccg": "off"
+  }
+}
+EOF
+```
+
+### Verification after fix
+
+```bash
+# 1. Run diagnostics
+python3 scripts/collab_doctor.py
+
+# 2. Restart Claude Code session
+
+# 3. Test skill activation
+/collab status
+# Should show: 🛠️ [Skill: Collab] handling request...
+```
+
 ## Version
 
-0.3.0 - Tri-model protocol with locked event/state validation
+0.3.1 - Skill activation fixes with diagnostic tools
