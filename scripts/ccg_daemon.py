@@ -109,6 +109,15 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 
+async def write_runtime_after_start(server, token):
+    """Write runtime file after server starts with actual port."""
+    await asyncio.sleep(0.1)  # Wait for server to bind
+    actual_port = server.servers[0].sockets[0].getsockname()[1]
+    write_runtime_file(actual_port, token)
+    print(f"✓ Runtime file written: {get_runtime_file()}")
+    print(f"✓ Daemon ready on http://127.0.0.1:{actual_port}")
+
+
 def main():
     """Start the daemon."""
     global daemon_root
@@ -126,14 +135,6 @@ def main():
     # Use dynamic port (0 = let OS choose)
     port = int(os.environ.get("CCG_DAEMON_PORT", "0"))
 
-    # Write runtime file
-    if port == 0:
-        # For dynamic port, we'll update after server starts
-        # For now, write placeholder
-        pass
-    else:
-        write_runtime_file(port, token)
-
     print(f"🚀 Starting CCG Daemon...")
     print(f"   Root: {daemon_root}")
     print(f"   Port: {port if port != 0 else 'dynamic'}")
@@ -147,6 +148,11 @@ def main():
         log_level="info"
     )
     server = uvicorn.Server(config)
+
+    # Write runtime file after server starts
+    @app.on_event("startup")
+    async def startup_event():
+        asyncio.create_task(write_runtime_after_start(server, token))
 
     try:
         server.run()
