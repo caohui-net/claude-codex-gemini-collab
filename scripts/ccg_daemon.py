@@ -154,9 +154,49 @@ async def execute_task(task_id: str):
         emit_event(task_id, "task_failed", {"task_id": task_id, "error": str(e)})
 
 
+def cleanup_old_tasks():
+    """Clean up old completed/failed/timeout tasks."""
+    now = datetime.now(timezone.utc)
+    to_delete = []
+
+    for task_id, task in tasks.items():
+        status = task.get("status")
+
+        # Never clean running/pending tasks
+        if status in ("running", "pending"):
+            continue
+
+        # Check TTL (30 minutes)
+        completed_at = task.get("completed_at") or task.get("failed_at") or task.get("timeout_at")
+        if completed_at:
+            completed_time = datetime.fromisoformat(completed_at)
+            age_minutes = (now - completed_time).total_seconds() / 60
+            if age_minutes > 30:
+                to_delete.append(task_id)
+
+    # Also enforce max count (keep most recent 1000)
+    finished_tasks = [(tid, t) for tid, t in tasks.items()
+                      if t.get("status") not in ("running", "pending")]
+    if len(finished_tasks) > 1000:
+        # Sort by completion time, delete oldest
+        finished_tasks.sort(key=lambda x: x[1].get("completed_at", ""))
+        for task_id, _ in finished_tasks[:-1000]:
+            to_delete.append(task_id)
+
+    # Delete tasks and their events
+    for task_id in set(to_delete):
+        tasks.pop(task_id, None)
+        task_events.pop(task_id, None)
+
+    return len(to_delete)
+
+
 @app.post("/tasks/submit")
 async def submit_task(task_data: dict):
     """Submit a new task."""
+    # Cleanup old tasks on submit
+    cleanup_old_tasks()
+
     task_id = str(uuid.uuid4())
 
     task = {
