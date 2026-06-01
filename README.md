@@ -29,7 +29,19 @@ cp -r . ~/.claude/skills/claude-codex-gemini-collab/
 
 For handoff, use the script directly:
 ```bash
-python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target>"
+python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target>" --target-agent <target>
+```
+
+Examples:
+```bash
+# Claude to Codex
+python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to codex" --target-agent codex
+
+# Claude to Gemini
+python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to gemini" --target-agent gemini
+
+# Gemini to Codex
+python3 scripts/collab_event.py handoff_requested gemini TASK-2 "handoff to codex" --target-agent codex
 ```
 
 ## Workspace Resolution

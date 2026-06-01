@@ -20,7 +20,9 @@ All collaboration files live under `.omc/collaboration/`.
 - `tasks/`: task specifications and task handoff documents.
 - `artifacts/`: generated outputs, reviews, summaries, and other durable work products.
 - `locks/`: lock files or directories for serialized work.
+- `claude-ready.md`: Claude readiness signal.
 - `codex-ready.md`: Codex readiness signal.
+- `gemini-ready.md`: Gemini readiness signal.
 
 Filesystem requirements:
 
@@ -63,7 +65,7 @@ Field meanings:
 
 - `workflow_id`: stable collaboration workflow identifier.
 - `current_task`: active task id or `null`.
-- `active_agent`: `claude`, `codex`, or `none`.
+- `active_agent`: `claude`, `codex`, `gemini`, or `none`.
 - `status`: compact workflow status such as `initialized`, `codex_ready`, `task_open`, `in_progress`, `blocked`, `completed`.
 - `last_event_id`: numeric id of the last event written to `events.jsonl`.
 - `updated_at`: UTC ISO-8601 timestamp for the state update.
@@ -114,6 +116,7 @@ Common event types:
 
 - `claude_ready`
 - `codex_ready`
+- `gemini_ready`
 - `task_created`
 - `task_claimed`
 - `artifact_created`

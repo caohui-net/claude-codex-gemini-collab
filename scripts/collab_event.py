@@ -13,6 +13,9 @@ from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 COMMAND_NAME = "/claude-codex-gemini-collab"
 
 STATUS_MAP = {
+    "claude_ready": "claude_ready",
+    "codex_ready": "codex_ready",
+    "gemini_ready": "gemini_ready",
     "task_created": "task_open",
     "task_claimed": "in_progress",
     "handoff_requested": "waiting",
@@ -70,10 +73,17 @@ def get_active_owner(events, task_id):
         if event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES:
             return None
 
-        if event.get("status") in ACTIVE_CLAIM_STATUSES:
+        # Check event type first for special handling
+        if event.get("type") in ACTIVE_CLAIM_EVENT_TYPES:
+            # For handoff_requested, return target_agent if present
+            if event.get("type") == "handoff_requested":
+                details = event.get("details", {})
+                if isinstance(details, dict) and details.get("target_agent"):
+                    return details["target_agent"]
             return event.get("agent") or "unknown"
 
-        if event.get("type") in ACTIVE_CLAIM_EVENT_TYPES:
+        # Fallback to status-based check
+        if event.get("status") in ACTIVE_CLAIM_STATUSES:
             return event.get("agent") or "unknown"
 
     return None
@@ -354,6 +364,13 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
             state["active_agent"] = "none"
             state["current_task"] = None
 
+        # For task-related events, recompute active_agent from event log
+        if task_id and event_type not in ["completed", "workflow_completed"]:
+            # Re-read events including the new one
+            events_with_new = events + [event]
+            active_owner = get_active_owner(events_with_new, task_id)
+            state["active_agent"] = active_owner if active_owner else "none"
+
         write_state_atomically(collab_dir, agent, state)
 
         print(f"✓ Event {next_id} appended: {event_type}")
@@ -372,13 +389,17 @@ if __name__ == "__main__":
     parser.add_argument("task_id", help="Task ID (or 'none')")
     parser.add_argument("summary", help="Event summary")
     parser.add_argument("artifacts", nargs="?", help="Artifacts JSON")
+    parser.add_argument("--target-agent", help="Target agent for handoff (optional)")
     args = parser.parse_args()
 
     try:
         base = resolve_existing_base_dir(args.base_dir)
         task_id = None if args.task_id == "none" else args.task_id
         artifacts = json.loads(args.artifacts) if args.artifacts else None
-        sys.exit(append_event(base, args.event_type, args.agent, task_id, args.summary, artifacts))
+        details = None
+        if args.target_agent:
+            details = {"target_agent": args.target_agent}
+        sys.exit(append_event(base, args.event_type, args.agent, task_id, args.summary, artifacts, details))
     except ValueError as e:
         print(f"❌ {e}")
         sys.exit(1)

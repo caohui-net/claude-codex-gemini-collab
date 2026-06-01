@@ -22,11 +22,14 @@ Chinese examples:
 - 查看协作状态
 
 English examples:
-- start Claude Codex collaboration
+- start Claude Codex Gemini collaboration
 - handoff to Codex
+- handoff to Gemini
 - create a collaboration task
 - check collaboration status
 - multi-model discussion
+- Gemini claim task
+- Gemini complete task
 
 **Do NOT trigger on:**
 - 我们讨论一下X (general conversation)
@@ -180,16 +183,19 @@ python3 scripts/collab_task.py claim <TASK-ID>
 Prepares handoff to other agent (filesystem only).
 
 ```bash
-python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target-agent>"
+python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target-agent>" --target-agent <target-agent>
 ```
 
 Example:
 ```bash
-python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to codex"
+python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to codex" --target-agent codex
+python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to gemini" --target-agent gemini
+python3 scripts/collab_event.py handoff_requested gemini TASK-2 "handoff to codex" --target-agent codex
 ```
 
-- Appends `handoff_requested` event
+- Appends `handoff_requested` event with `details.target_agent`
 - Updates state to `waiting`
+- Sets active owner to target agent
 
 Does NOT auto-invoke codex/gemini (user must do manually via /oh-my-claudecode:ask).
 
