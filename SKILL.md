@@ -70,6 +70,35 @@ English examples:
 /claude-codex-gemini-collab repair
 ```
 
+### discuss - Multi-Agent Discussion
+
+**Purpose:** Initiate multi-round discussion between Claude, Codex, and Gemini to reach consensus on a topic.
+
+**Trigger:**
+- Command: `/claude-codex-gemini-collab discuss --topic "<topic>" [--max-rounds 3]`
+- Natural language: "让三方讨论X", "启动讨论：Y", "让Claude、Codex和Gemini讨论X"
+
+**Parameters:**
+- `--topic` (required): Discussion topic
+- `--max-rounds` (optional): Maximum rounds (default: 3, range: 1-10)
+- Participants: Fixed as claude,codex,gemini (MVP)
+
+**Prerequisites:** Must run `init` first to establish collaboration state.
+
+**Behavior:**
+- Does NOT auto-create task
+- Writes discussion artifacts to `.omc/collaboration/artifacts/`
+- Returns consensus result or blocking issues
+
+**Example:**
+```
+/claude-codex-gemini-collab discuss --topic "API设计方案评审" --max-rounds 5
+```
+
+**vs omc ask:**
+- `omc ask`: Single external consultation, one-shot advice
+- `discuss`: Multi-round collaborative discussion with consensus detection
+
 ## Protocol Rules
 
 **MUST read before any operation:**
@@ -230,47 +259,6 @@ python3 scripts/collab_task.py complete <TASK-ID>
 - Appends `completed` event
 - Updates state
 - Sets active_agent to none
-
-### discuss
-
-Multi-agent discussion to reach consensus.
-
-```bash
-# Start a discussion
-python3 scripts/collab_discuss.py discuss <TASK-ID> "<topic>" --participants codex,gemini --max-rounds 3
-
-# View discussion history
-python3 scripts/collab_discuss.py history <TASK-ID> [--format text|json] [--summary]
-```
-
-Example:
-```bash
-# Start discussion
-python3 scripts/collab_discuss.py discuss TASK-1 "Database schema design" --participants codex,gemini
-
-# View full history
-python3 scripts/collab_discuss.py history TASK-1
-
-# View summary
-python3 scripts/collab_discuss.py history TASK-1 --summary
-
-# Get JSON output
-python3 scripts/collab_discuss.py history TASK-1 --format json
-```
-
-Features:
-- Iterative multi-round discussion until consensus
-- Structured JSON responses (consensus, decision, blocking_issues)
-- Compressed history + artifact references for context
-- Auto-judgment with manual conclude fallback
-- Real-time emoji progress display
-- History query: view past discussions with text/json/summary formats
-
-Differs from `omc ask`:
-- Context-aware (bound to task, reads events.jsonl)
-- Multi-round iteration (not single Q&A)
-- Consensus-driven (structured agreement protocol)
-- Artifact integration (saves full discussion to files)
 
 ### repair
 
