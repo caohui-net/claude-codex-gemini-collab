@@ -201,11 +201,64 @@ def complete_task(base_dir, task_id, agent="claude"):
     return append_event(base_dir, "completed", agent, task_id,
                        f"Completed task {task_id}")
 
+def list_tasks(base_dir):
+    """List all tasks with their status."""
+    base = Path(base_dir).resolve()
+    collab_dir = base / ".omc" / "collaboration"
+    events_file = collab_dir / "events.jsonl"
+
+    try:
+        events = read_events(events_file)
+    except ValueError as e:
+        print(f"❌ {e}")
+        return 1
+
+    tasks = {}
+    for event in events:
+        if event.get('type') == 'task_created':
+            task_id = get_event_task_id(event)
+            if task_id:
+                tasks[task_id] = {'id': task_id, 'summary': event.get('summary', ''), 'status': 'open', 'owner': None}
+
+    for task_id in tasks:
+        owner = get_active_owner(events, task_id)
+        if owner:
+            tasks[task_id]['owner'] = owner
+            tasks[task_id]['status'] = 'in_progress'
+        for event in reversed(events):
+            if get_event_task_id(event) == task_id and event.get('type') == 'completed':
+                tasks[task_id]['status'] = 'completed'
+                tasks[task_id]['owner'] = event.get('agent')
+                break
+
+    print(f"📋 Tasks ({len(tasks)} total)")
+    for task_id, info in sorted(tasks.items()):
+        icon = "✓" if info['status'] == 'completed' else "⏳" if info['status'] == 'in_progress' else "○"
+        owner = f" [{info['owner']}]" if info['owner'] else ""
+        print(f"{icon} {task_id}: {info['summary'][:50]}{owner}")
+    return 0
+
+def current_task(base_dir):
+    """Show current task."""
+    base = Path(base_dir).resolve()
+    state_file = base / ".omc" / "collaboration" / "state.json"
+    try:
+        state = read_state(state_file)
+    except ValueError as e:
+        print(f"❌ {e}")
+        return 1
+    current = state.get('current_task')
+    if current:
+        print(f"📌 Current: {current} [{state.get('active_agent', 'none')}] ({state.get('status', 'unknown')})")
+    else:
+        print("No current task")
+    return 0
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Task lifecycle operations")
     add_base_dir_arg(parser)
-    parser.add_argument("command", choices=["create", "claim", "complete"])
-    parser.add_argument("task_arg", help="Task description (create) or task ID (claim/complete)")
+    parser.add_argument("command", choices=["create", "claim", "complete", "list", "current"])
+    parser.add_argument("task_arg", nargs="?", help="Task description (create) or task ID (claim/complete)")
     parser.add_argument("agent", nargs="?", default="claude", help="Agent name (claim/complete)")
     args = parser.parse_args()
 
@@ -217,6 +270,10 @@ if __name__ == "__main__":
             sys.exit(claim_task(base, args.task_arg, args.agent))
         elif args.command == "complete":
             sys.exit(complete_task(base, args.task_arg, args.agent))
+        elif args.command == "list":
+            sys.exit(list_tasks(base))
+        elif args.command == "current":
+            sys.exit(current_task(base))
     except ValueError as e:
         print(f"❌ {e}")
         sys.exit(1)
