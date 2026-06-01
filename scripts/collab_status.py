@@ -7,7 +7,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
-from collab_event import read_events, read_state
+from collab_event import read_events, read_state, write_state_atomically
+from collab_state import rebuild_state
 
 def show_status(base_dir="."):
     """Display collaboration status."""
@@ -37,6 +38,19 @@ def show_status(base_dir="."):
             events = read_events(events_file)
         except ValueError as e:
             event_error = str(e)
+
+    # Read-Repair: auto-rebuild state if events.jsonl is newer
+    if events_file.exists() and state_file.exists() and not event_error:
+        events_mtime = events_file.stat().st_mtime
+        state_mtime = state_file.stat().st_mtime
+        if events_mtime > state_mtime and events:
+            # Events file modified after state - rebuild state
+            rebuilt_state = rebuild_state(events)
+            rebuilt_state["workflow_id"] = "claude-codex-gemini-collab"
+            rebuilt_state["updated_at"] = events[-1].get('timestamp')
+            write_state_atomically(collab_dir, "status", rebuilt_state)
+            state = rebuilt_state
+            print("🔄 Auto-repaired: state.json rebuilt from events.jsonl")
 
     # Display
     print(f"📊 Collaboration Status")
