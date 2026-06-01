@@ -121,9 +121,19 @@ Common event types:
 - `task_claimed`
 - `artifact_created`
 - `handoff_requested`
+- `handoff_accepted`
+- `handoff_rejected`
+- `handoff_cancelled`
+- `handoff_timed_out`
 - `review_requested`
 - `blocked`
+- `discussion_started`
+- `discussion_message`
+- `discussion_round_start`
+- `discussion_round_end`
+- `discussion_concluded`
 - `completed`
+- `workflow_completed`
 
 ## 6. Tasks
 
@@ -170,6 +180,21 @@ YYYYMMDD-HHMM-agent-topic.md
 ```
 
 For formal Codex review or OMC `/ask codex` workflows, the repository's `docs/codex-review-protocol.md` remains mandatory and takes precedence over this generic artifact convention.
+
+## 7.5. Multi-Agent Discussion
+
+Multi-agent discussion enables iterative consensus-building between agents on a specific task topic.
+
+Discussion flow:
+1. Orchestrator (typically Claude) initiates discussion with `discussion_started` event
+2. Each round: `discussion_round_start` → participants respond with `discussion_message` → `discussion_round_end`
+3. Participants provide structured JSON responses with `consensus`, `decision`, `blocking_issues`, and `reasoning` fields
+4. Discussion continues until consensus reached or max rounds exceeded
+5. Orchestrator records final outcome with `discussion_concluded` event
+
+Discussion events are ownership-neutral: they do not change task ownership or active agent state.
+
+Discussion artifacts are saved to `.omc/collaboration/artifacts/` with naming pattern: `TASK-ID-discuss-rN-agent-timestamp.md`
 
 ## 8. Locks
 
