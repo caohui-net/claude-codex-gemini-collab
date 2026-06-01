@@ -4,6 +4,7 @@
 import argparse
 import json
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
@@ -195,6 +196,7 @@ def run_discussion(
     timeout_sec: int = 180
 ) -> int:
     """Run multi-round discussion until consensus or max rounds."""
+    discussion_start = time.time()
     collab_dir = base_dir / ".omc" / "collaboration"
 
     if not collab_dir.exists():
@@ -211,8 +213,10 @@ def run_discussion(
     print()
 
     artifacts_refs = []
+    timing_log = []
 
     for round_num in range(1, max_rounds + 1):
+        round_start = time.time()
         print(f"⏳ [Round {round_num}] Starting...")
 
         # Append round start event
@@ -237,6 +241,7 @@ def run_discussion(
                 continue  # Claude is orchestrator, not participant in this MVP
 
             print(f"⏳ [{agent.capitalize()}] analyzing...")
+            agent_start = time.time()
 
             prompt = build_discussion_prompt(
                 topic, task_id, agent, round_num, history, artifacts_refs
@@ -249,6 +254,14 @@ def run_discussion(
             else:
                 print(f"❌ Unknown agent: {agent}")
                 continue
+
+            agent_elapsed = time.time() - agent_start
+            timing_log.append({
+                "round": round_num,
+                "agent": agent,
+                "elapsed_sec": agent_elapsed,
+                "cli_elapsed_sec": reply.elapsed_sec
+            })
 
             if reply.exit_code != 0:
                 print(f"❌ {agent.capitalize()} failed: {reply.parsed.get('error', 'unknown')}")
@@ -295,9 +308,24 @@ def run_discussion(
             details={"round": round_num, "consensus": consensus, "blocking_issues": blocking}
         )
 
+        round_elapsed = time.time() - round_start
+        timing_log.append({
+            "round": round_num,
+            "type": "round_total",
+            "elapsed_sec": round_elapsed
+        })
+
         if consensus:
+            discussion_elapsed = time.time() - discussion_start
             print(f"\n✅ Consensus reached in round {round_num}!")
             print(f"📁 Artifacts: {', '.join(artifacts_refs)}")
+            print(f"\n⏱️  Performance Summary:")
+            print(f"  Total: {discussion_elapsed:.1f}s")
+            for entry in timing_log:
+                if entry.get("type") == "round_total":
+                    print(f"  Round {entry['round']}: {entry['elapsed_sec']:.1f}s")
+                elif "agent" in entry:
+                    print(f"    {entry['agent']}: {entry['elapsed_sec']:.1f}s (CLI: {entry['cli_elapsed_sec']:.1f}s)")
             return 0
 
         if blocking:
@@ -305,9 +333,17 @@ def run_discussion(
 
         print()
 
+    discussion_elapsed = time.time() - discussion_start
     print(f"⚠️  No consensus after {max_rounds} rounds")
     print(f"📁 Artifacts: {', '.join(artifacts_refs)}")
     print(f"💡 Use: collab discuss conclude {task_id} \"<decision>\"")
+    print(f"\n⏱️  Performance Summary:")
+    print(f"  Total: {discussion_elapsed:.1f}s")
+    for entry in timing_log:
+        if entry.get("type") == "round_total":
+            print(f"  Round {entry['round']}: {entry['elapsed_sec']:.1f}s")
+        elif "agent" in entry:
+            print(f"    {entry['agent']}: {entry['elapsed_sec']:.1f}s (CLI: {entry['cli_elapsed_sec']:.1f}s)")
     return 1
 
 
