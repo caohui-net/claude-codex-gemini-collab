@@ -137,12 +137,20 @@ def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentRepl
 
         # Parse JSON output
         parsed = {}
-        response = ""
+        full_response = ""
         try:
             output = json.loads(result.stdout)
-            response = output.get("response", "")
+            full_response = output.get("response", "")
 
-            # Strip markdown and parse inner JSON from response
+            # Extract content between markers if present
+            if "[RESPONSE_START]" in full_response and "[RESPONSE_END]" in full_response:
+                start_idx = full_response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+                end_idx = full_response.index("[RESPONSE_END]")
+                response = full_response[start_idx:end_idx].strip()
+            else:
+                response = full_response
+
+            # Strip markdown and parse inner JSON
             response = strip_markdown_json(response)
             try:
                 parsed = json.loads(response)
@@ -150,12 +158,12 @@ def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentRepl
                 parsed = {"raw": response}
 
         except json.JSONDecodeError:
-            response = result.stdout
-            parsed = {"raw": response}
+            full_response = result.stdout
+            parsed = {"raw": full_response}
 
         return AgentReply(
             agent="gemini",
-            raw_text=response,
+            raw_text=full_response,
             parsed=parsed,
             artifact_path="",
             elapsed_sec=elapsed,
