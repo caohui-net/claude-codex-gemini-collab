@@ -273,6 +273,13 @@ def run_discussion(
                 print(f"❌ {agent.capitalize()} failed: {reply.parsed.get('error', 'unknown')}")
                 continue
 
+            # Verify protocol compliance: response must use markers
+            if "[RESPONSE_START]" not in reply.raw_text or "[RESPONSE_END]" not in reply.raw_text:
+                print(f"⚠️  {agent.capitalize()} violated output protocol (missing markers)")
+                print(f"   Raw response: {reply.raw_text[:200]}...")
+                print(f"   Skipping this response")
+                continue
+
             # Save artifact
             artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
             artifacts_refs.append(artifact_path)

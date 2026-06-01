@@ -51,17 +51,17 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply
         )
         elapsed = time.time() - start
 
-        # Extract response between markers or use full stdout
-        raw_text = result.stdout
+        # Keep full stdout for protocol enforcement and artifact saving
+        full_stdout = result.stdout
 
         # Try to extract content between [RESPONSE_START] and [RESPONSE_END]
-        if "[RESPONSE_START]" in raw_text and "[RESPONSE_END]" in raw_text:
-            start_idx = raw_text.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = raw_text.index("[RESPONSE_END]")
-            response = raw_text[start_idx:end_idx].strip()
+        if "[RESPONSE_START]" in full_stdout and "[RESPONSE_END]" in full_stdout:
+            start_idx = full_stdout.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+            end_idx = full_stdout.index("[RESPONSE_END]")
+            response = full_stdout[start_idx:end_idx].strip()
         else:
             # Fallback: use full stdout (for backward compatibility)
-            response = raw_text.strip()
+            response = full_stdout.strip()
 
         # Strip markdown blocks and parse JSON
         response = strip_markdown_json(response)
@@ -70,7 +70,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply
         if not response or response.lower() in ("ready", "ready."):
             return AgentReply(
                 agent="codex",
-                raw_text=response,
+                raw_text=full_stdout,
                 parsed={"error": "codex_no_response", "raw": response},
                 artifact_path="",
                 elapsed_sec=elapsed,
@@ -85,7 +85,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply
 
         return AgentReply(
             agent="codex",
-            raw_text=response,
+            raw_text=full_stdout,
             parsed=parsed,
             artifact_path="",
             elapsed_sec=elapsed,
