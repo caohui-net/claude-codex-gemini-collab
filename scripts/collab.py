@@ -98,8 +98,14 @@ def main():
         if command == "repair":
             script_args = ["repair"] + args
         elif command == "discuss":
-            # Prepend discuss subcommand for collab_discuss.py
-            script_args = ["discuss"] + args
+            # Handle discuss subcommands: status, resume, history, scan
+            # If first arg is a subcommand, pass through directly
+            # Otherwise, prepend "discuss" for new --topic format
+            discuss_subcommands = ["status", "resume", "history", "scan"]
+            if args and args[0] in discuss_subcommands:
+                script_args = args  # Pass subcommand directly
+            else:
+                script_args = ["discuss"] + args  # Prepend for --topic format
         elif command == "task" and agent:
             # Pass agent as positional argument for task operations
             script_args = args + [agent]
