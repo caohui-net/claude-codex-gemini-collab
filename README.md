@@ -57,7 +57,7 @@ python3 scripts/collab.py help      # Show all commands
 python3 scripts/collab.py status    # Check collaboration state
 python3 scripts/collab.py doctor    # Run diagnostics
 python3 scripts/collab.py task create "description"
-python3 scripts/collab.py handoff codex TASK-1
+python3 scripts/collab.py handoff gemini TASK-1  # Handoff to target agent
 ```
 
 ### Direct script usage

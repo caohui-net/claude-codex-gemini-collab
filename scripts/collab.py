@@ -48,11 +48,23 @@ def main():
     if command == "handoff":
         # Special handling for handoff
         if len(args) < 2:
-            print("Usage: collab.py handoff <agent> <task-id> [message]")
+            print("Usage: collab.py handoff <target-agent> <task-id> [message]")
             return 1
-        agent, task_id = args[0], args[1]
-        message = args[2] if len(args) > 2 else f"handoff to {agent}"
-        script_args = ["handoff_requested", agent, task_id, message, "--target-agent", agent]
+        target_agent, task_id = args[0], args[1]
+        message = args[2] if len(args) > 2 else f"handoff to {target_agent}"
+
+        # Get current owner from task state
+        import json
+        from pathlib import Path as P
+        try:
+            state_file = P(".omc/collaboration/state.json")
+            with open(state_file) as f:
+                state = json.load(f)
+            requester = state.get("active_agent", "unknown")
+        except:
+            requester = "unknown"
+
+        script_args = ["handoff_requested", requester, task_id, message, "--target-agent", target_agent]
         script = "collab_event.py"
     elif command in script_map:
         script = script_map[command]
