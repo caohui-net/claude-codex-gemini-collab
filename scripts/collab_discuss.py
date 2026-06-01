@@ -560,8 +560,15 @@ def run_discussion(
 
             replies.append(reply)
 
-        # Judge consensus
-        consensus, blocking = judge_consensus(replies)
+        # Check if all participants successfully replied
+        expected_participant_count = len([p for p in participants if p != "claude"])
+        if len(replies) < expected_participant_count:
+            print(f"⚠️  Not all required participants completed successfully. Consensus blocked.")
+            consensus = False
+            blocking = ["Not all required participants completed successfully (some failed or were skipped)."]
+        else:
+            # Judge consensus
+            consensus, blocking = judge_consensus(replies)
 
         # Mark round as completed
         task_state = complete_round(task_state, round_num, consensus, blocking)
