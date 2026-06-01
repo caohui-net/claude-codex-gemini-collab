@@ -66,7 +66,7 @@ English examples:
 /claude-codex-gemini-collab task "<description>"
 /claude-codex-gemini-collab claim <TASK-ID>
 /claude-codex-gemini-collab complete <TASK-ID>
-/claude-codex-gemini-collab discuss <TASK-ID> "<topic>" [--participants codex,gemini] [--max-rounds 3]
+/claude-codex-gemini-collab discuss --topic "<topic>" [--max-rounds 3]
 /claude-codex-gemini-collab repair
 ```
 
