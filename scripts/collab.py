@@ -96,8 +96,8 @@ def main():
         if command == "repair":
             script_args = ["repair"] + args
         elif command == "task" and agent:
-            # Pass --agent to task operations if provided
-            script_args = args + ["--agent", agent] if args else ["--agent", agent]
+            # Pass agent as positional argument for task operations
+            script_args = args + [agent]
         else:
             script_args = args
     else:
