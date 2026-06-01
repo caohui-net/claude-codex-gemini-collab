@@ -316,14 +316,14 @@ def run_discussion(
     timing_log = []
 
     # Determine starting round
-    start_round = 1
+    start_round_num = 1
     if resume and len(task_state["rounds"]) > 0:
-        start_round = len(task_state["rounds"])
+        start_round_num = len(task_state["rounds"])
         # Collect existing artifacts
         for artifact in task_state["artifacts"]["files"]:
             artifacts_refs.append(artifact)
 
-    for round_num in range(start_round, max_rounds + 1):
+    for round_num in range(start_round_num, max_rounds + 1):
         round_start = time.time()
         print(f"⏳ [Round {round_num}] Starting...")
 
