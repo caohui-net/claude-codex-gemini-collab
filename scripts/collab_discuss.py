@@ -632,8 +632,9 @@ if __name__ == "__main__":
 
     # Discuss subcommand (default behavior)
     discuss_parser = subparsers.add_parser("discuss", help="Start a discussion")
-    discuss_parser.add_argument("task_id", help="Task ID")
-    discuss_parser.add_argument("topic", help="Discussion topic")
+    discuss_parser.add_argument("task_id", nargs='?', help="Task ID (optional if --topic provided)")
+    discuss_parser.add_argument("topic", nargs='?', help="Discussion topic (positional, or use --topic)")
+    discuss_parser.add_argument("--topic", dest="topic_flag", help="Discussion topic (alternative to positional)")
     discuss_parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
     discuss_parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
     discuss_parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
@@ -684,8 +685,27 @@ if __name__ == "__main__":
         elif args.command == "resume":
             sys.exit(run_resume(base, args.task_id, args.retry_failed))
         elif args.command == "discuss":
+            # Determine task_id and topic based on input format
+            if args.topic_flag:
+                # New format: --topic "..." (generate TASK-ID from topic)
+                topic = args.topic_flag
+                # Generate TASK-ID from topic: first 3 words + timestamp
+                import re
+                words = re.findall(r'\w+', topic)[:3]
+                slug = "-".join(words).upper()
+                task_id = f"DISCUSS-{slug}-{int(time.time())}"
+            elif args.task_id and args.topic:
+                # Old format: task_id topic (backward compatibility)
+                task_id = args.task_id
+                topic = args.topic
+            else:
+                print("❌ Error: Either provide --topic or both task_id and topic")
+                print("Usage: collab_discuss.py discuss --topic \"...\" [--max-rounds 3]")
+                print("   or: collab_discuss.py discuss TASK-ID \"topic\" [--participants ...]")
+                sys.exit(1)
+
             participants = [p.strip() for p in args.participants.split(",")]
-            sys.exit(run_discussion(base, args.task_id, args.topic, participants, args.max_rounds, args.timeout_sec))
+            sys.exit(run_discussion(base, task_id, topic, participants, args.max_rounds, args.timeout_sec))
         else:
             parser.print_help()
             sys.exit(1)
