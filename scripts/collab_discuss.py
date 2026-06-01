@@ -91,6 +91,10 @@ Output ONLY the markers and JSON, nothing else.
 
 def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
     """Judge if consensus reached from agent replies."""
+    # No replies means no consensus
+    if not replies:
+        return False, []
+
     all_agree = True
     blocking_issues = []
 
@@ -449,18 +453,21 @@ def run_discussion(
             if agent == "claude":
                 continue  # Claude is orchestrator, not participant in this MVP
 
-            # Check if participant already completed (resume case)
+            # Check if participant already completed or failed (resume case)
             skip_execution = False
             if resume and round_num <= len(task_state["rounds"]):
                 round_state = task_state["rounds"][round_num - 1]
                 for p in round_state["participants"]:
-                    if p["agent"] == agent and p["status"] == "completed":
-                        print(f"✓ [{agent.capitalize()}] already completed (skipping)")
-                        if p["parsed_response"]:
+                    if p["agent"] == agent and p["status"] in ("completed", "failed"):
+                        status_label = p["status"].capitalize()
+                        print(f"✓ [{agent.capitalize()}] already {status_label.lower()} (skipping)")
+                        if p["status"] == "completed" and p["parsed_response"]:
                             replies.append(AgentReply(
+                                agent=agent,
                                 exit_code=0,
                                 raw_text="",
                                 parsed=p["parsed_response"],
+                                artifact_path=p.get("response_file", ""),
                                 elapsed_sec=0
                             ))
                         skip_execution = True

@@ -371,13 +371,26 @@ def main():
             text=True,
             timeout=10
         )
-        if scan_result.returncode == 0 and scan_result.stdout:
-            print(scan_result.stdout.strip())
+        if scan_result.returncode == 0:
+            if scan_result.stdout:
+                print(scan_result.stdout.strip())
             # Log scan to audit
             write_audit_log({
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "event": "daemon_startup_scan",
                 "status": "completed"
+            })
+        else:
+            # Handle scan failure
+            print(f"⚠️  Startup scan failed with exit code {scan_result.returncode}")
+            if scan_result.stderr:
+                print(f"   Error: {scan_result.stderr.strip()}")
+            write_audit_log({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "daemon_startup_scan",
+                "status": "failed",
+                "exit_code": scan_result.returncode,
+                "stderr": scan_result.stderr
             })
     except Exception as e:
         print(f"⚠️  Startup scan failed: {e}")
