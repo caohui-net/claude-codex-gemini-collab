@@ -233,20 +233,23 @@ Working tree: clean (tracked files)
 **当前支持（Manual Multi-Agent Coordination）：**
 - ✅ Event-sourced collaboration state (事件溯源协作状态)
 - ✅ Task lifecycle management (任务生命周期管理)
-- ✅ Advisory handoff signaling (建议性交接信号)
+- ✅ Two-phase handoff protocol (两阶段交接协议)
+- ✅ Handoff acceptance semantics (交接接受语义)
 - ✅ Manual agent invocation via `/oh-my-claudecode:ask` (手动agent调用)
 - ✅ Atomic operations with journal lock (原子操作与日志锁)
 
 **当前不支持（Phase 2 Future Work）：**
 - ❌ Automatic multi-agent orchestration (自动多agent编排)
-- ❌ Operational ownership transfer on handoff (交接时的操作性所有权转移)
-- ❌ Handoff acceptance semantics (交接接受语义)
+- ❌ Handoff timeout and auto-escalation (交接超时与自动升级)
 - ❌ Concurrent multi-agent execution (并发多agent执行)
 
 **说明：**
-当前实现支持手动多agent协作：Claude可以通过`handoff_requested`事件记录交接意图，然后用户手动调用Codex处理。Codex claim会失败（"already claimed by claude"），complete会失败（"owned by claude, not codex"）。这是设计行为，不是bug。
+当前实现支持两阶段handoff协议：
+- `handoff_requested`: 请求方保持所有权，任务进入handoff_pending状态
+- `handoff_accepted`: 目标agent接受后，所有权转移
+- 支持`handoff_rejected`, `handoff_cancelled`事件用于拒绝或取消交接
 
-Phase 2将实现完整的handoff acceptance语义，使Codex可以接受交接并获得操作性所有权。
+这确保了交接过程中责任链无断层，避免任务进入"无人处理"状态。
 
 ---
 

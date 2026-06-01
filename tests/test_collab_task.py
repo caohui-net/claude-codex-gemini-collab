@@ -684,7 +684,7 @@ class CollaborationTaskTests(unittest.TestCase):
 
             # Test handoff with --base-dir
             handoff_result = subprocess.run(
-                [sys.executable, str(ROOT / "scripts" / "collab.py"), "handoff", "codex", task_id, "test handoff", "--base-dir", tmp_dir],
+                [sys.executable, str(ROOT / "scripts" / "collab.py"), "--agent", "claude", "handoff", "codex", task_id, "test handoff", "--base-dir", tmp_dir],
                 env=env,
                 text=True,
                 stdout=subprocess.PIPE,

@@ -18,7 +18,11 @@ STATUS_MAP = {
     "gemini_ready": "gemini_ready",
     "task_created": "task_open",
     "task_claimed": "in_progress",
-    "handoff_requested": "waiting",
+    "handoff_requested": "handoff_pending",
+    "handoff_accepted": "in_progress",
+    "handoff_rejected": "in_progress",
+    "handoff_cancelled": "in_progress",
+    "handoff_timed_out": "in_progress",
     "completed": "completed",
     "blocked": "blocked",
     "independent_analysis_completed": "waiting_synthesis",
@@ -32,10 +36,12 @@ ACTIVE_CLAIM_STATUSES = {
     "waiting",
     "blocked",
     "timeout_candidate",
+    "handoff_pending",
 }
 ACTIVE_CLAIM_EVENT_TYPES = {
     "task_claimed",
     "handoff_requested",
+    "handoff_accepted",
     "blocked",
 }
 TERMINAL_CLAIM_STATUSES = {
@@ -75,11 +81,12 @@ def get_active_owner(events, task_id):
 
         # Check event type first for special handling
         if event.get("type") in ACTIVE_CLAIM_EVENT_TYPES:
-            # For handoff_requested, return target_agent if present
-            if event.get("type") == "handoff_requested":
+            # For handoff_accepted, return target_agent
+            if event.get("type") == "handoff_accepted":
                 details = event.get("details", {})
                 if isinstance(details, dict) and details.get("target_agent"):
                     return details["target_agent"]
+            # For handoff_requested, keep ownership with requester (two-phase handoff)
             return event.get("agent") or "unknown"
 
         # Fallback to status-based check

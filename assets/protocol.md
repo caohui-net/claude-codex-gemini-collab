@@ -236,13 +236,27 @@ Agents MUST NOT continue normal task claiming, handoff, or completion until the 
 
 ## 10. Handoff Rules
 
-When handing work to the other agent:
+**Two-Phase Handoff Protocol:**
 
+The handoff protocol uses a two-phase commit pattern to ensure responsibility chain integrity:
+
+**Phase 1: Request (handoff_requested)**
 1. Write or update the task document.
 2. Write any supporting artifact needed for context.
-3. Append a `handoff_requested` event.
-4. Update `state.json` with the current task, status, active agent, and last event id.
-5. State the handoff clearly in the user-facing response when applicable.
+3. Append a `handoff_requested` event with `details.target_agent`.
+4. Task enters `handoff_pending` state.
+5. **Ownership remains with requester** until acceptance.
+
+**Phase 2: Acceptance (handoff_accepted)**
+1. Target agent reviews task and context.
+2. Target agent appends `handoff_accepted` event.
+3. **Ownership transfers to target agent**.
+4. Task returns to `in_progress` state.
+
+**Alternative outcomes:**
+- `handoff_rejected`: Target declines, ownership returns to requester.
+- `handoff_cancelled`: Requester cancels, ownership stays with requester.
+- `handoff_timed_out`: No response, ownership returns to requester.
 
 Handoffs should include concrete next actions, relevant file paths, and any known blockers.
 
