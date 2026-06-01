@@ -9,6 +9,7 @@ import subprocess
 import sys
 import uuid
 from collections import deque
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional, Deque
@@ -19,13 +20,27 @@ from sse_starlette.sse import EventSourceResponse
 import uvicorn
 
 
-app = FastAPI(title="CCG Daemon", version="0.1.0")
-
 # Global state
 tasks: Dict[str, dict] = {}
 task_events: Dict[str, Deque[dict]] = {}  # Ring buffer of events per task
 daemon_root: Optional[Path] = None
+daemon_token: Optional[str] = None
+daemon_server = None
 MAX_EVENTS_PER_TASK = 100
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup/shutdown."""
+    # Startup: schedule runtime file write as background task
+    if daemon_server and daemon_token:
+        asyncio.create_task(write_runtime_after_start(daemon_server, daemon_token))
+    yield
+    # Shutdown: cleanup runtime file
+    cleanup_runtime_file()
+
+
+app = FastAPI(title="CCG Daemon", version="0.1.0", lifespan=lifespan)
 
 
 def get_runtime_file() -> Path:
@@ -113,8 +128,12 @@ async def execute_task(task_id: str):
             start_new_session=True  # Process group isolation
         )
 
-        # Send task data via stdin
-        stdin_data = json.dumps(task_data).encode()
+        # Send stdin data
+        # If task_data has "stdin" field, use it; otherwise send task_data as JSON
+        if "stdin" in task_data:
+            stdin_data = task_data["stdin"].encode() if isinstance(task_data["stdin"], str) else task_data["stdin"]
+        else:
+            stdin_data = json.dumps(task_data).encode()
 
         # Wait with timeout
         try:
@@ -286,7 +305,7 @@ async def write_runtime_after_start(server, token):
 
 def main():
     """Start the daemon."""
-    global daemon_root
+    global daemon_root, daemon_token, daemon_server
 
     # Set daemon root to current directory
     daemon_root = Path.cwd()
@@ -296,7 +315,7 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
 
     # Generate auth token
-    token = str(uuid.uuid4())
+    daemon_token = str(uuid.uuid4())
 
     # Use dynamic port (0 = let OS choose)
     port = int(os.environ.get("CCG_DAEMON_PORT", "0"))
@@ -313,15 +332,10 @@ def main():
         port=port,
         log_level="info"
     )
-    server = uvicorn.Server(config)
-
-    # Write runtime file after server starts
-    @app.on_event("startup")
-    async def startup_event():
-        asyncio.create_task(write_runtime_after_start(server, token))
+    daemon_server = uvicorn.Server(config)
 
     try:
-        server.run()
+        daemon_server.run()
     finally:
         cleanup_runtime_file()
 
