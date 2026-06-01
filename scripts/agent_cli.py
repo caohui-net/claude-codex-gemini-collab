@@ -70,11 +70,23 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply
 
         # Strip markdown blocks and parse JSON
         response = strip_markdown_json(response)
+
+        # Handle non-JSON responses (e.g., "Ready.")
+        if not response or response.lower() in ("ready", "ready."):
+            return AgentReply(
+                agent="codex",
+                raw_text=response,
+                parsed={"error": "codex_no_response", "raw": response},
+                artifact_path="",
+                elapsed_sec=elapsed,
+                exit_code=result.returncode,
+            )
+
         parsed = {}
         try:
             parsed = json.loads(response)
         except json.JSONDecodeError:
-            parsed = {"raw": response}
+            parsed = {"error": "json_parse_failed", "raw": response}
 
         return AgentReply(
             agent="codex",
