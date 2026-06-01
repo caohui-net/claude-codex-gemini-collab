@@ -97,6 +97,9 @@ def main():
         script = script_map[command]
         if command == "repair":
             script_args = ["repair"] + args
+        elif command == "discuss":
+            # Prepend discuss subcommand for collab_discuss.py
+            script_args = ["discuss"] + args
         elif command == "task" and agent:
             # Pass agent as positional argument for task operations
             script_args = args + [agent]
