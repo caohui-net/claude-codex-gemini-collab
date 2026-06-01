@@ -51,25 +51,17 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply
         )
         elapsed = time.time() - start
 
-        # Extract last message (Codex output after "codex\n")
+        # Extract response between markers or use full stdout
         raw_text = result.stdout
-        lines = raw_text.split('\n')
 
-        # Find "codex" marker and extract response
-        response_lines = []
-        found_marker = False
-        for line in lines:
-            if line.strip() == "codex":
-                found_marker = True
-                continue
-            if found_marker and line.strip() and not line.startswith("tokens used"):
-                response_lines.append(line)
-
-        # If no marker found (subprocess mode), use entire stdout
-        if not found_marker and raw_text.strip():
-            response = raw_text.strip()
+        # Try to extract content between [RESPONSE_START] and [RESPONSE_END]
+        if "[RESPONSE_START]" in raw_text and "[RESPONSE_END]" in raw_text:
+            start_idx = raw_text.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+            end_idx = raw_text.index("[RESPONSE_END]")
+            response = raw_text[start_idx:end_idx].strip()
         else:
-            response = '\n'.join(response_lines).strip()
+            # Fallback: use full stdout (for backward compatibility)
+            response = raw_text.strip()
 
         # Strip markdown blocks and parse JSON
         response = strip_markdown_json(response)

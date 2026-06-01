@@ -55,13 +55,19 @@ def build_discussion_prompt(
 
 Topic: {topic}
 
-You are {agent}. Respond with structured JSON:
+You are {agent}. Respond with structured JSON wrapped in markers:
+
+[RESPONSE_START]
 {{
   "consensus": true/false,
   "decision": "your position or agreed decision",
   "blocking_issues": ["issue1", "issue2"] or [],
   "reasoning": "why you agree/disagree"
 }}
+[RESPONSE_END]
+
+IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
+Output ONLY the markers and JSON, nothing else.
 
 """
 
