@@ -32,13 +32,12 @@ def strip_markdown_json(text: str) -> str:
 
 
 def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply:
-    """Run Codex CLI in read-only mode."""
+    """Run Codex CLI for discussion analysis."""
     start = time.time()
 
     cmd = [
         "codex", "exec",
         "--cd", str(base_dir),
-        "--sandbox", "read-only",
         "-"
     ]
 
@@ -66,7 +65,11 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180) -> AgentReply
             if found_marker and line.strip() and not line.startswith("tokens used"):
                 response_lines.append(line)
 
-        response = '\n'.join(response_lines).strip()
+        # If no marker found (subprocess mode), use entire stdout
+        if not found_marker and raw_text.strip():
+            response = raw_text.strip()
+        else:
+            response = '\n'.join(response_lines).strip()
 
         # Strip markdown blocks and parse JSON
         response = strip_markdown_json(response)
