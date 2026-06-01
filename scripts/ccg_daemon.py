@@ -5,14 +5,17 @@ import asyncio
 import json
 import os
 import signal
+import subprocess
 import sys
 import uuid
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Deque
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
 import uvicorn
 
 
@@ -20,7 +23,9 @@ app = FastAPI(title="CCG Daemon", version="0.1.0")
 
 # Global state
 tasks: Dict[str, dict] = {}
+task_events: Dict[str, Deque[dict]] = {}  # Ring buffer of events per task
 daemon_root: Optional[Path] = None
+MAX_EVENTS_PER_TASK = 100
 
 
 def get_runtime_file() -> Path:
@@ -54,6 +59,46 @@ def cleanup_runtime_file():
         runtime_file.unlink()
 
 
+def emit_event(task_id: str, event_type: str, payload: dict):
+    """Emit an event for a task."""
+    if task_id not in task_events:
+        task_events[task_id] = deque(maxlen=MAX_EVENTS_PER_TASK)
+
+    event = {
+        "event_id": str(uuid.uuid4()),
+        "task_id": task_id,
+        "type": event_type,
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "seq": len(task_events[task_id]),
+        "payload": payload
+    }
+
+    task_events[task_id].append(event)
+
+
+async def execute_task(task_id: str):
+    """Execute a task in subprocess."""
+    task = tasks[task_id]
+    task["status"] = "running"
+    task["started_at"] = datetime.now(timezone.utc).isoformat()
+
+    emit_event(task_id, "task_started", {"task_id": task_id})
+
+    try:
+        # Simulate task execution (replace with actual subprocess)
+        await asyncio.sleep(1)
+
+        task["status"] = "completed"
+        task["completed_at"] = datetime.now(timezone.utc).isoformat()
+        emit_event(task_id, "task_completed", {"task_id": task_id})
+
+    except Exception as e:
+        task["status"] = "failed"
+        task["failed_at"] = datetime.now(timezone.utc).isoformat()
+        task["error"] = str(e)
+        emit_event(task_id, "task_failed", {"task_id": task_id, "error": str(e)})
+
+
 @app.post("/tasks/submit")
 async def submit_task(task_data: dict):
     """Submit a new task."""
@@ -67,6 +112,10 @@ async def submit_task(task_data: dict):
     }
 
     tasks[task_id] = task
+    emit_event(task_id, "task_created", {"task_id": task_id})
+
+    # Start task execution in background
+    asyncio.create_task(execute_task(task_id))
 
     return {"task_id": task_id, "status": "pending"}
 
@@ -94,6 +143,28 @@ async def cancel_task(task_id: str):
     task["cancelled_at"] = datetime.now(timezone.utc).isoformat()
 
     return {"message": "Task cancelled"}
+
+
+@app.get("/tasks/{task_id}/events")
+async def stream_task_events(task_id: str):
+    """Stream task events via SSE."""
+    if task_id not in tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    async def event_generator():
+        # Send existing events
+        if task_id in task_events:
+            for event in task_events[task_id]:
+                yield {
+                    "event": event["type"],
+                    "data": json.dumps(event)
+                }
+
+        # Keep connection open for new events
+        # (In MVP, just close after sending existing events)
+        # TODO: Implement real-time event push in Phase 3A-3
+
+    return EventSourceResponse(event_generator())
 
 
 @app.get("/health")
