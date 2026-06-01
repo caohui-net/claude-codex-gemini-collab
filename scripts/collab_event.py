@@ -76,16 +76,39 @@ def get_active_owner(events, task_id):
         if get_event_task_id(event) != task_id:
             continue
 
-        if event.get("type") == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES:
+        event_type = event.get("type")
+
+        # Terminal events: task is no longer owned
+        if event_type == "completed" or event.get("status") in TERMINAL_CLAIM_STATUSES:
             return None
 
-        # Check event type first for special handling
-        if event.get("type") in ACTIVE_CLAIM_EVENT_TYPES:
-            # For handoff_accepted, return target_agent
-            if event.get("type") == "handoff_accepted":
+        # Handoff rejection/cancellation/timeout: return ownership to requester
+        if event_type in ("handoff_rejected", "handoff_cancelled", "handoff_timed_out"):
+            # Find the preceding handoff_requested to get the requester
+            # We're already iterating backwards, so continue from current position
+            found_current = False
+            for prev_event in reversed(events):
+                if get_event_task_id(prev_event) != task_id:
+                    continue
+                # Skip until we pass the current rejection event
+                if not found_current:
+                    if prev_event == event:
+                        found_current = True
+                    continue
+                # Now look for the handoff_requested
+                if prev_event.get("type") == "handoff_requested":
+                    return prev_event.get("agent") or "unknown"
+            return "unknown"
+
+        # Active claim events
+        if event_type in ACTIVE_CLAIM_EVENT_TYPES:
+            # For handoff_accepted, validate and return target_agent
+            if event_type == "handoff_accepted":
                 details = event.get("details", {})
                 if isinstance(details, dict) and details.get("target_agent"):
-                    return details["target_agent"]
+                    # Validate that accepting agent matches target
+                    if event.get("agent") == details["target_agent"]:
+                        return details["target_agent"]
             # For handoff_requested, keep ownership with requester (two-phase handoff)
             return event.get("agent") or "unknown"
 
@@ -271,6 +294,11 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
 
         # Validate handoff_requested: task must exist and agent must be owner
         if event_type == "handoff_requested" and task_id:
+            # Enforce target_agent field
+            if not isinstance(details, dict) or not details.get("target_agent"):
+                print(f"❌ Cannot handoff: target_agent required in details")
+                return 1
+
             task_exists = any(
                 e.get('type') == 'task_created' and get_event_task_id(e) == task_id
                 for e in events
