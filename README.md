@@ -92,17 +92,24 @@ Multi-agent discussion orchestration with consensus detection and state persiste
 ### Usage
 
 ```bash
-# Start a discussion
-python3 scripts/collab_discuss.py discuss TASK-ID "topic" --participants codex,gemini
+# Start a discussion (recommended format)
+python3 scripts/collab.py discuss --topic "Your discussion topic" --max-rounds 3
 
 # Check discussion status
-python3 scripts/collab_discuss.py status TASK-ID
+python3 scripts/collab.py discuss status TASK-ID
 
 # Resume interrupted discussion
-python3 scripts/collab_discuss.py resume TASK-ID
+python3 scripts/collab.py discuss resume TASK-ID
 
 # View discussion history
-python3 scripts/collab_discuss.py history TASK-ID
+python3 scripts/collab.py discuss history TASK-ID
+```
+
+### Compatibility
+
+Legacy format still supported for backward compatibility:
+```bash
+python3 scripts/collab_discuss.py discuss TASK-ID "topic" --participants codex,gemini
 ```
 
 ### Consensus Semantics
