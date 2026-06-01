@@ -110,6 +110,82 @@ def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, cont
     return str(artifact_path.relative_to(base_dir))
 
 
+def parse_discussion_artifacts(base_dir: Path, task_id: str) -> List[Dict]:
+    """Parse discussion artifacts for a task."""
+    artifacts_dir = base_dir / ".omc" / "collaboration" / "artifacts"
+    if not artifacts_dir.exists():
+        return []
+
+    pattern = f"{task_id}-discuss-r*.md"
+    artifact_files = sorted(artifacts_dir.glob(pattern))
+
+    results = []
+    for artifact_file in artifact_files:
+        # Extract round and agent from filename
+        # Format: TASK-ID-discuss-rN-agent-timestamp.md
+        parts = artifact_file.stem.split("-")
+        round_idx = next((i for i, p in enumerate(parts) if p.startswith("r") and p[1:].isdigit()), None)
+        if round_idx is None:
+            continue
+
+        round_num = int(parts[round_idx][1:])
+        agent = parts[round_idx + 1] if round_idx + 1 < len(parts) else "unknown"
+
+        # Parse JSON content
+        try:
+            content = json.loads(artifact_file.read_text())
+            results.append({
+                "round": round_num,
+                "agent": agent,
+                "consensus": content.get("consensus", False),
+                "decision": content.get("decision", ""),
+                "reasoning": content.get("reasoning", ""),
+                "blocking_issues": content.get("blocking_issues", [])
+            })
+        except json.JSONDecodeError:
+            continue
+
+    return results
+
+
+def format_history_text(history: List[Dict], summary: bool = False) -> str:
+    """Format discussion history as text."""
+    if not history:
+        return "No discussion history found."
+
+    output = []
+    for item in history:
+        round_num = item["round"]
+        agent = item["agent"].capitalize()
+        consensus = "✓" if item["consensus"] else "✗"
+        decision = item["decision"]
+
+        if summary:
+            output.append(f"[Round {round_num}] {agent}: {consensus} - {decision[:80]}...")
+        else:
+            output.append(f"[Round {round_num}] {agent} ({consensus})")
+            output.append(f"  Decision: {decision}")
+            if item["reasoning"]:
+                output.append(f"  Reasoning: {item['reasoning']}")
+            if item["blocking_issues"]:
+                output.append(f"  Blocking: {', '.join(item['blocking_issues'])}")
+            output.append("")
+
+    return "\n".join(output)
+
+
+def run_history(base_dir: Path, task_id: str, format_type: str = "text", summary: bool = False) -> int:
+    """Show discussion history for a task."""
+    history = parse_discussion_artifacts(base_dir, task_id)
+
+    if format_type == "json":
+        print(json.dumps(history, indent=2))
+    else:
+        print(format_history_text(history, summary))
+
+    return 0
+
+
 def run_discussion(
     base_dir: Path,
     task_id: str,
@@ -238,17 +314,50 @@ def run_discussion(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Multi-agent discussion orchestration")
     add_base_dir_arg(parser)
-    parser.add_argument("task_id", help="Task ID")
-    parser.add_argument("topic", help="Discussion topic")
-    parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
-    parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
-    parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
+    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+
+    # Discuss subcommand (default behavior)
+    discuss_parser = subparsers.add_parser("discuss", help="Start a discussion")
+    discuss_parser.add_argument("task_id", help="Task ID")
+    discuss_parser.add_argument("topic", help="Discussion topic")
+    discuss_parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
+    discuss_parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
+    discuss_parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
+
+    # History subcommand
+    history_parser = subparsers.add_parser("history", help="Show discussion history")
+    history_parser.add_argument("task_id", help="Task ID")
+    history_parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
+    history_parser.add_argument("--summary", action="store_true", help="Show summary only")
+
     args = parser.parse_args()
+
+    # Handle legacy usage (no subcommand)
+    if args.command is None:
+        if len(sys.argv) >= 3:
+            # Legacy: collab_discuss.py TASK-ID "topic"
+            args.command = "discuss"
+            args.task_id = sys.argv[1]
+            args.topic = sys.argv[2]
+            args.participants = "codex,gemini"
+            args.max_rounds = 3
+            args.timeout_sec = 180
+        else:
+            parser.print_help()
+            sys.exit(1)
 
     try:
         base = resolve_existing_base_dir(args.base_dir)
-        participants = [p.strip() for p in args.participants.split(",")]
-        sys.exit(run_discussion(base, args.task_id, args.topic, participants, args.max_rounds, args.timeout_sec))
+
+        if args.command == "history":
+            sys.exit(run_history(base, args.task_id, args.format, args.summary))
+        elif args.command == "discuss":
+            participants = [p.strip() for p in args.participants.split(",")]
+            sys.exit(run_discussion(base, args.task_id, args.topic, participants, args.max_rounds, args.timeout_sec))
+        else:
+            parser.print_help()
+            sys.exit(1)
+
     except ValueError as e:
         print(f"❌ {e}")
         sys.exit(1)

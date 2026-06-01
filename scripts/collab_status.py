@@ -9,8 +9,9 @@ from pathlib import Path
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 from collab_event import read_events, read_state, write_state_atomically
 from collab_state import rebuild_state
+from collab_discuss import parse_discussion_artifacts
 
-def show_status(base_dir="."):
+def show_status(base_dir=".", task_id=None):
     """Display collaboration status."""
     print("🛠️ [Skill: Collab] handling request...")
 
@@ -72,6 +73,36 @@ def show_status(base_dir="."):
             summary = event.get('summary', '')
             print(f"  [{eid}] {etype} ({agent}): {summary[:60]}")
 
+    # Discussion status (if task_id specified)
+    if task_id:
+        history = parse_discussion_artifacts(base, task_id)
+        if history:
+            print(f"\n💬 Discussion Status for {task_id}:")
+
+            # Group by round
+            rounds = {}
+            for item in history:
+                round_num = item["round"]
+                if round_num not in rounds:
+                    rounds[round_num] = []
+                rounds[round_num].append(item)
+
+            # Display each round
+            for round_num in sorted(rounds.keys()):
+                agents_status = []
+                round_consensus = True
+                for item in rounds[round_num]:
+                    agent = item["agent"].capitalize()
+                    status = "✓" if item["consensus"] else "✗"
+                    agents_status.append(f"{agent}: {status}")
+                    if not item["consensus"]:
+                        round_consensus = False
+
+                consensus_text = "Consensus: Yes" if round_consensus else "Consensus: No"
+                print(f"  [Round {round_num}] {' | '.join(agents_status)} ({consensus_text})")
+        else:
+            print(f"\n💬 No discussion history found for {task_id}")
+
     # Check for issues
     issues = []
 
@@ -107,11 +138,12 @@ def show_status(base_dir="."):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Display collaboration status")
     add_base_dir_arg(parser)
+    parser.add_argument("--task", help="Show discussion status for specific task")
     args = parser.parse_args()
 
     try:
         base = resolve_existing_base_dir(args.base_dir)
-        sys.exit(show_status(base))
+        sys.exit(show_status(base, args.task))
     except ValueError as e:
         print(f"❌ {e}")
         sys.exit(1)

@@ -5,10 +5,12 @@ import json
 import pytest
 from pathlib import Path
 import sys
+import tempfile
+import shutil
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
-from collab_discuss import compress_history, judge_consensus, build_discussion_prompt
+from collab_discuss import compress_history, judge_consensus, build_discussion_prompt, parse_discussion_artifacts, format_history_text
 from agent_cli import AgentReply
 
 
@@ -70,6 +72,83 @@ def test_build_discussion_prompt():
     assert "codex" in prompt
     assert "Round 1" in prompt
     assert "consensus" in prompt
+
+
+def test_parse_discussion_artifacts():
+    """Test parsing discussion artifacts from filesystem."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base = Path(tmpdir)
+        artifacts_dir = base / ".omc" / "collaboration" / "artifacts"
+        artifacts_dir.mkdir(parents=True)
+
+        # Create test artifacts
+        artifact1 = artifacts_dir / "TASK-1-discuss-r1-codex-20260601-120000.md"
+        artifact1.write_text(json.dumps({
+            "consensus": True,
+            "decision": "Test decision",
+            "reasoning": "Test reasoning",
+            "blocking_issues": []
+        }))
+
+        artifact2 = artifacts_dir / "TASK-1-discuss-r2-gemini-20260601-120100.md"
+        artifact2.write_text(json.dumps({
+            "consensus": False,
+            "decision": "Different decision",
+            "reasoning": "Different reasoning",
+            "blocking_issues": ["issue1"]
+        }))
+
+        # Parse artifacts
+        history = parse_discussion_artifacts(base, "TASK-1")
+
+        assert len(history) == 2
+        assert history[0]["round"] == 1
+        assert history[0]["agent"] == "codex"
+        assert history[0]["consensus"] is True
+        assert history[1]["round"] == 2
+        assert history[1]["agent"] == "gemini"
+        assert history[1]["consensus"] is False
+
+
+def test_format_history_text():
+    """Test text formatting of discussion history."""
+    history = [
+        {
+            "round": 1,
+            "agent": "codex",
+            "consensus": True,
+            "decision": "Test decision",
+            "reasoning": "Test reasoning",
+            "blocking_issues": []
+        }
+    ]
+
+    text = format_history_text(history, summary=False)
+    assert "[Round 1]" in text
+    assert "Codex" in text
+    assert "✓" in text
+    assert "Test decision" in text
+    assert "Test reasoning" in text
+
+
+def test_format_history_text_summary():
+    """Test summary formatting of discussion history."""
+    history = [
+        {
+            "round": 1,
+            "agent": "gemini",
+            "consensus": False,
+            "decision": "A" * 100,
+            "reasoning": "Test",
+            "blocking_issues": []
+        }
+    ]
+
+    text = format_history_text(history, summary=True)
+    assert "[Round 1]" in text
+    assert "Gemini" in text
+    assert "✗" in text
+    assert len(text) < 200  # Summary should be truncated
 
 
 if __name__ == "__main__":

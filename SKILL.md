@@ -156,7 +156,7 @@ This command does not repair or mutate collaboration files.
 Shows current collaboration state.
 
 ```bash
-python3 scripts/collab_status.py
+python3 scripts/collab_status.py [--task TASK-ID]
 ```
 
 Displays:
@@ -165,6 +165,11 @@ Displays:
 - Current task
 - Recent events
 - Any issues detected
+
+With `--task` flag:
+- Shows discussion status for specific task
+- Displays rounds, agents, and consensus states
+- Format: `[Round N] Agent: ✓/✗ (Consensus: Yes/No)`
 
 ### task
 
@@ -231,12 +236,26 @@ python3 scripts/collab_task.py complete <TASK-ID>
 Multi-agent discussion to reach consensus.
 
 ```bash
-python3 scripts/collab_discuss.py <TASK-ID> "<topic>" --participants codex,gemini --max-rounds 3
+# Start a discussion
+python3 scripts/collab_discuss.py discuss <TASK-ID> "<topic>" --participants codex,gemini --max-rounds 3
+
+# View discussion history
+python3 scripts/collab_discuss.py history <TASK-ID> [--format text|json] [--summary]
 ```
 
 Example:
 ```bash
-python3 scripts/collab_discuss.py TASK-1 "Database schema design" --participants codex,gemini --max-rounds 3
+# Start discussion
+python3 scripts/collab_discuss.py discuss TASK-1 "Database schema design" --participants codex,gemini
+
+# View full history
+python3 scripts/collab_discuss.py history TASK-1
+
+# View summary
+python3 scripts/collab_discuss.py history TASK-1 --summary
+
+# Get JSON output
+python3 scripts/collab_discuss.py history TASK-1 --format json
 ```
 
 Features:
@@ -245,6 +264,7 @@ Features:
 - Compressed history + artifact references for context
 - Auto-judgment with manual conclude fallback
 - Real-time emoji progress display
+- History query: view past discussions with text/json/summary formats
 
 Differs from `omc ask`:
 - Context-aware (bound to task, reads events.jsonl)
