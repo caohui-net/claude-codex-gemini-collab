@@ -76,6 +76,16 @@ def emit_event(task_id: str, event_type: str, payload: dict):
     task_events[task_id].append(event)
 
 
+def validate_path(path: str) -> bool:
+    """Validate path is within workspace root."""
+    try:
+        resolved = Path(path).resolve(strict=False)
+        resolved.relative_to(daemon_root)
+        return True
+    except (ValueError, RuntimeError):
+        return False
+
+
 async def execute_task(task_id: str):
     """Execute a task in subprocess."""
     task = tasks[task_id]
@@ -84,13 +94,58 @@ async def execute_task(task_id: str):
 
     emit_event(task_id, "task_started", {"task_id": task_id})
 
-    try:
-        # Simulate task execution (replace with actual subprocess)
-        await asyncio.sleep(1)
+    task_data = task.get("data", {})
+    timeout = task_data.get("timeout", 300)  # Default 5 min
 
-        task["status"] = "completed"
-        task["completed_at"] = datetime.now(timezone.utc).isoformat()
-        emit_event(task_id, "task_completed", {"task_id": task_id})
+    try:
+        # Validate paths if present
+        if "cwd" in task_data:
+            if not validate_path(task_data["cwd"]):
+                raise ValueError(f"Invalid path: {task_data['cwd']}")
+
+        # Execute subprocess with process group isolation
+        proc = await asyncio.create_subprocess_exec(
+            *task_data.get("cmd", ["echo", "no command"]),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=task_data.get("cwd", str(daemon_root)),
+            start_new_session=True  # Process group isolation
+        )
+
+        # Send task data via stdin
+        stdin_data = json.dumps(task_data).encode()
+
+        # Wait with timeout
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(stdin_data),
+                timeout=timeout
+            )
+
+            task["status"] = "completed"
+            task["completed_at"] = datetime.now(timezone.utc).isoformat()
+            task["exit_code"] = proc.returncode
+            task["stdout"] = stdout.decode()
+            task["stderr"] = stderr.decode()
+
+            emit_event(task_id, "task_completed", {
+                "task_id": task_id,
+                "exit_code": proc.returncode
+            })
+
+        except asyncio.TimeoutError:
+            # Timeout: SIGTERM → grace period → SIGKILL
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                await asyncio.wait_for(proc.wait(), timeout=5)
+            except asyncio.TimeoutError:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                await proc.wait()
+
+            task["status"] = "timeout"
+            task["timeout_at"] = datetime.now(timezone.utc).isoformat()
+            emit_event(task_id, "task_timeout", {"task_id": task_id})
 
     except Exception as e:
         task["status"] = "failed"
