@@ -39,3 +39,8 @@ Thumbs.db
 # Project-specific
 .omc/state/
 .omc/logs/
+.omc/artifacts/
+.omc/project-memory.json
+.omc/collaboration/PROJECT-STATUS.md
+.omc/collaboration/artifacts/
+.claude/

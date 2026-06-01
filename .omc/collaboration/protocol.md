@@ -64,7 +64,7 @@ Field meanings:
 - `workflow_id`: stable collaboration workflow identifier.
 - `current_task`: active task id or `null`.
 - `active_agent`: `claude`, `codex`, or `none`.
-- `status`: compact workflow status such as `initialized`, `codex_ready`, `task_open`, `in_progress`, `blocked`, `needs_repair`, `completed`.
+- `status`: compact workflow status such as `initialized`, `codex_ready`, `task_open`, `in_progress`, `blocked`, `completed`.
 - `last_event_id`: numeric id of the last event written to `events.jsonl`.
 - `updated_at`: UTC ISO-8601 timestamp for the state update.
 
@@ -72,7 +72,7 @@ State updates should be minimal and should not replace durable task or artifact 
 
 State write rules:
 
-- Any operation that writes `state.json` MUST hold `locks/journal.lock`.
+- Normal workflow operations that write `state.json` MUST hold `locks/journal.lock`. The repair tool is an exception and does not acquire locks.
 - Agents MUST write state updates to `.omc/collaboration/state.json.tmp.<agent>`.
 - Agents MUST validate the temporary file as well-formed JSON before publishing it.
 - Agents MUST atomically rename the validated temporary file into place with `mv`.
@@ -195,7 +195,7 @@ Remove locks after the protected write completes. If a stale lock is suspected, 
 
 ### Required Journal Lock
 
-Any operation that appends to `events.jsonl` or writes `state.json` MUST first acquire `.omc/collaboration/locks/journal.lock`.
+Normal workflow operations that append to `events.jsonl` or write `state.json` MUST first acquire `.omc/collaboration/locks/journal.lock`. The repair tool is an exception and does not acquire locks.
 
 Lock acquisition MUST use an atomic filesystem operation. Preferred command pattern:
 
@@ -223,11 +223,11 @@ The lock owner MUST hold `journal.lock` for the full read-check-write-validation
 
 Agents MUST validate `events.jsonl` and `state.json` before using them for workflow decisions.
 
-If `state.json` is invalid but `events.jsonl` is valid, the agent MUST rebuild `state.json` from the valid log while holding `locks/journal.lock`. The rebuild MUST use the atomic state write procedure, and the agent MUST append a `state_rebuilt` event.
+If `state.json` is invalid but `events.jsonl` is valid, the repair tool rebuilds `state.json` from the valid log. The repair tool is a recovery operation that runs outside normal collaboration workflow and does not acquire locks, since locks themselves may be corrupted or stale when repair is needed.
 
-If `events.jsonl` contains duplicate event ids, normal collaboration MUST stop. The agent MUST set `state.json.status` to `needs_repair` if state can be written safely, preserve the original log, and create a repair artifact describing the duplicate ids and proposed repair.
+If `events.jsonl` contains duplicate event ids, normal collaboration MUST stop. The agent MUST preserve the original log and report the error to the user.
 
-If `events.jsonl` contains a malformed JSONL line, normal collaboration MUST stop. The agent MUST preserve the original log, create a repair artifact describing the malformed line and proposed repair, and set `state.json.status` to `needs_repair` if state can be written safely.
+If `events.jsonl` contains a malformed JSONL line, normal collaboration MUST stop. The agent MUST preserve the original log and report the error to the user.
 
 Agents MUST NOT continue normal task claiming, handoff, or completion until the repair is complete.
 
@@ -245,9 +245,22 @@ Handoffs should include concrete next actions, relevant file paths, and any know
 
 ## 11. Completion Rules
 
+### Task Completion
+
 A task is complete only when the requested files are written, verification appropriate to the change has been performed, and completion is reflected in the collaboration log when the task is part of this workflow.
 
-Completion should write a `completed` event and update `state.json.status` to `completed` unless the workflow remains open for the other agent.
+Task completion MUST use the `completed` event type with a `task_id`. The `completed` event is task-scoped and requires a valid task identifier.
+
+### Workflow Completion
+
+Workflow-level completion MUST use the `workflow_completed` event type. This event type is for closing the entire collaboration workflow and MUST NOT include a `task_id`.
+
+`workflow_completed` can only be appended when all created tasks have reached a terminal state (`completed` or `cancelled`). Attempting to close the workflow while non-terminal tasks exist will be rejected.
+
+### State Transitions
+
+- `completed`: Sets `state.status = "completed"` and `state.active_agent = "none"`. Preserves `state.current_task`.
+- `workflow_completed`: Sets `state.status = "completed"`, `state.active_agent = "none"`, and clears `state.current_task = null`.
 
 ## 12. Readiness Signal
 
