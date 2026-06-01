@@ -571,7 +571,9 @@ def run_discussion(
             consensus, blocking = judge_consensus(replies)
 
         # Mark round as completed
-        task_state = complete_round(task_state, round_num, consensus, blocking)
+        task_state = complete_round(task_state, round_num, consensus, blocking,
+                                   actual_responded=len(replies),
+                                   expected_count=expected_participant_count)
         save_task_state(base_dir, task_id, task_state)
 
         # Append round end event

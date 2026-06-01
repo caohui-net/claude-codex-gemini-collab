@@ -264,13 +264,22 @@ def fail_participant(state: Dict, round_num: int, agent: str, error_type: str, e
     return state
 
 
-def complete_round(state: Dict, round_num: int, consensus: bool, blocking_issues: List[str]) -> Dict:
+def complete_round(state: Dict, round_num: int, consensus: bool, blocking_issues: List[str],
+                   actual_responded: int = None, expected_count: int = None) -> Dict:
     """Mark round as completed."""
     round_state = state["rounds"][round_num - 1]
     round_state["status"] = "completed"
     round_state["completed_at"] = datetime.now(timezone.utc).isoformat()
+
+    # Calculate all_responded based on actual vs expected counts
+    if actual_responded is not None and expected_count is not None:
+        all_responded = (actual_responded == expected_count)
+    else:
+        # Fallback: check participant statuses
+        all_responded = all(p["status"] == "completed" for p in round_state["participants"])
+
     round_state["consensus_check"] = {
-        "all_responded": True, "consensus_reached": consensus,
+        "all_responded": all_responded, "consensus_reached": consensus,
         "decision": None, "blocking_issues": blocking_issues
     }
     if consensus:
