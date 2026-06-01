@@ -1,14 +1,28 @@
 ---
 name: claude-codex-gemini-collab
 displayName: Multi-Agent Collab
-aliases: [collab, ccg, tricollab]
-description: Claude-Codex-Gemini collaboration protocol operations - init, task management, state validation
-version: 0.3.0
+aliases: [collab, tricollab]
+description: Use when the user wants persistent Claude/Codex/Gemini collaboration state, task creation, claim/complete, or handoff to Codex/Gemini. Prefer this over omc ask for collaboration protocol operations; do not use for one-off advisor questions.
+version: 0.3.1
 ---
 
 # Claude-Codex-Gemini Collaboration Skill
 
 Provides deterministic operations for Claude-Codex-Gemini tri-model collaboration via shared filesystem state.
+
+## Routing Rule
+
+Use this skill when the user asks to:
+- start or manage Claude-Codex-Gemini collaboration
+- create, claim, complete, validate, or inspect collaboration tasks
+- hand off a task to Codex or Gemini using shared `.omc/collaboration/` state
+
+Do not route these requests to `omc ask codex` or `omc ask gemini` unless the user asks for a one-off external opinion/advisor response.
+
+**Examples:**
+- "请Codex给我一个一次性review" → `omc ask codex`
+- "创建一个协作任务并交给Codex/Gemini处理" → `claude-codex-gemini-collab`
+- "查看协作状态/任务归属/事件日志" → `claude-codex-gemini-collab`
 
 ## When to Use
 
@@ -41,7 +55,7 @@ English examples:
 - Mutating (requires clear intent): `task`, `claim`, `complete`, handoff
 - High-risk (requires slash command): `repair`
 
-**Slash command always takes priority:** `/claude-codex-gemini-collab` or aliases `/collab`, `/ccg`
+**Slash command always takes priority:** `/claude-codex-gemini-collab` or aliases `/collab`, `/tricollab`
 
 ## Commands
 

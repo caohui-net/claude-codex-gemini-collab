@@ -11,6 +11,8 @@ from collab_event import read_events, read_state
 
 def show_status(base_dir="."):
     """Display collaboration status."""
+    print("🛠️ [Skill: Collab] handling request...")
+
     base = Path(base_dir).resolve()
     collab_dir = base / ".omc" / "collaboration"
 
