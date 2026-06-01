@@ -92,6 +92,9 @@ The discussion system supports crash recovery and resume capabilities.
 ### Recovery Commands
 
 ```bash
+# Scan for incomplete tasks (runs automatically on daemon startup)
+python3 scripts/collab_discuss.py scan
+
 # Check discussion status
 python3 scripts/collab_discuss.py status TASK-ID
 
@@ -103,6 +106,13 @@ python3 scripts/collab_discuss.py resume TASK-ID --retry-failed
 ```
 
 ### Common Scenarios
+
+**Daemon restart:**
+```bash
+python3 scripts/collab_discuss.py scan              # Find incomplete tasks
+python3 scripts/collab_discuss.py status TASK-ID    # Check specific task
+python3 scripts/collab_discuss.py resume TASK-ID    # Resume from checkpoint
+```
 
 **Daemon crash or user interruption:**
 ```bash

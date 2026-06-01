@@ -361,6 +361,33 @@ def main():
     audit_log_path = daemon_root / ".omc" / "daemon-audit.log"
     audit_log_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Scan for incomplete tasks on startup
+    print("🔍 Scanning for incomplete tasks...")
+    try:
+        scan_result = subprocess.run(
+            [sys.executable, "scripts/collab_discuss.py", "scan"],
+            cwd=daemon_root,
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if scan_result.returncode == 0 and scan_result.stdout:
+            print(scan_result.stdout.strip())
+            # Log scan to audit
+            write_audit_log({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "daemon_startup_scan",
+                "status": "completed"
+            })
+    except Exception as e:
+        print(f"⚠️  Startup scan failed: {e}")
+        write_audit_log({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "event": "daemon_startup_scan",
+            "status": "failed",
+            "error": str(e)
+        })
+
     # Register signal handlers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)

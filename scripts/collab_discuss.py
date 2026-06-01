@@ -213,32 +213,82 @@ def run_scan(base_dir: Path) -> int:
         return 0
 
     incomplete_tasks = []
+    pending_tasks = []
+    corrupted_tasks = []
 
     for state_file in state_files:
-        task_state = load_task_state(base_dir, state_file.stem)
-        if task_state and task_state["status"] in ("running", "failed"):
-            incomplete_tasks.append({
-                "task_id": task_state["task_id"],
-                "status": task_state["status"],
-                "topic": task_state["topic"],
-                "rounds": len(task_state["rounds"]),
-                "created": task_state["created_at"]
-            })
+        task_id = state_file.stem
 
-    if not incomplete_tasks:
+        try:
+            task_state = load_task_state(base_dir, task_id)
+
+            if task_state is None:
+                # Corrupted JSON
+                corrupted_tasks.append({"task_id": task_id, "file": str(state_file)})
+                continue
+
+            # Check required fields
+            status = task_state.get("status")
+            if status is None:
+                corrupted_tasks.append({"task_id": task_id, "error": "missing status field"})
+                continue
+
+            # Categorize by status
+            if status in ("running", "failed"):
+                incomplete_tasks.append({
+                    "task_id": task_state["task_id"],
+                    "status": status,
+                    "topic": task_state.get("topic", "N/A"),
+                    "rounds": len(task_state.get("rounds", [])),
+                    "created": task_state.get("created_at", "N/A")
+                })
+            elif status == "pending":
+                pending_tasks.append({
+                    "task_id": task_state["task_id"],
+                    "topic": task_state.get("topic", "N/A"),
+                    "created": task_state.get("created_at", "N/A")
+                })
+
+        except KeyError as e:
+            corrupted_tasks.append({"task_id": task_id, "error": f"missing field: {e}"})
+        except Exception as e:
+            corrupted_tasks.append({"task_id": task_id, "error": str(e)})
+
+    # Report results
+    total_issues = len(incomplete_tasks) + len(pending_tasks) + len(corrupted_tasks)
+
+    if total_issues == 0:
         print("✓ No incomplete tasks found")
         return 0
 
-    print(f"⚠️  Found {len(incomplete_tasks)} incomplete task(s):\n")
+    if incomplete_tasks:
+        print(f"⚠️  Found {len(incomplete_tasks)} incomplete task(s):\n")
+        for task in incomplete_tasks:
+            print(f"📋 {task['task_id']}")
+            print(f"   Status: {task['status']}")
+            print(f"   Topic: {task['topic']}")
+            print(f"   Rounds: {task['rounds']}")
+            print(f"   Created: {task['created']}")
+            print(f"   Resume: python3 scripts/collab_discuss.py resume {task['task_id']}")
+            print()
 
-    for task in incomplete_tasks:
-        print(f"📋 {task['task_id']}")
-        print(f"   Status: {task['status']}")
-        print(f"   Topic: {task['topic']}")
-        print(f"   Rounds: {task['rounds']}")
-        print(f"   Created: {task['created']}")
-        print(f"   Resume: python3 scripts/collab_discuss.py resume {task['task_id']}")
-        print()
+    if pending_tasks:
+        print(f"⏸️  Found {len(pending_tasks)} pending task(s):\n")
+        for task in pending_tasks:
+            print(f"📋 {task['task_id']}")
+            print(f"   Topic: {task['topic']}")
+            print(f"   Created: {task['created']}")
+            print()
+
+    if corrupted_tasks:
+        print(f"❌ Found {len(corrupted_tasks)} corrupted task(s):\n")
+        for task in corrupted_tasks:
+            print(f"📋 {task['task_id']}")
+            if "file" in task:
+                print(f"   File: {task['file']}")
+            if "error" in task:
+                print(f"   Error: {task['error']}")
+            print()
 
     return 0
 
@@ -372,19 +422,21 @@ def run_discussion(
         round_start = time.time()
         print(f"⏳ [Round {round_num}] Starting...")
 
-        # Initialize round in state
-        task_state = start_round(task_state, round_num, participants)
-        save_task_state(base_dir, task_id, task_state)
+        # Initialize round in state (skip if already exists during resume)
+        round_exists = round_num <= len(task_state["rounds"])
+        if not round_exists:
+            task_state = start_round(task_state, round_num, participants)
+            save_task_state(base_dir, task_id, task_state)
 
-        # Append round start event
-        append_event(
-            base_dir,
-            "discussion_round_start",
-            "claude",
-            task_id,
-            f"Round {round_num} started",
-            details={"round": round_num, "topic": topic}
-        )
+            # Append round start event
+            append_event(
+                base_dir,
+                "discussion_round_start",
+                "claude",
+                task_id,
+                f"Round {round_num} started",
+                details={"round": round_num, "topic": topic}
+            )
 
         # Refresh events after round start
         events = read_events(collab_dir / "events.jsonl")

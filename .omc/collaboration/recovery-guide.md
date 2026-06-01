@@ -94,7 +94,7 @@ $ python3 scripts/collab_discuss.py resume TASK-NEXT-STEP --retry-failed
 | `execution_failed` | Agent CLI returned non-zero exit code | Maybe | Check agent logs, retry |
 | `format_error` | Response missing markers or invalid JSON | No | Check agent output, manual fix |
 | `timeout` | Agent execution exceeded timeout | Yes | Retry with --retry-failed |
-| `daemon_crash` | Daemon crashed during execution | Yes | Resume automatically |
+| `daemon_crash` | Daemon crashed during execution | Yes | Use status/resume commands |
 | `file_write_failed` | Failed to write artifact file | No | Check disk space, permissions |
 
 ## Troubleshooting
@@ -247,8 +247,7 @@ If state file is corrupted:
 **Future Enhancement:**
 Full Daemon state persistence is planned for a future release. This will enable:
 - Automatic task recovery on daemon restart
-- Daemon startup scanning to detect incomplete tasks
-- Seamless recovery across daemon restarts
+- Seamless recovery across daemon restarts without manual intervention
 
 ## See Also
 
