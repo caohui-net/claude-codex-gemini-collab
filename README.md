@@ -13,13 +13,54 @@ This skill enables Claude, Codex, and Gemini to collaborate autonomously via sha
 
 ## Installation
 
-Copy to Claude Code skills directory:
+### 1. Sync to all installation paths
 
 ```bash
-cp -r . ~/.claude/skills/claude-codex-gemini-collab/
+python3 scripts/sync_skill_install.py
+```
+
+This syncs SKILL.md to:
+- `.omc/skills/claude-codex-gemini-collab/`
+- `~/.claude/skills/claude-codex-gemini-collab/`
+- `~/.omc/skills/claude-codex-gemini-collab/`
+
+### 2. Configure skillOverrides (required)
+
+Add to `.claude/settings.local.json`:
+
+```json
+{
+  "skillOverrides": {
+    "ccg": "off"
+  }
+}
+```
+
+This disables OMC's built-in `ccg` skill to avoid conflicts.
+
+### 3. Restart Claude Code session
+
+Changes take effect after restart.
+
+### 4. Verify activation
+
+```bash
+python3 scripts/collab_doctor.py
 ```
 
 ## Usage
+
+### Unified entry point (recommended)
+
+```bash
+python3 scripts/collab.py help      # Show all commands
+python3 scripts/collab.py status    # Check collaboration state
+python3 scripts/collab.py doctor    # Run diagnostics
+python3 scripts/collab.py task create "description"
+python3 scripts/collab.py handoff codex TASK-1
+```
+
+### Direct script usage
 
 ```bash
 /claude-codex-gemini-collab init          # Initialize collaboration
