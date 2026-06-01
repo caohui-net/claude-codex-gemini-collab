@@ -217,10 +217,38 @@ If state file is corrupted:
 
 ## Limitations
 
+### Discussion-Level Limitations
+
 - Resume only works within same discussion session (same topic, participants)
 - Cannot change max_rounds or timeout after discussion starts
 - Failed participants are skipped by default (use --retry-failed to retry)
 - No automatic retry for format errors (manual intervention required)
+
+### Daemon State Persistence
+
+**Current Status:** Discussion task state is persisted, but Daemon task state is NOT persisted.
+
+**What This Means:**
+- **Discussion state** (`.omc/collaboration/state/{TASK-ID}.json`): ✓ Persisted to disk
+  - Survives daemon crashes
+  - Survives user interruptions
+  - Can be resumed with `resume` command
+  
+- **Daemon task state** (in-memory only): ✗ NOT persisted
+  - Lost on daemon restart
+  - Lost on system reboot
+  - Cannot be recovered after daemon process ends
+
+**Impact:**
+- If daemon restarts while a discussion is running, the discussion state is preserved but the daemon loses track of the active task
+- Workaround: Use discussion-level recovery commands (`status`, `resume`)
+- The daemon will not automatically resume tasks after restart
+
+**Future Enhancement:**
+Full Daemon state persistence is planned for a future release. This will enable:
+- Automatic task recovery on daemon restart
+- Daemon startup scanning to detect incomplete tasks
+- Seamless recovery across daemon restarts
 
 ## See Also
 

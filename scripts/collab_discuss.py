@@ -198,6 +198,51 @@ def run_history(base_dir: Path, task_id: str, format_type: str = "text", summary
     return 0
 
 
+def run_scan(base_dir: Path) -> int:
+    """Scan for incomplete discussion tasks."""
+    state_dir = base_dir / ".omc" / "collaboration" / "state"
+
+    if not state_dir.exists():
+        print("📂 No state directory found")
+        return 0
+
+    state_files = list(state_dir.glob("*.json"))
+
+    if not state_files:
+        print("✓ No discussion tasks found")
+        return 0
+
+    incomplete_tasks = []
+
+    for state_file in state_files:
+        task_state = load_task_state(base_dir, state_file.stem)
+        if task_state and task_state["status"] in ("running", "failed"):
+            incomplete_tasks.append({
+                "task_id": task_state["task_id"],
+                "status": task_state["status"],
+                "topic": task_state["topic"],
+                "rounds": len(task_state["rounds"]),
+                "created": task_state["created_at"]
+            })
+
+    if not incomplete_tasks:
+        print("✓ No incomplete tasks found")
+        return 0
+
+    print(f"⚠️  Found {len(incomplete_tasks)} incomplete task(s):\n")
+
+    for task in incomplete_tasks:
+        print(f"📋 {task['task_id']}")
+        print(f"   Status: {task['status']}")
+        print(f"   Topic: {task['topic']}")
+        print(f"   Rounds: {task['rounds']}")
+        print(f"   Created: {task['created']}")
+        print(f"   Resume: python3 scripts/collab_discuss.py resume {task['task_id']}")
+        print()
+
+    return 0
+
+
 def run_status(base_dir: Path, task_id: str) -> int:
     """Show task status."""
     task_state = load_task_state(base_dir, task_id)
@@ -540,6 +585,9 @@ if __name__ == "__main__":
     status_parser = subparsers.add_parser("status", help="Show task status")
     status_parser.add_argument("task_id", help="Task ID")
 
+    # Scan subcommand
+    subparsers.add_parser("scan", help="Scan for incomplete tasks")
+
     args = parser.parse_args()
 
     # Handle legacy usage (no subcommand)
@@ -559,7 +607,9 @@ if __name__ == "__main__":
     try:
         base = resolve_existing_base_dir(args.base_dir)
 
-        if args.command == "history":
+        if args.command == "scan":
+            sys.exit(run_scan(base))
+        elif args.command == "history":
             sys.exit(run_history(base, args.task_id, args.format, args.summary))
         elif args.command == "status":
             sys.exit(run_status(base, args.task_id))

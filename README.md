@@ -85,6 +85,45 @@ python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to gemi
 python3 scripts/collab_event.py handoff_requested gemini TASK-2 "handoff to codex" --target-agent codex
 ```
 
+## Recovery Features
+
+The discussion system supports crash recovery and resume capabilities.
+
+### Recovery Commands
+
+```bash
+# Check discussion status
+python3 scripts/collab_discuss.py status TASK-ID
+
+# Resume interrupted discussion
+python3 scripts/collab_discuss.py resume TASK-ID
+
+# Retry failed participants
+python3 scripts/collab_discuss.py resume TASK-ID --retry-failed
+```
+
+### Common Scenarios
+
+**Daemon crash or user interruption:**
+```bash
+python3 scripts/collab_discuss.py status TASK-ID    # Check state
+python3 scripts/collab_discuss.py resume TASK-ID    # Resume from checkpoint
+```
+
+**Agent timeout:**
+```bash
+python3 scripts/collab_discuss.py resume TASK-ID --retry-failed
+```
+
+### State Persistence
+
+- **Discussion state**: Persisted to `.omc/collaboration/state/{TASK-ID}.json`
+- **Daemon state**: In-memory only (not persisted across daemon restarts)
+
+**Limitation:** If daemon restarts, use discussion-level recovery commands (`status`, `resume`) to continue.
+
+For detailed recovery documentation, see `.omc/collaboration/recovery-guide.md`.
+
 ## Workspace Resolution
 
 All commands support `--base-dir` to specify the collaboration workspace root explicitly:
