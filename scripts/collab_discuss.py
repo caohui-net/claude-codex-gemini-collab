@@ -348,6 +348,44 @@ def run_status(base_dir: Path, task_id: str) -> int:
     return 0
 
 
+def run_conclude(base_dir: Path, task_id: str, decision: str) -> int:
+    """Manually conclude discussion with final decision."""
+    task_state = load_task_state(base_dir, task_id)
+    if task_state is None:
+        print(f"❌ No state found for {task_id}")
+        return 1
+
+    if task_state['status'] == 'completed':
+        print(f"⚠️  Task {task_id} already completed")
+        return 0
+
+    # Update final consensus
+    task_state['final_consensus'] = {
+        'reached': True,
+        'decision': decision,
+        'method': 'manual_conclude'
+    }
+    task_state['status'] = 'completed'
+    task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
+
+    # Save state
+    save_task_state(base_dir, task_id, task_state)
+
+    # Append discussion_concluded event
+    append_event(
+        base_dir,
+        'discussion_concluded',
+        'system',
+        task_id,
+        decision,
+        details={'method': 'manual_conclude'}
+    )
+
+    print(f"✅ Discussion concluded for {task_id}")
+    print(f"📋 Decision: {decision}")
+    return 0
+
+
 def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
     """Resume interrupted discussion."""
     task_state = load_task_state(base_dir, task_id)
@@ -668,6 +706,11 @@ if __name__ == "__main__":
     status_parser = subparsers.add_parser("status", help="Show task status")
     status_parser.add_argument("task_id", help="Task ID")
 
+    # Conclude subcommand
+    conclude_parser = subparsers.add_parser("conclude", help="Manually conclude discussion with decision")
+    conclude_parser.add_argument("task_id", help="Task ID")
+    conclude_parser.add_argument("decision", help="Final decision text")
+
     # Scan subcommand
     subparsers.add_parser("scan", help="Scan for incomplete tasks")
 
@@ -696,6 +739,8 @@ if __name__ == "__main__":
             sys.exit(run_history(base, args.task_id, args.format, args.summary))
         elif args.command == "status":
             sys.exit(run_status(base, args.task_id))
+        elif args.command == "conclude":
+            sys.exit(run_conclude(base, args.task_id, args.decision))
         elif args.command == "resume":
             sys.exit(run_resume(base, args.task_id, args.retry_failed))
         elif args.command == "discuss":
