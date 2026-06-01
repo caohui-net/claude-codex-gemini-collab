@@ -291,6 +291,30 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
                 print(f"❌ Cannot handoff: task {task_id} owned by {current_owner}, not {agent}")
                 return 1
 
+        # Validate handoff_accepted: must have pending handoff_requested
+        if event_type == "handoff_accepted" and task_id:
+            # Find most recent handoff_requested for this task
+            pending_handoff = None
+            for e in reversed(events):
+                if get_event_task_id(e) != task_id:
+                    continue
+                if e.get('type') == 'handoff_requested':
+                    pending_handoff = e
+                    break
+                # Stop if we hit a terminal or accepted handoff
+                if e.get('type') in ['handoff_accepted', 'handoff_rejected', 'handoff_cancelled', 'completed']:
+                    break
+
+            if not pending_handoff:
+                print(f"❌ Cannot accept handoff: no pending handoff_requested for task {task_id}")
+                return 1
+
+            # Validate agent is the target
+            target_agent = pending_handoff.get('details', {}).get('target_agent')
+            if target_agent != agent:
+                print(f"❌ Cannot accept handoff: task {task_id} handoff target is {target_agent}, not {agent}")
+                return 1
+
         # Validate completed: task must exist, not be terminal, and agent must be owner
         # Normalize task_id from top-level or details (Task #27 fix)
         effective_task_id = task_id or (details.get("task_id") if isinstance(details, dict) else None)
