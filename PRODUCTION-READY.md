@@ -96,13 +96,31 @@ Phase 1b closeout成功完成，所有pre-production blockers已修复。项目�
 - 测试：47/47通过（35 task + 12 paths）
 - 代码行数：-12行（删除重复代码）
 
+### Priority 2b Final Hardening (2026-06-01)
+- Codex讨论后的语义强化：
+  1. **Taskless completion rejection**
+     - 问题：completed without task_id语义不明确，可能意外关闭workflow
+     - 修复：completed必须提供task_id（top-level或details）
+     - 验证：taskless completed现在被拒绝，提示使用workflow_completed
+  2. **workflow_completed event type**
+     - 新增workflow_completed事件类型用于workflow-level关闭
+     - 禁止workflow_completed携带task_id（top-level或details）
+     - workflow_completed验证所有task已终态，否则拒绝
+     - 状态转换：设置active_agent="none"，清空current_task=null
+  3. **Protocol Section 11更新**
+     - 明确completed=task-scoped only
+     - 明确workflow_completed=workflow-scoped only
+     - 文档化状态转换规则
+- 测试：51/51通过（39 task + 12 paths，新增4个workflow_completed测试）
+- 代码变更：+50行（validation + state transition + tests）
+
 ---
 
 ## 最终验证
 
 ### 测试结果
 ```
-Ran 47 tests in 0.920s
+Ran 51 tests in 1.020s
 OK
 ```
 

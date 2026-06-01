@@ -245,9 +245,22 @@ Handoffs should include concrete next actions, relevant file paths, and any know
 
 ## 11. Completion Rules
 
+### Task Completion
+
 A task is complete only when the requested files are written, verification appropriate to the change has been performed, and completion is reflected in the collaboration log when the task is part of this workflow.
 
-Completion should write a `completed` event and update `state.json.status` to `completed` unless the workflow remains open for the other agent.
+Task completion MUST use the `completed` event type with a `task_id`. The `completed` event is task-scoped and requires a valid task identifier.
+
+### Workflow Completion
+
+Workflow-level completion MUST use the `workflow_completed` event type. This event type is for closing the entire collaboration workflow and MUST NOT include a `task_id`.
+
+`workflow_completed` can only be appended when all created tasks have reached a terminal state (`completed` or `cancelled`). Attempting to close the workflow while non-terminal tasks exist will be rejected.
+
+### State Transitions
+
+- `completed`: Sets `state.status = "completed"` and `state.active_agent = "none"`. Preserves `state.current_task`.
+- `workflow_completed`: Sets `state.status = "completed"`, `state.active_agent = "none"`, and clears `state.current_task = null`.
 
 ## 12. Readiness Signal
 

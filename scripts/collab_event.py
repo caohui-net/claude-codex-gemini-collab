@@ -20,6 +20,7 @@ STATUS_MAP = {
     "blocked": "blocked",
     "independent_analysis_completed": "waiting_synthesis",
     "synthesis_completed": "completed",
+    "workflow_completed": "completed",
 }
 
 ACTIVE_CLAIM_STATUSES = {
@@ -264,6 +265,34 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         # Validate completed: task must exist, not be terminal, and agent must be owner
         # Normalize task_id from top-level or details (Task #27 fix)
         effective_task_id = task_id or (details.get("task_id") if isinstance(details, dict) else None)
+
+        # Reject taskless completed (P2 Final Hardening)
+        if event_type == "completed" and not effective_task_id:
+            print("❌ Cannot append 'completed' event without task_id")
+            print("   Use 'workflow_completed' for workflow-level completion")
+            return 1
+
+        # Reject workflow_completed with task_id (P2 Final Hardening)
+        if event_type == "workflow_completed":
+            if task_id or (details and isinstance(details, dict) and details.get("task_id")):
+                print("❌ Cannot append 'workflow_completed' with task_id")
+                print("   Use 'completed' for task completion")
+                return 1
+
+            # Reject workflow_completed if any non-terminal task exists
+            for e in events:
+                if e.get('type') == 'task_created':
+                    tid = get_event_task_id(e)
+                    if tid:
+                        # Check if this task is terminal
+                        task_is_terminal = any(
+                            is_terminal_event(ev, tid) for ev in events
+                        )
+                        if not task_is_terminal:
+                            print(f"❌ Cannot append 'workflow_completed': task {tid} is not terminal")
+                            print("   Complete or cancel all tasks before workflow completion")
+                            return 1
+
         if event_type == "completed" and effective_task_id:
             task_created = False
             task_terminal = False
@@ -321,6 +350,9 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
             state["current_task"] = task_id
         if event_type == "completed":
             state["active_agent"] = "none"
+        if event_type == "workflow_completed":
+            state["active_agent"] = "none"
+            state["current_task"] = None
 
         write_state_atomically(collab_dir, agent, state)
 

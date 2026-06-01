@@ -562,6 +562,57 @@ class CollaborationTaskTests(unittest.TestCase):
         self.assertEqual(self.event_count(), before_count)
         self.assertFalse(self.lock_exists())
 
+    def test_complete_rejects_taskless_completion(self):
+        """Test complete rejects taskless completion (P2 Final Hardening)."""
+        self.write_events([make_event(1, "task_created", task_id="TASK-1", status="task_open")])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "completed", "codex", None, "taskless complete")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_workflow_completed_rejects_with_task_id(self):
+        """Test workflow_completed rejects with task_id (P2 Final Hardening)."""
+        self.write_events([])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "workflow_completed", "codex", "TASK-1", "workflow done")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_workflow_completed_rejects_with_open_task(self):
+        """Test workflow_completed rejects with open task (P2 Final Hardening)."""
+        self.write_events([make_event(1, "task_created", task_id="TASK-1", status="task_open")])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "workflow_completed", "codex", None, "workflow done")
+
+        self.assertEqual(result, 1)
+        self.assertEqual(self.event_count(), before_count)
+        self.assertFalse(self.lock_exists())
+
+    def test_workflow_completed_succeeds_with_all_terminal(self):
+        """Test workflow_completed succeeds when all tasks terminal (P2 Final Hardening)."""
+        self.write_events([
+            make_event(1, "task_created", task_id="TASK-1", status="task_open"),
+            make_event(2, "completed", task_id="TASK-1", status="completed"),
+        ])
+        before_count = self.event_count()
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = append_event(self.base, "workflow_completed", "codex", None, "workflow done")
+
+        self.assertEqual(result, 0)
+        self.assertEqual(self.event_count(), before_count + 1)
+        self.assertFalse(self.lock_exists())
+
     def test_cli_smoke_init_create_claim_complete_validate(self):
         with tempfile.TemporaryDirectory() as smoke_dir:
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
