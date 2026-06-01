@@ -160,10 +160,20 @@ def repair(base_dir="."):
         last_event = events[-1]
         max_id = max(e.get('id', 0) for e in events)
 
+        # Import get_active_owner for correct active_agent calculation
+        from collab_event import get_active_owner, get_event_task_id
+
+        # Determine current_task and active_agent
+        current_task = last_event.get('task_id')
+        if current_task:
+            active_agent = get_active_owner(events, current_task) or 'none'
+        else:
+            active_agent = 'none'
+
         state = {
             "workflow_id": "claude-codex-gemini-collab",
-            "current_task": last_event.get('task_id'),
-            "active_agent": last_event.get('agent') if last_event.get('status') != 'completed' else 'none',
+            "current_task": current_task,
+            "active_agent": active_agent,
             "status": last_event.get('status', 'unknown'),
             "last_event_id": max_id,
             "updated_at": last_event.get('timestamp')

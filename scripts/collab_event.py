@@ -262,7 +262,7 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
             print(f"Run: {COMMAND_NAME} repair")
             return 1
 
-        # Validate handoff_requested: task must exist
+        # Validate handoff_requested: task must exist and agent must be owner
         if event_type == "handoff_requested" and task_id:
             task_exists = any(
                 e.get('type') == 'task_created' and get_event_task_id(e) == task_id
@@ -270,6 +270,12 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
             )
             if not task_exists:
                 print(f"❌ Cannot handoff: task {task_id} not found in events")
+                return 1
+
+            # Check if agent is current owner
+            current_owner = get_active_owner(events, task_id)
+            if current_owner and current_owner != agent:
+                print(f"❌ Cannot handoff: task {task_id} owned by {current_owner}, not {agent}")
                 return 1
 
         # Validate completed: task must exist, not be terminal, and agent must be owner
@@ -398,6 +404,12 @@ if __name__ == "__main__":
         artifacts = json.loads(args.artifacts) if args.artifacts else None
         details = None
         if args.target_agent:
+            # Validate target_agent
+            try:
+                validate_agent_id(args.target_agent)
+            except ValueError as e:
+                print(f"❌ Invalid target agent: {e}")
+                sys.exit(1)
             details = {"target_agent": args.target_agent}
         sys.exit(append_event(base, args.event_type, args.agent, task_id, args.summary, artifacts, details))
     except ValueError as e:

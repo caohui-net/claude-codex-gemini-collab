@@ -267,12 +267,19 @@ Workflow-level completion MUST use the `workflow_completed` event type. This eve
 
 ## 12. Readiness Signal
 
-Codex readiness is represented by both:
+Agent readiness is represented by both an event and an optional artifact file:
 
+**Claude readiness:**
+- A `claude_ready` event in `events.jsonl`.
+- `.omc/collaboration/claude-ready.md` (optional).
+
+**Codex readiness:**
 - A `codex_ready` event in `events.jsonl`.
-- `.omc/collaboration/codex-ready.md`.
+- `.omc/collaboration/codex-ready.md` (optional).
 
-Claude readiness may be represented similarly with `claude_ready` and a corresponding readiness artifact.
+**Gemini readiness:**
+- A `gemini_ready` event in `events.jsonl`.
+- `.omc/collaboration/gemini-ready.md` (optional).
 
 ## 13. Minimal Operating Checklist
 
