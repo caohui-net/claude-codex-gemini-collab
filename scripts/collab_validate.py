@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import shutil
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from collab_state import rebuild_state
 
 COMMAND_NAME = "/claude-codex-gemini-collab"
 
@@ -157,27 +158,12 @@ def repair(base_dir="."):
         events = [e for e in events if isinstance(e, dict)]
 
     if events:
-        last_event = events[-1]
-        max_id = max(e.get('id', 0) for e in events)
+        # Use centralized reducer to rebuild state
+        state = rebuild_state(events)
 
-        # Import get_active_owner for correct active_agent calculation
-        from collab_event import get_active_owner, get_event_task_id
-
-        # Determine current_task and active_agent
-        current_task = last_event.get('task_id')
-        if current_task:
-            active_agent = get_active_owner(events, current_task) or 'none'
-        else:
-            active_agent = 'none'
-
-        state = {
-            "workflow_id": "claude-codex-gemini-collab",
-            "current_task": current_task,
-            "active_agent": active_agent,
-            "status": last_event.get('status', 'unknown'),
-            "last_event_id": max_id,
-            "updated_at": last_event.get('timestamp')
-        }
+        # Add workflow_id and updated_at for compatibility
+        state["workflow_id"] = "claude-codex-gemini-collab"
+        state["updated_at"] = events[-1].get('timestamp')
 
         state_file = collab_dir / "state.json"
         state_file.write_text(json.dumps(state, indent=2) + '\n')

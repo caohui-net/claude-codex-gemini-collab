@@ -9,6 +9,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from collab_state import rebuild_state
 
 COMMAND_NAME = "/claude-codex-gemini-collab"
 
@@ -423,24 +424,12 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         with events_file.open('a') as f:
             f.write(json.dumps(event) + '\n')
 
-        # Update state.json atomically
-        state["last_event_id"] = next_id
-        state["status"] = event["status"]
-        state["updated_at"] = event["timestamp"]
-        if task_id:
-            state["current_task"] = task_id
-        if event_type == "completed":
-            state["active_agent"] = "none"
-        if event_type == "workflow_completed":
-            state["active_agent"] = "none"
-            state["current_task"] = None
+        # Rebuild state using centralized reducer
+        events_with_new = events + [event]
+        state = rebuild_state(events_with_new)
 
-        # For task-related events, recompute active_agent from event log
-        if task_id and event_type not in ["completed", "workflow_completed"]:
-            # Re-read events including the new one
-            events_with_new = events + [event]
-            active_owner = get_active_owner(events_with_new, task_id)
-            state["active_agent"] = active_owner if active_owner else "none"
+        # Add workflow_id for compatibility
+        state["workflow_id"] = "claude-codex-gemini-collab"
 
         write_state_atomically(collab_dir, agent, state)
 
