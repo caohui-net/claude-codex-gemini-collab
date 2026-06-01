@@ -147,15 +147,25 @@ def repair(base_dir="."):
     # Rebuild state from events
     events_file = collab_dir / "events.jsonl"
     events = []
+    quarantined = []
     if events_file.exists():
         for line in events_file.read_text().strip().split('\n'):
             if line:
                 try:
-                    events.append(json.loads(line))
-                except:
-                    pass
-        # Filter out scalar/non-dict events to avoid AttributeError
-        events = [e for e in events if isinstance(e, dict)]
+                    event = json.loads(line)
+                    if isinstance(event, dict):
+                        events.append(event)
+                    else:
+                        quarantined.append(line)
+                except json.JSONDecodeError:
+                    quarantined.append(line)
+
+        # Quarantine malformed events instead of silent drop
+        if quarantined:
+            quarantine_file = collab_dir / "events_quarantine.jsonl"
+            quarantine_file.write_text('\n'.join(quarantined) + '\n')
+            print(f"⚠️  Quarantined {len(quarantined)} malformed event(s) to {quarantine_file}")
+            print(f"   Review and fix manually, then re-run repair")
 
     if events:
         # Use centralized reducer to rebuild state

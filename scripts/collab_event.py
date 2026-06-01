@@ -426,6 +426,13 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         # Determine status from event type
         event["status"] = STATUS_MAP.get(event_type, "in_progress")
 
+        # Validate event schema (P4-lite: minimal whitelist)
+        required_fields = ["id", "timestamp", "type", "agent", "summary"]
+        missing_fields = [f for f in required_fields if f not in event or event[f] is None]
+        if missing_fields:
+            print(f"❌ Event schema validation failed: missing required fields {missing_fields}")
+            return 1
+
         # Append to events.jsonl
         with events_file.open('a') as f:
             f.write(json.dumps(event) + '\n')

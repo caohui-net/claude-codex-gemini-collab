@@ -58,6 +58,22 @@ def create_task(base_dir, description):
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
         task_id = f"TASK-{timestamp}-{next_id:02d}"
 
+        # Check for task_id collision
+        task_exists_in_events = any(
+            event.get("type") == "task_created" and get_event_task_id(event) == task_id
+            for event in events
+        )
+        if task_exists_in_events:
+            print(f"❌ Task ID collision: {task_id} already exists in events")
+            return 1
+
+        tasks_dir = collab_dir / "tasks"
+        if tasks_dir.exists():
+            existing_files = list(tasks_dir.glob(f"{task_id}-*.md"))
+            if existing_files:
+                print(f"❌ Task ID collision: {task_id} file already exists")
+                return 1
+
         # Prepare task document
         safe_desc = description[:30].replace('/', '-').replace('\\', '-').replace(' ', '-').lower()
         task_file = collab_dir / "tasks" / f"{task_id}-{safe_desc}.md"

@@ -18,6 +18,10 @@ STATUS_MAP = {
     "independent_analysis_completed": "waiting_synthesis",
     "synthesis_completed": "completed",
     "workflow_completed": "completed",
+    # Discussion events (ownership-neutral)
+    "discussion_message": "discussion",
+    "discussion_round_start": "discussion",
+    "discussion_round_end": "discussion",
 }
 
 ACTIVE_CLAIM_STATUSES = {
