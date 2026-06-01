@@ -276,6 +276,12 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         print(f"❌ Invalid agent ID: {e}")
         return 1
 
+    # Validate blocked events require reason
+    if event_type == "blocked":
+        if not details or not isinstance(details, dict) or not details.get("reason"):
+            print(f"❌ Event type 'blocked' requires reason in details")
+            return 1
+
     # Acquire lock
     if not acquire_lock(collab_dir, agent, task_id, f"append {event_type} event"):
         print("❌ Failed to acquire journal lock")
@@ -450,13 +456,17 @@ if __name__ == "__main__":
     parser.add_argument("summary", help="Event summary")
     parser.add_argument("artifacts", nargs="?", help="Artifacts JSON")
     parser.add_argument("--target-agent", help="Target agent for handoff (optional)")
+    parser.add_argument("--reason", help="Reason for state transition (required for blocked events)")
+    parser.add_argument("--log-file", help="Path to log file to attach")
     args = parser.parse_args()
 
     try:
         base = resolve_existing_base_dir(args.base_dir)
         task_id = None if args.task_id == "none" else args.task_id
         artifacts = json.loads(args.artifacts) if args.artifacts else None
-        details = None
+
+        # Build details dict with reason, logs, and target_agent
+        details = {}
         if args.target_agent:
             # Validate target_agent
             try:
@@ -464,7 +474,21 @@ if __name__ == "__main__":
             except ValueError as e:
                 print(f"❌ Invalid target agent: {e}")
                 sys.exit(1)
-            details = {"target_agent": args.target_agent}
+            details["target_agent"] = args.target_agent
+
+        if args.reason:
+            details["reason"] = args.reason
+
+        if args.log_file:
+            # Store log file reference
+            details["logs"] = [args.log_file]
+
+        # Validate blocked events require reason
+        if args.event_type == "blocked" and not args.reason:
+            print(f"❌ Event type 'blocked' requires --reason parameter")
+            sys.exit(1)
+
+        details = details if details else None
         sys.exit(append_event(base, args.event_type, args.agent, task_id, args.summary, artifacts, details))
     except ValueError as e:
         print(f"❌ {e}")
