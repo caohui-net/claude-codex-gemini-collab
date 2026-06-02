@@ -48,15 +48,83 @@ def compress_history(events: List[Dict], task_id: str, max_recent: int = 2) -> s
     return summary.strip()
 
 
+def save_discussion_context(
+    base_dir: Path,
+    task_id: str,
+    round_num: int,
+    topic: str,
+    history: str,
+    artifacts: List[str]
+) -> str:
+    """Save discussion context to file, return relative path."""
+    context_dir = base_dir / ".omc" / "collaboration" / "context"
+    context_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{task_id}-r{round_num}-context.md"
+    context_path = context_dir / filename
+
+    content = f"""# Discussion Context
+
+**Task:** {task_id}
+**Round:** {round_num}
+
+## Topic
+
+{topic}
+
+"""
+
+    if history:
+        content += f"""## Previous Discussion
+
+{history}
+
+"""
+
+    if artifacts:
+        content += "## Referenced Artifacts\n\n"
+        for art in artifacts:
+            content += f"- {art}\n"
+        content += "\n"
+
+    context_path.write_text(content, encoding="utf-8")
+    return str(context_path.relative_to(base_dir))
+
+
 def build_discussion_prompt(
     topic: str,
     task_id: str,
     agent: str,
     round_num: int,
     history: str,
-    artifacts: List[str]
+    artifacts: List[str],
+    context_file: Optional[str] = None
 ) -> str:
-    """Build discussion prompt with context."""
+    """Build discussion prompt with context (file reference or inline)."""
+
+    # File reference mode (token-optimized)
+    if context_file:
+        prompt = f"""TASK-{task_id} Discussion Round {round_num}
+
+You are {agent}. Read the discussion context from: {context_file}
+
+Respond with structured JSON wrapped in markers:
+
+[RESPONSE_START]
+{{
+  "consensus": true/false,
+  "decision": "your position or agreed decision",
+  "blocking_issues": ["issue1", "issue2"] or [],
+  "reasoning": "why you agree/disagree"
+}}
+[RESPONSE_END]
+
+IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
+Output ONLY the markers and JSON, nothing else.
+"""
+        return prompt
+
+    # Inline mode (backward compatible)
     prompt = f"""TASK-{task_id} Discussion Round {round_num}
 
 Topic: {topic}
@@ -560,8 +628,16 @@ def run_discussion(
             task_state = start_participant(task_state, round_num, agent)
             save_task_state(base_dir, task_id, task_state)
 
+            # Check if file-reference mode enabled (token optimization, default: true)
+            use_file_ref = os.environ.get("CCG_USE_FILE_REF", "true").lower() == "true"
+            context_file = None
+            if use_file_ref:
+                context_file = save_discussion_context(
+                    base_dir, task_id, round_num, topic, history, artifacts_refs
+                )
+
             prompt = build_discussion_prompt(
-                topic, task_id, agent, round_num, history, artifacts_refs
+                topic, task_id, agent, round_num, history, artifacts_refs, context_file
             )
 
             # use_tmux and keep_session can be enabled via env vars
