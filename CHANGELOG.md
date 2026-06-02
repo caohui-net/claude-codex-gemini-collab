@@ -4,16 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-02
+
 ### Added
 
 - **P2-1: all_responded Observability** - Added `actual_responded` and `expected_count` fields to `consensus_check` in task state. Enables debugging of partial-response scenarios (e.g., 2/3 participants completed vs 3/3 expected).
 - **P2-1: Partial-Response Tests** - Added `tests/test_partial_response.py` with coverage for both partial (2/3) and full (2/2) participant response scenarios.
+- **P0-1: Decision Persistence Test** - Added `tests/test_decision_persistence.py` validating final_consensus.decision extraction from participant responses.
+- **P0-2: Terminal State Test** - Added `tests/test_terminal_state.py` verifying no-consensus terminal state transitions.
+- **P0-3: Conclude Path Test** - Added `tests/test_conclude.py` validating manual conclude command behavior.
+- **P0-4: Routing Validation Test** - Added `tests/test_routing.py` verifying SKILL.md trigger pattern documentation.
 
 ### Changed
 
 - **P2-3: Documentation Consistency** - Clarified throughout documentation that Claude orchestrates Codex/Gemini rather than being an equal participant in discussions.
 - **P2-3: Known Limitations** - Added comprehensive Known Limitations section to README documenting daemon state persistence, protocol coverage, testing status, and future enhancements.
 - **P2-3: Phase 4A Cleanup** - Removed outdated "Phase 4A documentation TODO" references from README.
+
+### Fixed
+
+- **P0-1: Decision Content Extraction** - Fixed `complete_round()` to extract actual decision content from participant responses instead of hardcoded "Consensus reached" placeholder.
 
 ## [0.1.1] - 2026-06-02
 
