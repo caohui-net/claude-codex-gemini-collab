@@ -61,10 +61,19 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
     try:
         # Build wrapper script that captures exit code and keeps session alive
         quoted_cmd = " ".join(shlex.quote(arg) for arg in cmd)
-        if stdin_data:
-            wrapper = f"cd {shlex.quote(cwd)} && ({quoted_cmd} << '{eof_marker}'\n{stdin_data}\n{eof_marker}\n); echo $? > {marker_file}; sleep 2"
+
+        if keep_session:
+            # Keep session alive indefinitely for debugging
+            if stdin_data:
+                wrapper = f"cd {shlex.quote(cwd)} && ({quoted_cmd} << '{eof_marker}'\n{stdin_data}\n{eof_marker}\n); echo $? > {marker_file}; exec bash"
+            else:
+                wrapper = f"cd {shlex.quote(cwd)} && {quoted_cmd}; echo $? > {marker_file}; exec bash"
         else:
-            wrapper = f"cd {shlex.quote(cwd)} && {quoted_cmd}; echo $? > {marker_file}; sleep 2"
+            # Normal: session exits after sleep
+            if stdin_data:
+                wrapper = f"cd {shlex.quote(cwd)} && ({quoted_cmd} << '{eof_marker}'\n{stdin_data}\n{eof_marker}\n); echo $? > {marker_file}; sleep 2"
+            else:
+                wrapper = f"cd {shlex.quote(cwd)} && {quoted_cmd}; echo $? > {marker_file}; sleep 2"
 
         # Run in tmux session that auto-exits
         subprocess.run(
