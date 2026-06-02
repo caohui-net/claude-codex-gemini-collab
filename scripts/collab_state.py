@@ -19,9 +19,11 @@ STATUS_MAP = {
     "synthesis_completed": "completed",
     "workflow_completed": "completed",
     # Discussion events (ownership-neutral)
+    "discussion_started": "discussion",
     "discussion_message": "discussion",
     "discussion_round_start": "discussion",
     "discussion_round_end": "discussion",
+    "discussion_concluded": "discussion",
 }
 
 ACTIVE_CLAIM_STATUSES = {
