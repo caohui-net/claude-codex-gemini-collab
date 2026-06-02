@@ -63,6 +63,50 @@ def test_tmux_execution():
     print("  ✓ Stdin handling works")
 
 
+def test_keep_session():
+    """Test keep_session=True preserves tmux sessions."""
+    print("\nTesting keep_session...")
+    from agent_cli import run_in_tmux
+    import time
+
+    if not check_rmux_available():
+        print("  ⊘ Skipped (rmux not available)")
+        return
+
+    stdout, exit_code = run_in_tmux(["echo", "preserved"], "/tmp", "", 5, keep_session=True)
+    assert exit_code == 0, f"Expected exit_code 0, got {exit_code}"
+    assert "preserved" in stdout.lower(), f"Expected 'preserved' in stdout"
+
+    # Extract session name
+    import re
+    match = re.search(r'ccg-[a-f0-9]{8}', stdout)
+    assert match, "No session name in output"
+    session = match.group(0)
+
+    # Verify session still exists after short delay
+    time.sleep(0.5)
+    import subprocess
+    result = subprocess.run(["tmux", "list-sessions"], capture_output=True, text=True)
+    assert session in result.stdout, f"Session {session} not found in tmux list"
+
+    # Cleanup
+    subprocess.run(["tmux", "kill-session", "-t", session], capture_output=True)
+    print(f"  ✓ Session preserved: {session}")
+
+
+def test_lifecycle_management():
+    """Test session lifecycle functions."""
+    print("\nTesting lifecycle management...")
+    from rmux_utils import list_ccg_sessions, cleanup_old_sessions
+
+    sessions = list_ccg_sessions()
+    print(f"  ✓ list_ccg_sessions: {len(sessions)} active")
+
+    # Cleanup returns count
+    killed = cleanup_old_sessions(max_age_seconds=1)
+    print(f"  ✓ cleanup_old_sessions: {killed} cleaned")
+
+
 if __name__ == "__main__":
     print("=== rmux Integration Tests ===\n")
 
@@ -70,6 +114,8 @@ if __name__ == "__main__":
         ("rmux detection", test_rmux_detection),
         ("backward compatibility", test_backward_compatibility),
         ("tmux execution", test_tmux_execution),
+        ("keep_session", test_keep_session),
+        ("lifecycle management", test_lifecycle_management),
     ]
 
     failed = 0
