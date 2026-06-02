@@ -451,6 +451,16 @@ def run_discussion(
     if task_state is None:
         task_state = init_task_state(base_dir, task_id, topic, participants)
         print(f"🛠️  [Skill: Collab] Starting discussion for {task_id}")
+
+        # Append discussion_started event
+        append_event(
+            base_dir,
+            'discussion_started',
+            'system',
+            task_id,
+            f"Discussion started: {topic}",
+            details={'topic': topic, 'participants': participants}
+        )
     else:
         print(f"🔄 [Skill: Collab] Resuming discussion for {task_id}")
         print(f"   Status: {task_state['status']}, Rounds: {len(task_state['rounds'])}")
@@ -647,6 +657,37 @@ def run_discussion(
 
         if consensus:
             discussion_elapsed = time.time() - discussion_start
+
+            # Aggregate decisions from participant responses
+            decisions = []
+            for reply in replies:
+                if isinstance(reply.parsed, dict):
+                    decision = reply.parsed.get("decision", "")
+                    if decision:
+                        decisions.append(f"[{reply.agent}] {decision}")
+
+            final_decision = "\n".join(decisions) if decisions else "Consensus reached"
+
+            # Set terminal state for consensus
+            task_state['status'] = 'completed'
+            task_state['final_consensus'] = {
+                'reached': True,
+                'decision': final_decision,
+                'round': round_num
+            }
+            task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
+            save_task_state(base_dir, task_id, task_state)
+
+            # Append discussion_concluded event
+            append_event(
+                base_dir,
+                'discussion_concluded',
+                'system',
+                task_id,
+                f"Consensus reached in round {round_num}",
+                details={'consensus': True, 'decision': final_decision}
+            )
+
             print(f"\n✅ Consensus reached in round {round_num}!")
             print(f"📁 Artifacts: {', '.join(artifacts_refs)}")
             print(f"\n⏱️  Performance Summary:")
@@ -664,6 +705,27 @@ def run_discussion(
         print()
 
     discussion_elapsed = time.time() - discussion_start
+
+    # Set terminal state for no consensus after max rounds
+    task_state['status'] = 'completed'
+    task_state['final_consensus'] = {
+        'reached': False,
+        'reason': 'max_rounds_reached',
+        'decision': ''
+    }
+    task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
+    save_task_state(base_dir, task_id, task_state)
+
+    # Append discussion_concluded event
+    append_event(
+        base_dir,
+        'discussion_concluded',
+        'system',
+        task_id,
+        f"Discussion ended without consensus after {max_rounds} rounds",
+        details={'consensus': False, 'reason': 'max_rounds_reached'}
+    )
+
     print(f"⚠️  No consensus after {max_rounds} rounds")
     print(f"📁 Artifacts: {', '.join(artifacts_refs)}")
     print(f"💡 Use: collab discuss conclude {task_id} \"<decision>\"")
