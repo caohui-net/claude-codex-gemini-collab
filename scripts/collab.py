@@ -101,7 +101,7 @@ def main():
             # Handle discuss subcommands: status, resume, history, scan
             # If first arg is a subcommand, pass through directly
             # Otherwise, prepend "discuss" for new --topic format
-            discuss_subcommands = ["status", "resume", "history", "scan"]
+            discuss_subcommands = ["status", "resume", "history", "scan", "conclude"]
             if args and args[0] in discuss_subcommands:
                 script_args = args  # Pass subcommand directly
             else:

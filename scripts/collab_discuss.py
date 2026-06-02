@@ -486,7 +486,12 @@ def run_discussion(
     # Determine starting round
     start_round_num = 1
     if resume and len(task_state["rounds"]) > 0:
-        start_round_num = len(task_state["rounds"])
+        last_round = task_state["rounds"][-1]
+        # If last round completed, start from next round; otherwise resume from last round
+        if last_round["status"] == "completed":
+            start_round_num = len(task_state["rounds"]) + 1
+        else:
+            start_round_num = len(task_state["rounds"])
         # Collect existing artifacts
         for artifact in task_state["artifacts"]["files"]:
             artifacts_refs.append(artifact)
