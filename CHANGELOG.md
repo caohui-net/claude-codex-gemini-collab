@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-02
+
+### Fixed
+
+- **Bug #3: UX Validation** - Added stdout message validation in tests for soft/hard limit UX
+- **Bug #4: State Persistence** - Added `limits` field to task state for persisting `max_rounds` and `hard_max_rounds`
+- **Resume Boundary** - Fixed resume to check last round status, starting from next round if completed
+- **Wrapper Conclude Routing** - Added `conclude` to `collab.py` discuss_subcommands
+- **Conclude Blocker** - Fixed `run_conclude()` to allow manual conclusion after hard limit without consensus
+
+### Changed
+
+- Resume now reads limits from state instead of hardcoded values (backward compatible)
+- Test coverage expanded to verify UX messages, not just exit codes
+
+### Notes
+
+- **Production-ready consensus**: Codex and Gemini confirmed all critical bugs resolved
+- 84 tests passing
+- All fixes based on multi-round discussions with Codex/Gemini identifying issues
+
 ## [0.2.1] - 2026-06-02
 
 ### Fixed
