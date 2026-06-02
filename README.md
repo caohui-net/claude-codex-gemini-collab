@@ -293,6 +293,29 @@ python3 scripts/collab_doctor.py
 # Should show: 🛠️ [Skill: Collab] handling request...
 ```
 
+## Known Limitations
+
+Current MVP release (v0.1.1) has the following known constraints:
+
+### Discussion State Persistence
+- Daemon state is memory-based and requires discussion-level recovery on restart
+- Persistent state available via `.omc/collaboration/state/*.json` files
+- Recovery commands: `collab.py discuss scan`, `collab.py discuss resume TASK-ID`
+
+### Protocol Coverage
+- WebSocket integration has MVP TODOs for real-time collaboration
+- Daemon enhancements (health checks, log rotation) deferred to v0.2.0 backlog
+
+### Testing
+- 77 tests passing (core functionality validated)
+- Additional regression coverage planned for v0.2.0
+
+### Future Enhancements
+- Phase 4B (daemon reliability): deferred to backlog
+- Phase 4D (new collaboration features): deferred to backlog
+
+See CHANGELOG.md for detailed release notes and roadmap.
+
 ## Version
 
 0.3.1 - Skill activation fixes with diagnostic tools
