@@ -281,7 +281,8 @@ def complete_round(state: Dict, round_num: int, consensus: bool, blocking_issues
         all_responded = all(p["status"] == "completed" for p in round_state["participants"])
 
     round_state["consensus_check"] = {
-        "all_responded": all_responded, "consensus_reached": consensus,
+        "all_responded": all_responded, "actual_responded": actual_responded,
+        "expected_count": expected_count, "consensus_reached": consensus,
         "decision": None, "blocking_issues": blocking_issues
     }
     if consensus:
