@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-02
+
+### Fixed
+
+- **Bug #1: Resume Continuation** - Fixed `run_resume()` to pass `hard_max_rounds=10` allowing discussions to continue past soft limit to hard limit.
+- **Bug #2: Hard Limit Enforcement** - Fixed discussion loop to cap at `min(max_rounds, hard_max_rounds)` preventing exceeding hard limit when `max_rounds > hard_max_rounds`.
+
+### Added
+
+- **Test Coverage** - Added `tests/test_soft_hard_limits.py` with 2 tests for soft/hard limit behavior (84 total tests passing).
+
 ## [0.2.0] - 2026-06-02
 
 ### Added
