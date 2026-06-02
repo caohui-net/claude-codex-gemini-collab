@@ -374,8 +374,8 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
                 print(f"❌ Cannot complete: task {effective_task_id} owned by {current_owner}, not {agent}")
                 return 1
 
-        # Compute next ID from log
-        next_id = max((e.get('id', 0) for e in events), default=0) + 1
+        # Compute next ID from log (filter None to handle corrupted logs)
+        next_id = max((e.get('id', 0) for e in events if e.get('id') is not None), default=0) + 1
 
         # Create event
         event = {

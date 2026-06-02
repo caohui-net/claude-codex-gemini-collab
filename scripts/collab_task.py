@@ -54,7 +54,7 @@ def create_task(base_dir, description):
             return 1
 
         # Generate task ID from next event ID (concurrency-safe)
-        next_id = max((e.get('id', 0) for e in events), default=0) + 1
+        next_id = max((e.get('id', 0) for e in events if e.get('id') is not None), default=0) + 1
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
         task_id = f"TASK-{timestamp}-{next_id:02d}"
 
@@ -179,7 +179,7 @@ def claim_task(base_dir, task_id, agent="claude"):
             return 0
 
         # Append claim event atomically while holding lock
-        next_id = max((e.get('id', 0) for e in events), default=0) + 1
+        next_id = max((e.get('id', 0) for e in events if e.get('id') is not None), default=0) + 1
         event = {
             "id": next_id,
             "type": "task_claimed",
