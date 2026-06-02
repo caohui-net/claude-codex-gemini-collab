@@ -72,16 +72,16 @@ English examples:
 
 ### discuss - Multi-Agent Discussion
 
-**Purpose:** Initiate multi-round discussion between Claude, Codex, and Gemini to reach consensus on a topic.
+**Purpose:** Initiate multi-round discussion where Claude orchestrates Codex and Gemini responses to reach consensus on a topic.
 
 **Trigger:**
 - Command: `/claude-codex-gemini-collab discuss --topic "<topic>" [--max-rounds 3]`
-- Natural language: "让三方讨论X", "启动讨论：Y", "让Claude、Codex和Gemini讨论X"
+- Natural language: "让Codex和Gemini讨论X", "启动讨论：Y", "Claude orchestrate Codex/Gemini discussing X"
 
 **Parameters:**
 - `--topic` (required): Discussion topic
 - `--max-rounds` (optional): Maximum rounds (default: 3, range: 1-10)
-- Participants: Fixed as claude,codex,gemini (MVP)
+- Participants: Codex and Gemini (orchestrated by Claude)
 
 **Prerequisites:** Must run `init` first to establish collaboration state.
 
