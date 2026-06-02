@@ -42,8 +42,11 @@ Thumbs.db
 .omc/artifacts/
 .omc/project-memory.json
 .omc/session-context.json
+.omc/daemon-audit.log
 .omc/collaboration/events.jsonl
 .omc/collaboration/state.json
+.omc/collaboration/state/
+.omc/collaboration/context/
 .omc/collaboration/protocol.md
 .omc/collaboration/PROJECT-STATUS.md
 .omc/collaboration/artifacts/
@@ -52,3 +55,4 @@ Thumbs.db
 .omc/plans/
 .omc/skills/
 .claude/
+response.json
