@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **P2-1: all_responded Observability** - Added `actual_responded` and `expected_count` fields to `consensus_check` in task state. Enables debugging of partial-response scenarios (e.g., 2/3 participants completed vs 3/3 expected).
+- **P2-1: Partial-Response Tests** - Added `tests/test_partial_response.py` with coverage for both partial (2/3) and full (2/2) participant response scenarios.
+
+### Changed
+
+- **P2-3: Documentation Consistency** - Clarified throughout documentation that Claude orchestrates Codex/Gemini rather than being an equal participant in discussions.
+- **P2-3: Known Limitations** - Added comprehensive Known Limitations section to README documenting daemon state persistence, protocol coverage, testing status, and future enhancements.
+- **P2-3: Phase 4A Cleanup** - Removed outdated "Phase 4A documentation TODO" references from README.
+
 ## [0.1.1] - 2026-06-02
 
 ### Fixed
