@@ -4,7 +4,7 @@ Tri-model collaboration protocol for autonomous multi-agent project construction
 
 ## Overview
 
-This skill enables Claude, Codex, and Gemini to collaborate autonomously via shared filesystem state, supporting:
+This skill enables Claude to orchestrate Codex and Gemini collaboration via shared filesystem state, supporting:
 
 - Independent analysis (avoiding anchoring bias)
 - Task lifecycle management (create, claim, handoff, complete)
@@ -122,8 +122,6 @@ python3 scripts/collab_discuss.py discuss TASK-ID "topic" --participants codex,g
 
 - 5 core scenarios validated (see `scripts/test_all_responded.py`)
 - Recovery semantics tested (see `scripts/test_scan.py`)
-
-**Note:** Detailed protocol and architecture documentation will be added in Phase 4A.
 
 ## Recovery Features
 
