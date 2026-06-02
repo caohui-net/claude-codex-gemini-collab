@@ -286,8 +286,18 @@ def complete_round(state: Dict, round_num: int, consensus: bool, blocking_issues
         "decision": None, "blocking_issues": blocking_issues
     }
     if consensus:
+        # Extract decision content from participant responses
+        decisions = []
+        for p in round_state["participants"]:
+            if p["status"] == "completed" and p.get("parsed_response"):
+                resp = p["parsed_response"]
+                if isinstance(resp, dict) and resp.get("decision"):
+                    decisions.append(f"{p['agent']}: {resp['decision']}")
+
+        decision_text = "; ".join(decisions) if decisions else "Consensus reached"
+
         state["final_consensus"] = {
-            "reached": True, "decision": "Consensus reached",
+            "reached": True, "decision": decision_text,
             "blocking_issues": [], "round_number": round_num
         }
         state["status"] = "completed"
