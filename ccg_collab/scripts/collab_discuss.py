@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Optional
 
 from agent_cli import run_codex, run_gemini, AgentReply
+from rmux_utils import check_rmux_available
 from collab_event import append_event, read_events, read_state
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 from collab_state import (
@@ -640,8 +641,11 @@ def run_discussion(
                 topic, task_id, agent, round_num, history, artifacts_refs, context_file
             )
 
-            # use_tmux and keep_session can be enabled via env vars
-            use_tmux = os.environ.get("CCG_USE_TMUX", "").lower() == "true"
+            # Auto-enable tmux if available, unless explicitly set via env var
+            if "CCG_USE_TMUX" in os.environ:
+                use_tmux = os.environ["CCG_USE_TMUX"].lower() == "true"
+            else:
+                use_tmux = check_rmux_available()
             keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
 
             if agent == "codex":
