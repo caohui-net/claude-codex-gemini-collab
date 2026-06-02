@@ -58,3 +58,70 @@ def get_tmux_version() -> Optional[str]:
         return None
     except Exception:
         return None
+
+
+def list_ccg_sessions() -> list:
+    """List all active CCG tmux sessions.
+
+    Returns:
+        List of dicts with keys: name, created, attached
+    """
+    try:
+        result = subprocess.run(
+            ["tmux", "list-sessions", "-F", "#{session_name}:#{session_created}:#{session_attached}"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode != 0:
+            return []
+
+        sessions = []
+        for line in result.stdout.strip().split('\n'):
+            if not line or not line.startswith('ccg-'):
+                continue
+
+            parts = line.split(':')
+            if len(parts) >= 3:
+                sessions.append({
+                    'name': parts[0],
+                    'created': int(parts[1]),
+                    'attached': parts[2] == '1'
+                })
+
+        return sessions
+
+    except Exception:
+        return []
+
+
+def cleanup_old_sessions(max_age_seconds: int = 3600) -> int:
+    """Clean up old CCG sessions exceeding max age.
+
+    Args:
+        max_age_seconds: Maximum session age (default: 1 hour)
+
+    Returns:
+        Number of sessions killed
+    """
+    import time
+
+    sessions = list_ccg_sessions()
+    current_time = int(time.time())
+    killed = 0
+
+    for session in sessions:
+        age = current_time - session['created']
+        if age > max_age_seconds and not session['attached']:
+            try:
+                subprocess.run(
+                    ["tmux", "kill-session", "-t", session['name']],
+                    capture_output=True,
+                    timeout=5
+                )
+                killed += 1
+            except Exception:
+                pass
+
+    return killed
