@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-02
+
+### Added
+
+- **Scripts Globalization** - Moved scripts from project root to `ccg_collab/scripts/` for pip installability
+  - Phase 1: Core modules (paths, state, event) 
+  - Phase 2: Utility modules (discuss orchestration, event management)
+  - Phase 3: CLI entry points (ccg, ccg-discuss, ccg-event)
+- **CLI Wrappers** - Subprocess-based wrappers in `ccg_collab/cli/` for global command access
+- **tmux Auto-Enable** - Automatic tmux/rmux detection and usage when available
+  - Process isolation for agent execution
+  - Timeout management and output capture
+  - Opt-out via `CCG_USE_TMUX=false` environment variable
+- **Installation Tests** - Added `tests/test_installation.py` and `tests/test_ccg_collab_cli.py` (6 tests)
+
+### Fixed
+
+- **Architecture Fix** - CLI wrappers now use correct relative paths (`../scripts`) instead of pointing outside package
+- **Wheel Packaging** - Scripts directory now included in wheel distribution for pip install compatibility
+
+### Changed
+
+- Package structure: 27 script files moved from `scripts/` to `ccg_collab/scripts/`
+- Entry points defined in `pyproject.toml` for global CLI access
+- Discussion orchestration auto-enables tmux when available (explicit env var takes precedence)
+
+### Verified
+
+- 14/14 tests passing (paths 5, discuss 3, event 3, cli 3, installation 3)
+- Wheel smoke test: clean venv installation, all 3 entry points functional
+- Multi-agent consensus: Codex and Gemini approved architecture fix and tmux auto-enable
+
 ## [0.3.0] - 2026-06-02
 
 ### Fixed
