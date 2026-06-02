@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ccg-collab"
+version = "0.1.0"
+description = "Claude-Codex-Gemini Collaboration Framework"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "CCG Project"}
+]
+dependencies = [
+    "requests>=2.28.0",
+]
+
+[project.scripts]
+ccg = "ccg_collab.cli:main"
+ccg-discuss = "ccg_collab.cli.discuss:main"
+ccg-event = "ccg_collab.cli.event:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ccg_collab*"]
