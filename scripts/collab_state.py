@@ -161,7 +161,8 @@ def get_task_state_file(base_dir: Path, task_id: str) -> Path:
     return state_dir / f"{task_id}.json"
 
 
-def init_task_state(base_dir: Path, task_id: str, topic: str, participants: List[str]) -> Dict:
+def init_task_state(base_dir: Path, task_id: str, topic: str, participants: List[str],
+                    max_rounds: int = 3, hard_max_rounds: int = 10) -> Dict:
     """Initialize new task state."""
     now = datetime.now(timezone.utc).isoformat()
     state = {
@@ -171,6 +172,7 @@ def init_task_state(base_dir: Path, task_id: str, topic: str, participants: List
         "created_at": now,
         "updated_at": now,
         "completed_at": None,
+        "limits": {"max_rounds": max_rounds, "hard_max_rounds": hard_max_rounds},
         "rounds": [],
         "final_consensus": {"reached": False, "decision": None, "blocking_issues": [], "round_number": None},
         "failures": [],

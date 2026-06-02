@@ -409,6 +409,11 @@ def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
     participants = task_state["participants"]
     current_round = len(task_state["rounds"])
 
+    # Read limits from state (backward compatible: default to 10 if missing)
+    limits = task_state.get("limits", {"max_rounds": 10, "hard_max_rounds": 10})
+    resume_max_rounds = limits.get("hard_max_rounds", 10)
+    resume_hard_max_rounds = limits.get("hard_max_rounds", 10)
+
     print(f"🔄 Resuming {task_id} from round {current_round}")
 
     # Reset failed participants to pending if retry requested
@@ -426,7 +431,8 @@ def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
 
     # Continue discussion (use hard_max_rounds as new max to allow full continuation)
     return run_discussion(base_dir, task_id, topic, participants,
-                         max_rounds=10, hard_max_rounds=10, timeout_sec=180, resume=True)
+                         max_rounds=resume_max_rounds, hard_max_rounds=resume_hard_max_rounds,
+                         timeout_sec=180, resume=True)
 
 
 def run_discussion(
@@ -450,7 +456,7 @@ def run_discussion(
     # Initialize or load task state
     task_state = load_task_state(base_dir, task_id)
     if task_state is None:
-        task_state = init_task_state(base_dir, task_id, topic, participants)
+        task_state = init_task_state(base_dir, task_id, topic, participants, max_rounds, hard_max_rounds)
         print(f"🛠️  [Skill: Collab] Starting discussion for {task_id}")
 
         # Append discussion_started event
