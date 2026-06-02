@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+"""Display current collaboration state."""
+
+import argparse
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from collab_event import read_events, read_state, write_state_atomically
+from collab_state import rebuild_state
+from collab_discuss import parse_discussion_artifacts
+
+def show_status(base_dir=".", task_id=None):
+    """Display collaboration status."""
+    print("🛠️ [Skill: Collab] handling request...")
+
+    base = Path(base_dir).resolve()
+    collab_dir = base / ".omc" / "collaboration"
+
+    if not collab_dir.exists():
+        print("❌ Collaboration not initialized. Run: /claude-codex-gemini-collab init")
+        return 1
+
+    # Read state
+    state_file = collab_dir / "state.json"
+    try:
+        state = read_state(state_file)
+    except ValueError as e:
+        print(f"❌ {e}")
+        return 1
+
+    # Read events
+    events_file = collab_dir / "events.jsonl"
+    events = []
+    event_error = None
+    if events_file.exists():
+        try:
+            events = read_events(events_file)
+        except ValueError as e:
+            event_error = str(e)
+
+    # Read-Repair: auto-rebuild state if events.jsonl is newer
+    if events_file.exists() and state_file.exists() and not event_error:
+        events_mtime = events_file.stat().st_mtime
+        state_mtime = state_file.stat().st_mtime
+        if events_mtime > state_mtime and events:
+            # Events file modified after state - rebuild state
+            rebuilt_state = rebuild_state(events)
+            rebuilt_state["workflow_id"] = "claude-codex-gemini-collab"
+            rebuilt_state["updated_at"] = events[-1].get('timestamp')
+            write_state_atomically(collab_dir, "status", rebuilt_state)
+            state = rebuilt_state
+            print("🔄 Auto-repaired: state.json rebuilt from events.jsonl")
+
+    # Display
+    print(f"📊 Collaboration Status")
+    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print(f"Workflow:      {state.get('workflow_id', 'unknown')}")
+    print(f"Status:        {state.get('status', 'unknown')}")
+    print(f"Active Agent:  {state.get('active_agent', 'none')}")
+    print(f"Current Task:  {state.get('current_task', 'none')}")
+    print(f"Last Event ID: {state.get('last_event_id', 0)}")
+    print(f"Updated:       {state.get('updated_at', 'unknown')}")
+
+    # Recent events
+    if events:
+        print(f"\n📝 Recent Events (last 5):")
+        for event in events[-5:]:
+            eid = event.get('id', '?')
+            etype = event.get('type', 'unknown')
+            agent = event.get('agent', '?')
+            summary = event.get('summary', '')
+            print(f"  [{eid}] {etype} ({agent}): {summary[:60]}")
+
+    # Discussion status (if task_id specified)
+    if task_id:
+        history = parse_discussion_artifacts(base, task_id)
+        if history:
+            print(f"\n💬 Discussion Status for {task_id}:")
+
+            # Group by round
+            rounds = {}
+            for item in history:
+                round_num = item["round"]
+                if round_num not in rounds:
+                    rounds[round_num] = []
+                rounds[round_num].append(item)
+
+            # Display each round
+            for round_num in sorted(rounds.keys()):
+                agents_status = []
+                round_consensus = True
+                for item in rounds[round_num]:
+                    agent = item["agent"].capitalize()
+                    status = "✓" if item["consensus"] else "✗"
+                    agents_status.append(f"{agent}: {status}")
+                    if not item["consensus"]:
+                        round_consensus = False
+
+                consensus_text = "Consensus: Yes" if round_consensus else "Consensus: No"
+                print(f"  [Round {round_num}] {' | '.join(agents_status)} ({consensus_text})")
+        else:
+            print(f"\n💬 No discussion history found for {task_id}")
+
+    # Check for issues
+    issues = []
+
+    # Report event log corruption
+    if event_error:
+        issues.append(f"Event log malformed: {event_error}")
+
+    if state.get('last_event_id', 0) != len(events):
+        issues.append(f"Event count mismatch: state says {state.get('last_event_id')}, log has {len(events)}")
+
+    if events:
+        max_id = max(e.get('id', 0) for e in events)
+        if state.get('last_event_id', 0) != max_id:
+            issues.append(f"Event ID mismatch: state says {state.get('last_event_id')}, max in log is {max_id}")
+
+    # Check for stale locks
+    locks_dir = collab_dir / "locks"
+    if locks_dir.exists():
+        locks = list(locks_dir.glob("*.lock"))
+        if locks:
+            issues.append(f"Stale locks detected: {len(locks)} lock(s)")
+
+    if issues:
+        print(f"\n⚠️  Issues Detected:")
+        for issue in issues:
+            print(f"  • {issue}")
+        print(f"\nRun: /claude-codex-gemini-collab validate")
+    else:
+        print(f"\n✓ No issues detected")
+
+    return 0
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Display collaboration status")
+    add_base_dir_arg(parser)
+    parser.add_argument("--task", help="Show discussion status for specific task")
+    args = parser.parse_args()
+
+    try:
+        base = resolve_existing_base_dir(args.base_dir)
+        sys.exit(show_status(base, args.task))
+    except ValueError as e:
+        print(f"❌ {e}")
+        sys.exit(1)

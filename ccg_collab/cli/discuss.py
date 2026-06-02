@@ -5,8 +5,8 @@ from pathlib import Path
 
 
 def main():
-    """Wrapper for scripts/collab_discuss.py."""
-    script = Path(__file__).parent.parent.parent / "scripts" / "collab_discuss.py"
+    """Wrapper for ccg_collab/scripts/collab_discuss.py."""
+    script = Path(__file__).parent.parent / "scripts" / "collab_discuss.py"
     if not script.exists():
         print(f"Error: {script} not found", file=sys.stderr)
         return 1
