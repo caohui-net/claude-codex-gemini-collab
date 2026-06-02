@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -563,10 +564,13 @@ def run_discussion(
                 topic, task_id, agent, round_num, history, artifacts_refs
             )
 
+            # use_tmux can be enabled via env var for testing
+            use_tmux = os.environ.get("CCG_USE_TMUX", "").lower() == "true"
+
             if agent == "codex":
-                reply = run_codex(prompt, base_dir, timeout_sec)
+                reply = run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux)
             elif agent == "gemini":
-                reply = run_gemini(prompt, base_dir, timeout_sec)
+                reply = run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux)
             else:
                 print(f"❌ Unknown agent: {agent}")
                 continue
