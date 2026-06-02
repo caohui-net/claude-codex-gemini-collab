@@ -424,9 +424,9 @@ def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
             save_task_state(base_dir, task_id, task_state)
             print(f"   Retrying {retry_count} failed participant(s)")
 
-    # Continue discussion
+    # Continue discussion (use hard_max_rounds as new max to allow full continuation)
     return run_discussion(base_dir, task_id, topic, participants,
-                         max_rounds=3, timeout_sec=180, resume=True)
+                         max_rounds=10, hard_max_rounds=10, timeout_sec=180, resume=True)
 
 
 def run_discussion(
@@ -435,6 +435,7 @@ def run_discussion(
     topic: str,
     participants: List[str],
     max_rounds: int = 3,
+    hard_max_rounds: int = 10,
     timeout_sec: int = 180,
     resume: bool = False
 ) -> int:
@@ -484,7 +485,9 @@ def run_discussion(
         for artifact in task_state["artifacts"]["files"]:
             artifacts_refs.append(artifact)
 
-    for round_num in range(start_round_num, max_rounds + 1):
+    # Cap loop at hard_max_rounds to prevent exceeding hard limit
+    effective_max = min(max_rounds, hard_max_rounds)
+    for round_num in range(start_round_num, effective_max + 1):
         round_start = time.time()
         print(f"⏳ [Round {round_num}] Starting...")
 
@@ -705,30 +708,48 @@ def run_discussion(
         print()
 
     discussion_elapsed = time.time() - discussion_start
+    current_round = len(task_state['rounds'])
 
-    # Set terminal state for no consensus after max rounds
-    task_state['status'] = 'completed'
-    task_state['final_consensus'] = {
-        'reached': False,
-        'reason': 'max_rounds_reached',
-        'decision': ''
-    }
-    task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
-    save_task_state(base_dir, task_id, task_state)
+    # Check if hard limit reached
+    if current_round >= hard_max_rounds:
+        # Hard limit: force stop
+        task_state['status'] = 'completed'
+        task_state['final_consensus'] = {
+            'reached': False,
+            'reason': 'hard_round_limit_reached',
+            'decision': ''
+        }
+        task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
+        save_task_state(base_dir, task_id, task_state)
 
-    # Append discussion_concluded event
-    append_event(
-        base_dir,
-        'discussion_concluded',
-        'system',
-        task_id,
-        f"Discussion ended without consensus after {max_rounds} rounds",
-        details={'consensus': False, 'reason': 'max_rounds_reached'}
-    )
+        append_event(
+            base_dir,
+            'discussion_concluded',
+            'system',
+            task_id,
+            f"Discussion stopped: hard limit ({hard_max_rounds} rounds) reached",
+            details={'consensus': False, 'reason': 'hard_round_limit_reached'}
+        )
 
-    print(f"⚠️  No consensus after {max_rounds} rounds")
+        print(f"🛑 Hard limit reached: {hard_max_rounds} rounds without consensus")
+        print(f"📁 Artifacts: {', '.join(artifacts_refs)}")
+        print(f"💡 Use: collab discuss conclude {task_id} \"<decision>\"")
+        print(f"\n⏱️  Performance Summary:")
+        print(f"  Total: {discussion_elapsed:.1f}s")
+        for entry in timing_log:
+            if entry.get("type") == "round_total":
+                print(f"  Round {entry['round']}: {entry['elapsed_sec']:.1f}s")
+            elif "agent" in entry:
+                print(f"    {entry['agent']}: {entry['elapsed_sec']:.1f}s (CLI: {entry['cli_elapsed_sec']:.1f}s)")
+        return 1
+
+    # Soft limit reached but not hard limit: allow manual continue
+    print(f"ℹ️  Soft limit ({max_rounds} rounds) reached without consensus")
+    print(f"   Discussion can continue (up to {hard_max_rounds} rounds total)")
     print(f"📁 Artifacts: {', '.join(artifacts_refs)}")
-    print(f"💡 Use: collab discuss conclude {task_id} \"<decision>\"")
+    print(f"💡 Options:")
+    print(f"   - Resume: collab discuss resume {task_id}")
+    print(f"   - Conclude manually: collab discuss conclude {task_id} \"<decision>\"")
     print(f"\n⏱️  Performance Summary:")
     print(f"  Total: {discussion_elapsed:.1f}s")
     for entry in timing_log:
@@ -736,7 +757,7 @@ def run_discussion(
             print(f"  Round {entry['round']}: {entry['elapsed_sec']:.1f}s")
         elif "agent" in entry:
             print(f"    {entry['agent']}: {entry['elapsed_sec']:.1f}s (CLI: {entry['cli_elapsed_sec']:.1f}s)")
-    return 1
+    return 0
 
 
 if __name__ == "__main__":
@@ -826,7 +847,9 @@ if __name__ == "__main__":
                 sys.exit(1)
 
             participants = [p.strip() for p in args.participants.split(",")]
-            sys.exit(run_discussion(base, task_id, topic, participants, args.max_rounds, args.timeout_sec))
+            sys.exit(run_discussion(base, task_id, topic, participants,
+                                   args.max_rounds, hard_max_rounds=10,
+                                   timeout_sec=args.timeout_sec))
         else:
             parser.print_help()
             sys.exit(1)
