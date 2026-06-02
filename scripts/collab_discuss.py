@@ -355,8 +355,8 @@ def run_conclude(base_dir: Path, task_id: str, decision: str) -> int:
         print(f"❌ No state found for {task_id}")
         return 1
 
-    if task_state['status'] == 'completed':
-        print(f"⚠️  Task {task_id} already completed")
+    if task_state['status'] == 'completed' and task_state['final_consensus'].get('reached', False):
+        print(f"⚠️  Task {task_id} already completed with consensus")
         return 0
 
     # Update final consensus
