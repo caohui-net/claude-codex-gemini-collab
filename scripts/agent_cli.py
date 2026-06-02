@@ -38,7 +38,7 @@ def strip_markdown_json(text: str) -> str:
     return text.strip()
 
 
-def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int) -> tuple[str, int]:
+def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_session: bool = False) -> tuple[str, int]:
     """Execute command in isolated tmux session and return output.
 
     Args:
@@ -46,9 +46,11 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int) -> tuple
         cwd: Working directory
         stdin_data: Data to send to stdin (optional)
         timeout_sec: Timeout in seconds
+        keep_session: If True, preserve session for debugging (default: False)
 
     Returns:
         tuple: (stdout, exit_code)
+        If keep_session=True, session name is printed to stdout for manual attachment
     """
     import shlex
 
@@ -85,9 +87,13 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int) -> tuple
             time.sleep(0.2)
 
         if exit_code is None:
-            # Timeout - kill session
-            subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+            # Timeout - kill session unless keep_session is True
+            if not keep_session:
+                subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
             subprocess.run(["rm", "-f", marker_file], capture_output=True)
+
+            if keep_session:
+                return f"[timeout - session preserved: {session_name}]", 124
             return "", 124
 
         # Capture output while session is still alive
@@ -99,23 +105,38 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int) -> tuple
         )
         stdout = output_result.stdout if output_result.returncode == 0 else ""
 
-        # Cleanup
-        subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+        # Cleanup (conditional on keep_session)
+        if keep_session:
+            # Preserve session for debugging
+            attach_msg = f"\n[tmux session preserved: {session_name}]\n[attach: tmux attach -t {session_name}]\n"
+            stdout = stdout + attach_msg
+        else:
+            # Normal cleanup
+            subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+
         subprocess.run(["rm", "-f", marker_file], capture_output=True)
 
         return stdout, exit_code
 
     except subprocess.TimeoutExpired:
-        subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+        if not keep_session:
+            subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
         subprocess.run(["rm", "-f", marker_file], capture_output=True)
+
+        if keep_session:
+            return f"[TimeoutExpired - session preserved: {session_name}]", 124
         return "", 124
     except Exception as e:
-        subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+        if not keep_session:
+            subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
         subprocess.run(["rm", "-f", marker_file], capture_output=True)
+
+        if keep_session:
+            return f"Error: {e} [session preserved: {session_name}]", 1
         return f"Error: {e}", 1
 
 
-def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False) -> AgentReply:
+def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
     """Run Codex CLI for discussion analysis.
 
     Args:
@@ -214,7 +235,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
     # Tmux execution path
     if should_use_tmux:
         cmd = ["codex", "exec", "--cd", str(base_dir), "-"]
-        stdout, exit_code = run_in_tmux(cmd, str(base_dir), prompt, timeout_sec)
+        stdout, exit_code = run_in_tmux(cmd, str(base_dir), prompt, timeout_sec, keep_session)
         elapsed = time.time() - start
 
         if exit_code == 124:
@@ -341,7 +362,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         )
 
 
-def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False) -> AgentReply:
+def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
     """Run Gemini CLI in plan mode with JSON output.
 
     Args:
@@ -440,7 +461,7 @@ def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bo
     if should_use_tmux:
         cmd = ["gemini", "--prompt", prompt, "--output-format", "json",
                "--approval-mode", "plan", "--skip-trust"]
-        stdout, exit_code = run_in_tmux(cmd, str(base_dir), "", timeout_sec)
+        stdout, exit_code = run_in_tmux(cmd, str(base_dir), "", timeout_sec, keep_session)
         elapsed = time.time() - start
 
         if exit_code == 124:

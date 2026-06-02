@@ -564,13 +564,14 @@ def run_discussion(
                 topic, task_id, agent, round_num, history, artifacts_refs
             )
 
-            # use_tmux can be enabled via env var for testing
+            # use_tmux and keep_session can be enabled via env vars
             use_tmux = os.environ.get("CCG_USE_TMUX", "").lower() == "true"
+            keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
 
             if agent == "codex":
-                reply = run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux)
+                reply = run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
             elif agent == "gemini":
-                reply = run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux)
+                reply = run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
             else:
                 print(f"❌ Unknown agent: {agent}")
                 continue
