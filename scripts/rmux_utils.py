@@ -9,6 +9,8 @@ from typing import Optional
 # Process-level cache for tmux availability check
 _tmux_cache = {
     'available': None,
+    'reason': None,
+    'version': None,
     'timestamp': 0,
     'ttl': 60  # Cache for 60 seconds
 }
@@ -22,20 +24,53 @@ def check_rmux_available() -> bool:
     Returns:
         bool: True if rmux/tmux command exists and can create sessions
     """
+    info = get_tmux_info()
+    return info['available']
+
+
+def get_tmux_info() -> dict:
+    """Get detailed tmux availability information with caching.
+
+    Returns:
+        dict: {
+            'available': bool,
+            'reason': str (e.g., 'functional', 'not_found', 'create_failed'),
+            'version': str or None
+        }
+    """
     import uuid
 
     # Check cache
     current_time = time.time()
     if (_tmux_cache['available'] is not None and
         current_time - _tmux_cache['timestamp'] < _tmux_cache['ttl']):
-        return _tmux_cache['available']
+        return {
+            'available': _tmux_cache['available'],
+            'reason': _tmux_cache['reason'],
+            'version': _tmux_cache['version']
+        }
 
     # Cache miss or expired - perform check
+    result = False
+    reason = 'unknown'
+    version = None
+
     try:
+        # First check if tmux command exists
+        version_result = subprocess.run(
+            ["tmux", "-V"],
+            capture_output=True,
+            text=True,
+            timeout=2
+        )
+        if version_result.returncode == 0:
+            version = version_result.stdout.strip()
+        else:
+            reason = 'command_exists_but_version_failed'
+
         # Functional test: create and destroy a test session
         test_session = f"rmux-test-{uuid.uuid4().hex[:8]}"
 
-        # Try to create a session
         create_result = subprocess.run(
             ["tmux", "new-session", "-d", "-s", test_session, "true"],
             capture_output=True,
@@ -44,6 +79,7 @@ def check_rmux_available() -> bool:
 
         if create_result.returncode != 0:
             result = False
+            reason = 'create_session_failed'
         else:
             # Cleanup test session
             subprocess.run(
@@ -52,15 +88,29 @@ def check_rmux_available() -> bool:
                 timeout=2
             )
             result = True
+            reason = 'functional'
 
-    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+    except FileNotFoundError:
         result = False
+        reason = 'not_found'
+    except subprocess.TimeoutExpired:
+        result = False
+        reason = 'timeout'
+    except Exception as e:
+        result = False
+        reason = f'error:{type(e).__name__}'
 
     # Update cache
     _tmux_cache['available'] = result
+    _tmux_cache['reason'] = reason
+    _tmux_cache['version'] = version
     _tmux_cache['timestamp'] = current_time
 
-    return result
+    return {
+        'available': result,
+        'reason': reason,
+        'version': version
+    }
 
 
 def get_tmux_version() -> Optional[str]:

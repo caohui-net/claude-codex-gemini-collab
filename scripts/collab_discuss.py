@@ -13,7 +13,7 @@ from typing import List, Dict, Optional
 from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
-from rmux_utils import check_rmux_available
+from rmux_utils import check_rmux_available, get_tmux_info
 from collab_state import (
     init_task_state, load_task_state, save_task_state,
     start_round, start_participant, complete_participant, fail_participant,
@@ -572,18 +572,22 @@ def run_discussion(
         use_tmux = False
         tmux_status = "disabled by CCG_USE_TMUX=false"
     elif use_tmux_env == "true":
-        use_tmux = check_rmux_available()
+        info = get_tmux_info()
+        use_tmux = info['available']
         if use_tmux:
-            tmux_status = "enabled by CCG_USE_TMUX=true"
+            version_str = f" ({info['version']})" if info['version'] else ""
+            tmux_status = f"enabled by CCG_USE_TMUX=true{version_str}"
         else:
-            tmux_status = "requested but unavailable (fallback to direct)"
+            tmux_status = f"requested but unavailable (reason: {info['reason']})"
     else:
         # Not set - auto-detect
-        use_tmux = check_rmux_available()
+        info = get_tmux_info()
+        use_tmux = info['available']
         if use_tmux:
-            tmux_status = "auto-enabled (rmux detected)"
+            version_str = f" ({info['version']})" if info['version'] else ""
+            tmux_status = f"auto-enabled{version_str}"
         else:
-            tmux_status = "auto-disabled (rmux not available)"
+            tmux_status = f"auto-disabled (reason: {info['reason']})"
 
     print(f"🔧 Tmux: {tmux_status}")
     print()
