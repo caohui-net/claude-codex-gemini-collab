@@ -2,6 +2,34 @@
 
 ## Latest Changes
 
+### Skill Specification Priority Fix (2026-06-03)
+
+**Status:** ✅ Prompt layer fix implemented
+
+**Issue:** User explicit skill specification被系统自动判断覆盖
+
+**Root Cause (Codex consensus):**
+- 路由模型缺少"显式用户指定"与"系统推断选择"优先级隔离
+- 显式技能被后续分类器、ask兜底、last-writer-wins逻辑覆盖
+
+**Solution Implemented:**
+- Added explicit skill invocation priority rule to `~/.claude/CLAUDE.md`
+- Rule: When user explicitly specifies skill, invoke immediately before any analysis
+- Pattern matching: "use X", "使用X技能", "invoke X", "用X"
+
+**Documentation:**
+- `.omc/collaboration/artifacts/skill-specification-priority-fix.md` - Full analysis
+
+**Discussion:**
+- 3 rounds with Codex (consensus achieved)
+- Gemini timeout (proxy 500 errors)
+
+**Next Steps:**
+- Test in new sessions
+- Consider implementation-layer fix if prompt insufficient
+
+---
+
 ### rmux/tmux Integration (2026-06-02)
 
 **Status:** ✅ Complete and merged to master
