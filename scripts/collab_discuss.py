@@ -13,6 +13,7 @@ from typing import List, Dict, Optional
 from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from rmux_utils import check_rmux_available
 from collab_state import (
     init_task_state, load_task_state, save_task_state,
     start_round, start_participant, complete_participant, fail_participant,
@@ -565,6 +566,28 @@ def run_discussion(
         for artifact in task_state["artifacts"]["files"]:
             artifacts_refs.append(artifact)
 
+    # Detect tmux availability once before discussion loop
+    use_tmux_env = os.environ.get("CCG_USE_TMUX", "").lower()
+    if use_tmux_env == "false":
+        use_tmux = False
+        tmux_status = "disabled by CCG_USE_TMUX=false"
+    elif use_tmux_env == "true":
+        use_tmux = check_rmux_available()
+        if use_tmux:
+            tmux_status = "enabled by CCG_USE_TMUX=true"
+        else:
+            tmux_status = "requested but unavailable (fallback to direct)"
+    else:
+        # Not set - auto-detect
+        use_tmux = check_rmux_available()
+        if use_tmux:
+            tmux_status = "auto-enabled (rmux detected)"
+        else:
+            tmux_status = "auto-disabled (rmux not available)"
+
+    print(f"🔧 Tmux: {tmux_status}")
+    print()
+
     # Cap loop at hard_max_rounds to prevent exceeding hard limit
     effective_max = min(max_rounds, hard_max_rounds)
     for round_num in range(start_round_num, effective_max + 1):
@@ -640,8 +663,7 @@ def run_discussion(
                 topic, task_id, agent, round_num, history, artifacts_refs, context_file
             )
 
-            # use_tmux and keep_session can be enabled via env vars
-            use_tmux = os.environ.get("CCG_USE_TMUX", "").lower() == "true"
+            # use_tmux was detected once before the loop
             keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
 
             if agent == "codex":

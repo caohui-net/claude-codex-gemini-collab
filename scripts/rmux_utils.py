@@ -2,17 +2,35 @@
 """Utilities for rmux/tmux integration."""
 
 import subprocess
+import time
 from typing import Optional
+
+
+# Process-level cache for tmux availability check
+_tmux_cache = {
+    'available': None,
+    'timestamp': 0,
+    'ttl': 60  # Cache for 60 seconds
+}
 
 
 def check_rmux_available() -> bool:
     """Check if rmux/tmux is available and functional.
+
+    Uses process-level cache with 60s TTL to avoid repeated session creation.
 
     Returns:
         bool: True if rmux/tmux command exists and can create sessions
     """
     import uuid
 
+    # Check cache
+    current_time = time.time()
+    if (_tmux_cache['available'] is not None and
+        current_time - _tmux_cache['timestamp'] < _tmux_cache['ttl']):
+        return _tmux_cache['available']
+
+    # Cache miss or expired - perform check
     try:
         # Functional test: create and destroy a test session
         test_session = f"rmux-test-{uuid.uuid4().hex[:8]}"
@@ -25,19 +43,24 @@ def check_rmux_available() -> bool:
         )
 
         if create_result.returncode != 0:
-            return False
-
-        # Cleanup test session
-        subprocess.run(
-            ["tmux", "kill-session", "-t", test_session],
-            capture_output=True,
-            timeout=2
-        )
-
-        return True
+            result = False
+        else:
+            # Cleanup test session
+            subprocess.run(
+                ["tmux", "kill-session", "-t", test_session],
+                capture_output=True,
+                timeout=2
+            )
+            result = True
 
     except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
-        return False
+        result = False
+
+    # Update cache
+    _tmux_cache['available'] = result
+    _tmux_cache['timestamp'] = current_time
+
+    return result
 
 
 def get_tmux_version() -> Optional[str]:
