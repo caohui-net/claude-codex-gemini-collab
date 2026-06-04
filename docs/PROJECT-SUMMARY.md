@@ -2,6 +2,26 @@
 
 ## Latest Changes
 
+### Phase-3D Task #34: E2E Tests (2026-06-04)
+
+**Status:** ✅ Complete
+
+**Objective:** Add E2E test coverage for recovery scenarios and discussion consensus logic.
+
+**Tests Created:**
+- `scripts/test_resume_partial_failure.py` - Resume without retry skips failed participants
+- `scripts/test_resume_retry.py` - Resume with --retry-failed re-executes failed participant
+- `scripts/test_discussion_consensus.py` - Both participants agree, task completes
+- `scripts/test_discussion_no_consensus.py` - Disagreement triggers next round
+
+**Verification:** All 4 tests passing
+
+**Related:**
+- Task #33 (fix all_responded semantics) already complete with 5 existing tests
+- Part of Phase-3D cleanup plan
+
+---
+
 ### Skill Specification Priority Fix (2026-06-03)
 
 **Status:** ✅ Prompt layer fix implemented
