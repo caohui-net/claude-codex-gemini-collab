@@ -2,6 +2,40 @@
 
 ## Latest Changes
 
+### Context Compaction Implementation (2026-06-04)
+
+**Status:** ✅ Implementation complete, all tests passing
+
+**Objective:** Compress old discussion rounds to prevent token overflow (inspired by PraisonAI).
+
+**Implementation:**
+- `scripts/context_compactor.py` - Round compression logic (145 lines)
+- `scripts/test_context_compactor.py` - Test suite (4 scenarios)
+- `.omc/collaboration/artifacts/context-compaction-design.md` - Design doc
+
+**Algorithm:**
+- Keep rounds N-1, N in full detail
+- Compress rounds 1..N-2 to essentials (decision + consensus + blocking issues)
+- Trigger: >= 3 rounds
+
+**Test Results:**
+- ✅ Single round compression correct
+- ✅ Edge case: <3 rounds rejected
+- ✅ Recent rounds preserved full
+- ✅ Real-world test: 41% savings (30.8KB → 18.3KB)
+- ✅ Synthetic test: 49% savings
+
+**Benefits:**
+- Enable longer discussions
+- Reduce state file size
+- Lower token costs
+
+**Next Steps:**
+- Optional: Auto-trigger in collab_discuss.py
+- Optional: LLM-based summarization (vs simple extraction)
+
+---
+
 ### MCP Adapter Implementation (2026-06-04)
 
 **Status:** ✅ MVP complete, all tests passing
