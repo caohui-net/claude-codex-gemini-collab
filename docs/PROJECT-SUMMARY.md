@@ -2,6 +2,34 @@
 
 ## Latest Changes
 
+### Doom Loop Detector Implementation (2026-06-04)
+
+**Status:** ✅ Implementation complete, all tests passing
+
+**Objective:** Add automatic detection for stuck/repeating discussion patterns (inspired by PraisonAI).
+
+**Implementation:**
+- `scripts/loop_detector.py` - Core detection logic with 3 pattern checkers
+- `scripts/test_loop_detector.py` - 5 test scenarios covering all patterns
+
+**Detection Patterns:**
+1. Repeated timeout (2+ timeouts from same agent)
+2. Identical responses (consecutive identical decisions)
+3. Stalled progress (3+ rounds without completion)
+
+**Test Results:**
+- ✅ All 5 tests passing
+- ✅ Real-world validation: correctly identified current stuck discussion (codex timeout x2)
+
+**Confidence levels:** 80-95% depending on pattern
+
+**Next Steps:**
+- Integrate into collab_discuss.py
+- Add auto-recovery actions
+- Code review by Codex/Gemini
+
+---
+
 ### PraisonAI Analysis (2026-06-04)
 
 **Status:** ✅ Analysis complete
