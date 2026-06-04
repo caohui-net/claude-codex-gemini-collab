@@ -2,6 +2,40 @@
 
 ## Latest Changes
 
+### MCP Adapter Implementation (2026-06-04)
+
+**Status:** ✅ MVP complete, all tests passing
+
+**Objective:** Standardize Codex/Gemini CLI access via Model Context Protocol (inspired by PraisonAI).
+
+**Implementation:**
+- `scripts/mcp_adapter.py` - JSON-RPC stdio wrapper (149 lines)
+- `scripts/test_mcp_adapter.py` - Protocol tests (5 scenarios)
+- `.omc/collaboration/artifacts/mcp-adapter-design.md` - Design doc
+
+**Features:**
+- JSON-RPC 2.0 protocol over stdio
+- Tools: run_codex, run_gemini
+- Methods: tools/list, tools/call
+- Complete error handling (-32700, -32601, -32602, -32603)
+
+**Test Results:**
+- ✅ tools/list: Returns tool metadata
+- ✅ tools/call: Executes agent CLIs
+- ✅ Error handling: Invalid JSON, unknown method, unknown tool
+- ✅ Edge cases: Missing arguments
+
+**Benefits:**
+- Standardized protocol for tool access
+- Easier to add new tools
+- Better error propagation
+
+**Next Steps:**
+- Optional: Create mcp_client.py for Python API
+- Optional: Integrate into collab_discuss.py
+
+---
+
 ### Doom Loop Detector Implementation (2026-06-04)
 
 **Status:** ✅ Implementation complete, all tests passing
