@@ -4,24 +4,32 @@
 
 ### Discussion Enhancements Integration (2026-06-05)
 
-**Status:** ✅ Complete
+**Status:** ✅ Complete (bug fixes applied after Codex review)
 
 **Objective:** Integrate doom loop detection, context compaction, and MCP adapter into main discussion system.
 
 **Changes:**
 - `scripts/discussion_enhancements.py` - Wrapper module for auto-triggering enhancements
 - `scripts/collab_discuss.py` - Added auto-triggers in main discussion loop
-  - Doom loop check before each round
-  - Auto-compaction when rounds >= 3
+  - Doom loop check before each round (with error isolation)
+  - Auto-compaction when rounds >= 3 (with state reload after compaction)
+  - run_status() compatibility with compacted rounds
 
 **Integration Points:**
 - Line 16: Import discussion_enhancements module
-- Lines 602-613: Doom loop detection + context compaction triggers
+- Lines 602-623: Doom loop detection + context compaction triggers (error-isolated)
+- Lines 407-413: run_status() handles compacted rounds
+
+**Bug Fixes (Post-Review):**
+1. State consistency: Reload task_state after compaction to sync memory with disk
+2. Trigger logic: Changed from `round_num >= 3` to `len(task_state['rounds']) >= 3`
+3. Error isolation: Wrapped enhancement calls in try/except to prevent main flow disruption
+4. Schema compatibility: run_status() checks `_compacted` marker before accessing participants
 
 **Benefits:**
 - Automatic stuck discussion detection
 - Automatic state compression for long discussions
-- No manual intervention required
+- Fail-safe design: enhancement failures don't break main discussion flow
 
 ---
 

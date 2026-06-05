@@ -404,11 +404,14 @@ def run_status(base_dir: Path, task_id: str) -> int:
     print(f"\n📝 Rounds: {len(task_state['rounds'])}")
     for r in task_state['rounds']:
         print(f"   Round {r['round_number']}: {r['status']}")
-        for p in r['participants']:
-            status_icon = "✓" if p['status'] == 'completed' else "✗" if p['status'] == 'failed' else "⏳"
-            print(f"      {status_icon} {p['agent']}: {p['status']}")
-            if p['error']:
-                print(f"         Error: {p['error']['type']} - {p['error']['message']}")
+        if r.get('_compacted'):
+            print(f"      📦 (compacted)")
+        else:
+            for p in r['participants']:
+                status_icon = "✓" if p['status'] == 'completed' else "✗" if p['status'] == 'failed' else "⏳"
+                print(f"      {status_icon} {p['agent']}: {p['status']}")
+                if p['error']:
+                    print(f"         Error: {p['error']['type']} - {p['error']['message']}")
 
     # Show failures
     if task_state['failures']:
@@ -600,16 +603,24 @@ def run_discussion(
         print(f"⏳ [Round {round_num}] Starting...")
 
         # Check for doom loop before proceeding
-        loop_status = check_and_handle_doom_loop(task_id, str(base_dir))
-        if loop_status:
-            print(f"⚠️  Doom loop detected: {loop_status['pattern']}")
-            print(f"   Suggested action: {loop_status['suggested_action']}")
+        try:
+            loop_status = check_and_handle_doom_loop(task_id, str(base_dir))
+            if loop_status:
+                print(f"⚠️  Doom loop detected: {loop_status['pattern']}")
+                print(f"   Suggested action: {loop_status['suggested_action']}")
+        except Exception as e:
+            print(f"⚠️  Doom loop detection failed: {e}")
 
         # Auto-compact if needed (rounds >= 3)
-        if round_num >= 3:
-            compact_result = auto_compact_if_needed(task_id, str(base_dir))
-            if compact_result:
-                print(f"📦 Compacted: saved {compact_result['savings_kb']:.1f} KB ({compact_result['savings_percent']:.0f}%)")
+        try:
+            if len(task_state["rounds"]) >= 3:
+                compact_result = auto_compact_if_needed(task_id, str(base_dir))
+                if compact_result:
+                    print(f"📦 Compacted: saved {compact_result['savings_kb']:.1f} KB ({compact_result['savings_percent']:.0f}%)")
+                    # Reload state to sync memory with disk after compaction
+                    task_state = load_task_state(base_dir, task_id)
+        except Exception as e:
+            print(f"⚠️  Auto-compaction failed: {e}")
 
         # Initialize round in state (skip if already exists during resume)
         round_exists = round_num <= len(task_state["rounds"])
