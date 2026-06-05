@@ -180,16 +180,37 @@ def collect_evidence(base_dir: Path, task_id: str, changed_files: list) -> dict:
 
 
 def verify_execution(evidence: dict, consensus: dict) -> bool:
-    """Verify execution succeeded based on evidence."""
-    # Minimal verification: check if any files changed
-    success = evidence["file_count"] > 0
+    """Verify execution succeeded based on evidence completeness."""
+    issues = []
 
-    if success:
-        print("\n✅ Verification: Execution produced changes")
-    else:
-        print("\n⚠️  Verification: No changes detected")
+    # Check evidence completeness
+    required_fields = ["task_id", "timestamp", "changed_files", "file_count"]
+    for field in required_fields:
+        if field not in evidence:
+            issues.append(f"Missing evidence field: {field}")
 
-    return success
+    # Check if any changes occurred
+    if evidence.get("file_count", 0) == 0:
+        issues.append("No file changes detected")
+
+    # Validate against consensus expectations
+    tasks = consensus.get("tasks", [])
+    if tasks:
+        target_files = {task.get("target_file") for task in tasks if task.get("target_file")}
+        changed_files = set(evidence.get("changed_files", []))
+
+        # Check if any expected targets were modified
+        if target_files and not target_files.intersection(changed_files):
+            issues.append(f"Expected targets not modified: {target_files}")
+
+    if issues:
+        print("\n❌ Verification failed:")
+        for issue in issues:
+            print(f"  - {issue}")
+        return False
+
+    print("\n✅ Verification passed: Evidence complete")
+    return True
 
 
 def validate_target_files(consensus: dict, base_dir: Path) -> tuple[bool, list]:
@@ -296,6 +317,9 @@ def main():
         print("\n❌ Execution violated security policy")
         sm.transition_to(Phase.FAILED)
         return 1
+
+    # Transition to verifying phase
+    sm.transition_to(Phase.VERIFYING)
 
     # Verification: Collect evidence
     evidence = collect_evidence(args.base_dir, args.task_id, changed_files)

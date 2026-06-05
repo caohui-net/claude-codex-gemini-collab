@@ -33,8 +33,13 @@ def test_collect_evidence(tmp_path):
 
 
 def test_verify_execution_with_changes():
-    """Test verification succeeds when files changed."""
-    evidence = {"file_count": 3, "changed_files": ["a.py", "b.py", "c.py"]}
+    """Test verification succeeds when evidence complete."""
+    evidence = {
+        "task_id": "test",
+        "timestamp": "2026-06-05T20:00:00Z",
+        "file_count": 3,
+        "changed_files": ["src/a.py", "src/b.py", "src/c.py"]
+    }
     consensus = {"decision": "Test"}
 
     success = verify_execution(evidence, consensus)
@@ -44,8 +49,41 @@ def test_verify_execution_with_changes():
 
 def test_verify_execution_no_changes():
     """Test verification fails when no changes detected."""
-    evidence = {"file_count": 0, "changed_files": []}
+    evidence = {
+        "task_id": "test",
+        "timestamp": "2026-06-05T20:00:00Z",
+        "file_count": 0,
+        "changed_files": []
+    }
     consensus = {"decision": "Test"}
+
+    success = verify_execution(evidence, consensus)
+
+    assert success is False
+
+
+def test_verify_execution_missing_fields():
+    """Test verification fails when evidence incomplete."""
+    evidence = {"file_count": 3}  # Missing required fields
+    consensus = {"decision": "Test"}
+
+    success = verify_execution(evidence, consensus)
+
+    assert success is False
+
+
+def test_verify_execution_target_mismatch():
+    """Test verification fails when expected targets not modified."""
+    evidence = {
+        "task_id": "test",
+        "timestamp": "2026-06-05T20:00:00Z",
+        "file_count": 2,
+        "changed_files": ["other/x.py", "other/y.py"]
+    }
+    consensus = {
+        "decision": "Test",
+        "tasks": [{"target_file": "src/main.py"}]
+    }
 
     success = verify_execution(evidence, consensus)
 

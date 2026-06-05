@@ -10,6 +10,7 @@ class Phase(Enum):
     """Execution phases."""
     PLANNING = "planning"
     EXECUTING = "executing"
+    VERIFYING = "verifying"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -20,7 +21,8 @@ class ExecutionStateMachine:
     # Valid phase transitions
     TRANSITIONS = {
         Phase.PLANNING: [Phase.EXECUTING, Phase.FAILED],
-        Phase.EXECUTING: [Phase.COMPLETED, Phase.FAILED],
+        Phase.EXECUTING: [Phase.VERIFYING, Phase.FAILED],
+        Phase.VERIFYING: [Phase.COMPLETED, Phase.FAILED],
         Phase.COMPLETED: [],
         Phase.FAILED: []
     }

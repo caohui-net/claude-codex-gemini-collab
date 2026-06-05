@@ -19,9 +19,19 @@ def test_valid_transition_planning_to_executing(tmp_path):
 
 
 def test_valid_transition_executing_to_completed(tmp_path):
-    """Test valid transition from EXECUTING to COMPLETED."""
+    """Test valid transition from EXECUTING to VERIFYING."""
     state_machine = ExecutionStateMachine(tmp_path, "test-task-2")
     state_machine.transition_to(Phase.EXECUTING)
+
+    state_machine.transition_to(Phase.VERIFYING)
+    assert state_machine.state["phase"] == Phase.VERIFYING.value
+
+
+def test_valid_transition_verifying_to_completed(tmp_path):
+    """Test valid transition from VERIFYING to COMPLETED."""
+    state_machine = ExecutionStateMachine(tmp_path, "test-task-2b")
+    state_machine.transition_to(Phase.EXECUTING)
+    state_machine.transition_to(Phase.VERIFYING)
 
     state_machine.transition_to(Phase.COMPLETED)
     assert state_machine.state["phase"] == Phase.COMPLETED.value
@@ -44,10 +54,20 @@ def test_invalid_transition_planning_to_completed(tmp_path):
         state_machine.transition_to(Phase.COMPLETED)
 
 
+def test_invalid_transition_executing_to_completed(tmp_path):
+    """Test invalid transition from EXECUTING to COMPLETED (must go through VERIFYING)."""
+    state_machine = ExecutionStateMachine(tmp_path, "test-task-6")
+    state_machine.transition_to(Phase.EXECUTING)
+
+    with pytest.raises(ValueError, match="Invalid transition: executing → completed"):
+        state_machine.transition_to(Phase.COMPLETED)
+
+
 def test_invalid_transition_completed_to_executing(tmp_path):
     """Test invalid transition from COMPLETED to EXECUTING."""
     state_machine = ExecutionStateMachine(tmp_path, "test-task-5")
     state_machine.transition_to(Phase.EXECUTING)
+    state_machine.transition_to(Phase.VERIFYING)
     state_machine.transition_to(Phase.COMPLETED)
 
     with pytest.raises(ValueError, match="Invalid transition: completed → executing"):
