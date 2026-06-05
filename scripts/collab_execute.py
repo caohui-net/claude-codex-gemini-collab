@@ -11,6 +11,10 @@ import json
 import sys
 from pathlib import Path
 
+# Add scripts to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
+from execution_state_machine import ExecutionStateMachine, Phase
+
 
 def load_consensus(base_dir: Path, task_id: str) -> dict:
     """Load consensus decision from task directory."""
@@ -36,15 +40,24 @@ def main():
     print(f"Task: {args.task_id}")
     print(f"Base: {args.base_dir}")
 
+    # Initialize state machine
+    sm = ExecutionStateMachine(args.base_dir, args.task_id)
+    print(f"\n📊 Current phase: {sm.state['phase']}")
+
     # Load consensus
     consensus = load_consensus(args.base_dir, args.task_id)
-
     print(f"\n📋 Consensus loaded:")
     print(f"  Decision: {consensus.get('decision', 'N/A')}")
     print(f"  Tasks: {len(consensus.get('tasks', []))}")
 
-    # TODO: Phase 1a - implement execution logic
-    print("\n⚠️  Execution logic not yet implemented (Phase 1a in progress)")
+    # Transition to executing phase
+    sm.transition_to(Phase.EXECUTING)
+
+    # TODO: Implement actual execution logic
+    print("\n⚠️  Execution logic not yet implemented")
+
+    # Mark as completed for now
+    sm.transition_to(Phase.COMPLETED)
 
     return 0
 
