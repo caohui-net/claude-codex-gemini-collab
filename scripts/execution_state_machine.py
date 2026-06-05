@@ -17,6 +17,14 @@ class Phase(Enum):
 class ExecutionStateMachine:
     """Minimal state machine for execution tracking."""
 
+    # Valid phase transitions
+    TRANSITIONS = {
+        Phase.PLANNING: [Phase.EXECUTING, Phase.FAILED],
+        Phase.EXECUTING: [Phase.COMPLETED, Phase.FAILED],
+        Phase.COMPLETED: [],
+        Phase.FAILED: []
+    }
+
     def __init__(self, base_dir: Path, task_id: str):
         self.base_dir = base_dir
         self.task_id = task_id
@@ -43,7 +51,13 @@ class ExecutionStateMachine:
             json.dump(self.state, f, indent=2)
 
     def transition_to(self, phase: Phase):
-        """Transition to new phase."""
+        """Transition to new phase with validation."""
+        current_phase = Phase(self.state["phase"])
+
+        # Validate transition
+        if phase not in self.TRANSITIONS[current_phase]:
+            raise ValueError(f"Invalid transition: {current_phase.value} → {phase.value}")
+
         old_phase = self.state["phase"]
         self.state["phase"] = phase.value
         self.state["updated_at"] = datetime.now().isoformat()

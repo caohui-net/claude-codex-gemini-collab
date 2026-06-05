@@ -160,6 +160,30 @@ Output ONLY the markers and JSON, nothing else.
     return prompt
 
 
+def save_consensus_contract(base_dir: Path, task_id: str, task_state: dict):
+    """Save consensus.json contract for execution phase.
+
+    Only called when consensus is reached.
+    """
+    if not task_state.get('final_consensus', {}).get('reached'):
+        return
+
+    consensus = {
+        "task_id": task_id,
+        "achieved_at": datetime.now(timezone.utc).isoformat(),
+        "decision": task_state['final_consensus']['decision'],
+        "round": task_state['final_consensus'].get('round'),
+        "tasks": [],  # Minimal implementation - can be parsed later
+        "blocking_issues": []
+    }
+
+    output_path = base_dir / ".omc/collaboration/tasks" / task_id / "consensus.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w") as f:
+        json.dump(consensus, f, indent=2, ensure_ascii=False)
+
+
 def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
     """Judge if consensus reached from agent replies."""
     # No replies means no consensus
@@ -822,6 +846,9 @@ def run_discussion(
             }
             task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
             save_task_state(base_dir, task_id, task_state)
+
+            # Save consensus contract for execution phase
+            save_consensus_contract(base_dir, task_id, task_state)
 
             # Append discussion_concluded event
             append_event(
