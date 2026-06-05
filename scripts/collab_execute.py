@@ -15,6 +15,7 @@ from pathlib import Path
 # Add scripts to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 from execution_state_machine import ExecutionStateMachine, Phase
+from path_validator import validate_path
 
 
 def load_consensus(base_dir: Path, task_id: str) -> dict:
@@ -39,9 +40,12 @@ def require_approval(consensus: dict) -> bool:
     return response == "yes"
 
 
-def create_snapshot(base_dir: Path) -> str:
-    """Create git snapshot before execution."""
+def create_snapshot(base_dir: Path) -> dict:
+    """Create git snapshot before execution with rollback capability."""
+    snapshot = {"head": "", "stash": "", "timestamp": "", "has_changes": False}
+
     try:
+        # Capture HEAD
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             cwd=base_dir,
@@ -49,22 +53,86 @@ def create_snapshot(base_dir: Path) -> str:
             text=True,
             check=True
         )
-        commit_hash = result.stdout.strip()
-        print(f"\n📸 Snapshot: {commit_hash[:8]}")
-        return commit_hash
+        snapshot["head"] = result.stdout.strip()
+
+        # Check for changes (staged, unstaged, untracked)
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=base_dir,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        snapshot["has_changes"] = bool(status_result.stdout.strip())
+
+        # Create stash for full worktree state (includes untracked)
+        if snapshot["has_changes"]:
+            stash_result = subprocess.run(
+                ["git", "stash", "create"],
+                cwd=base_dir,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            snapshot["stash"] = stash_result.stdout.strip()
+
+        snapshot["timestamp"] = subprocess.run(
+            ["date", "-u", "+%Y-%m-%dT%H:%M:%SZ"],
+            capture_output=True,
+            text=True
+        ).stdout.strip()
+
+        print(f"\n📸 Snapshot: HEAD={snapshot['head'][:8]}, changes={snapshot['has_changes']}")
+        if snapshot["stash"]:
+            print(f"   Stash: {snapshot['stash'][:8]} (rollback enabled)")
+
+        return snapshot
+
     except subprocess.CalledProcessError:
-        print("\n⚠️  No git repository, skipping snapshot")
-        return ""
+        print("\n⚠️  No git repository, snapshot disabled")
+        return snapshot
 
 
-def audit_execution(base_dir: Path, snapshot: str) -> list:
+def rollback_snapshot(base_dir: Path, snapshot: dict) -> bool:
+    """Rollback to snapshot state."""
+    if not snapshot.get("head"):
+        print("\n⚠️  No snapshot to rollback to")
+        return False
+
+    try:
+        # Reset to snapshot HEAD
+        subprocess.run(
+            ["git", "reset", "--hard", snapshot["head"]],
+            cwd=base_dir,
+            check=True,
+            capture_output=True
+        )
+
+        # Restore stashed changes if any
+        if snapshot.get("stash"):
+            subprocess.run(
+                ["git", "stash", "apply", snapshot["stash"]],
+                cwd=base_dir,
+                check=True,
+                capture_output=True
+            )
+
+        print(f"\n↩️  Rolled back to snapshot {snapshot['head'][:8]}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"\n❌ Rollback failed: {e}")
+        return False
+
+
+def audit_execution(base_dir: Path, snapshot: dict) -> list:
     """Audit file changes after execution."""
-    if not snapshot:
+    if not snapshot.get("head"):
         return []
 
     try:
         result = subprocess.run(
-            ["git", "diff", "--name-only", snapshot],
+            ["git", "diff", "--name-only", snapshot["head"]],
             cwd=base_dir,
             capture_output=True,
             text=True,
@@ -124,6 +192,54 @@ def verify_execution(evidence: dict, consensus: dict) -> bool:
     return success
 
 
+def validate_target_files(consensus: dict, base_dir: Path) -> tuple[bool, list]:
+    """Validate target files from consensus against security policy."""
+    tasks = consensus.get("tasks", [])
+    if not tasks:
+        print("\n⚠️  No tasks in consensus, skipping target validation")
+        return True, []
+
+    violations = []
+    for task in tasks:
+        target_file = task.get("target_file")
+        if target_file:
+            valid, error = validate_path(target_file, base_dir)
+            if not valid:
+                violations.append(f"{target_file}: {error}")
+
+    if violations:
+        print(f"\n❌ Target file validation failed:")
+        for v in violations:
+            print(f"  - {v}")
+        return False, violations
+
+    print(f"\n✅ Target files validated ({len(tasks)} task(s))")
+    return True, []
+
+
+def validate_changed_files(changed_files: list, base_dir: Path) -> tuple[bool, list]:
+    """Validate changed files against security policy."""
+    if not changed_files:
+        return True, []
+
+    violations = []
+    for file_path in changed_files:
+        valid, error = validate_path(file_path, base_dir)
+        if not valid:
+            violations.append(f"{file_path}: {error}")
+
+    if violations:
+        print(f"\n❌ Changed file validation failed:")
+        for v in violations[:5]:
+            print(f"  - {v}")
+        if len(violations) > 5:
+            print(f"  ... and {len(violations) - 5} more")
+        return False, violations
+
+    print(f"\n✅ Changed files validated ({len(changed_files)} file(s))")
+    return True, []
+
+
 def main():
     parser = argparse.ArgumentParser(description="Execute collaboration consensus")
     parser.add_argument("task_id", help="Task ID to execute")
@@ -155,6 +271,13 @@ def main():
             sm.transition_to(Phase.FAILED)
             return 1
 
+    # Security: Validate target files before execution
+    target_valid, target_violations = validate_target_files(consensus, args.base_dir)
+    if not target_valid:
+        print("\n❌ Execution blocked by security policy")
+        sm.transition_to(Phase.FAILED)
+        return 1
+
     # Safety: Create snapshot before execution
     snapshot = create_snapshot(args.base_dir)
 
@@ -166,6 +289,13 @@ def main():
 
     # Safety: Audit changes after execution
     changed_files = audit_execution(args.base_dir, snapshot)
+
+    # Security: Validate changed files against policy
+    changed_valid, changed_violations = validate_changed_files(changed_files, args.base_dir)
+    if not changed_valid:
+        print("\n❌ Execution violated security policy")
+        sm.transition_to(Phase.FAILED)
+        return 1
 
     # Verification: Collect evidence
     evidence = collect_evidence(args.base_dir, args.task_id, changed_files)

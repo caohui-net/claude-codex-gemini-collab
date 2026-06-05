@@ -34,15 +34,18 @@ def test_require_approval_no():
 @patch('subprocess.run')
 def test_create_snapshot_success(mock_run, tmp_path):
     """Test snapshot creation in git repo."""
-    mock_run.return_value = MagicMock(
-        stdout="abc123def456\n",
-        returncode=0
-    )
+    mock_run.side_effect = [
+        MagicMock(stdout="abc123def456\n", returncode=0),  # git rev-parse HEAD
+        MagicMock(stdout="M file.py\n", returncode=0),      # git status --porcelain
+        MagicMock(stdout="stash789\n", returncode=0),       # git stash create
+        MagicMock(stdout="2026-06-05T20:00:00Z\n", returncode=0)  # date
+    ]
 
     snapshot = create_snapshot(tmp_path)
 
-    assert snapshot == "abc123def456"
-    mock_run.assert_called_once()
+    assert snapshot["head"] == "abc123def456"
+    assert snapshot["has_changes"] is True
+    assert snapshot["stash"] == "stash789"
 
 
 @patch('subprocess.run')
@@ -53,7 +56,8 @@ def test_create_snapshot_no_git(mock_run, tmp_path):
 
     snapshot = create_snapshot(tmp_path)
 
-    assert snapshot == ""
+    assert snapshot["head"] == ""
+    assert snapshot["has_changes"] is False
 
 
 @patch('subprocess.run')
@@ -64,7 +68,7 @@ def test_audit_execution_with_changes(mock_run, tmp_path):
         returncode=0
     )
 
-    changed = audit_execution(tmp_path, "abc123")
+    changed = audit_execution(tmp_path, {"head": "abc123"})
 
     assert len(changed) == 2
     assert "file1.py" in changed
@@ -79,14 +83,14 @@ def test_audit_execution_no_changes(mock_run, tmp_path):
         returncode=0
     )
 
-    changed = audit_execution(tmp_path, "abc123")
+    changed = audit_execution(tmp_path, {"head": "abc123"})
 
     assert changed == []
 
 
 def test_audit_execution_no_snapshot(tmp_path):
     """Test audit when no snapshot exists."""
-    changed = audit_execution(tmp_path, "")
+    changed = audit_execution(tmp_path, {})
 
     assert changed == []
 
