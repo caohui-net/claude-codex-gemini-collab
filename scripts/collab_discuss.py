@@ -13,6 +13,7 @@ from typing import List, Dict, Optional
 from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from discussion_enhancements import check_and_handle_doom_loop, auto_compact_if_needed
 from rmux_utils import check_rmux_available, get_tmux_info
 from collab_state import (
     init_task_state, load_task_state, save_task_state,
@@ -597,6 +598,18 @@ def run_discussion(
     for round_num in range(start_round_num, effective_max + 1):
         round_start = time.time()
         print(f"⏳ [Round {round_num}] Starting...")
+
+        # Check for doom loop before proceeding
+        loop_status = check_and_handle_doom_loop(task_id, str(base_dir))
+        if loop_status:
+            print(f"⚠️  Doom loop detected: {loop_status['pattern']}")
+            print(f"   Suggested action: {loop_status['suggested_action']}")
+
+        # Auto-compact if needed (rounds >= 3)
+        if round_num >= 3:
+            compact_result = auto_compact_if_needed(task_id, str(base_dir))
+            if compact_result:
+                print(f"📦 Compacted: saved {compact_result['savings_kb']:.1f} KB ({compact_result['savings_percent']:.0f}%)")
 
         # Initialize round in state (skip if already exists during resume)
         round_exists = round_num <= len(task_state["rounds"])

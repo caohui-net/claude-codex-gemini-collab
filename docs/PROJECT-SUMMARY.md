@@ -2,6 +2,29 @@
 
 ## Latest Changes
 
+### Discussion Enhancements Integration (2026-06-05)
+
+**Status:** ✅ Complete
+
+**Objective:** Integrate doom loop detection, context compaction, and MCP adapter into main discussion system.
+
+**Changes:**
+- `scripts/discussion_enhancements.py` - Wrapper module for auto-triggering enhancements
+- `scripts/collab_discuss.py` - Added auto-triggers in main discussion loop
+  - Doom loop check before each round
+  - Auto-compaction when rounds >= 3
+
+**Integration Points:**
+- Line 16: Import discussion_enhancements module
+- Lines 602-613: Doom loop detection + context compaction triggers
+
+**Benefits:**
+- Automatic stuck discussion detection
+- Automatic state compression for long discussions
+- No manual intervention required
+
+---
+
 ### Context Compaction Implementation (2026-06-04)
 
 **Status:** ✅ Implementation complete, all tests passing
