@@ -1,11 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T16:28:40.160Z
-> Files: 518 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T16:31:36.626Z
+> Files: 519 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
-- `.gitignore` — Git ignore rules (~208 tok)
+- `.gitignore` — Git ignore rules (~224 tok)
 - `CHANGELOG.md` — Change log (~1757 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
@@ -28,7 +28,7 @@
 
 - `daemon-audit.log` (~125609 tok)
 - `project-memory.json` (~2513 tok)
-- `session-context.json` (~1352 tok)
+- `session-context.json` (~1388 tok)
 
 ## .omc/artifacts/ask/
 
@@ -544,3 +544,7 @@
 ## .omc/collaboration/artifacts/.omc/state/
 
 - `last-tool-error.json` (~118 tok)
+
+## docs/
+
+- `PROJECT-SUMMARY.md` — Project Summary (~4200 tok)

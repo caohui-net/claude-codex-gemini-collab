@@ -59,3 +59,6 @@ response.json
 
 # OMC runtime artifacts in any subdirectory
 **/.omc/
+
+# OpenWolf runtime session state
+.wolf/hooks/_session.json

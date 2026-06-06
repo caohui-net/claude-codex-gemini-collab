@@ -1,4 +1,21 @@
 {
   "version": 1,
-  "bugs": []
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-06-06T16:30:10.550Z",
+      "error_message": "Incorrect value in code",
+      "file": ".omc/session-context.json",
+      "root_cause": "Had \"146/146 tests passing: Phase 1-3全部测试 + Phase 3.3新",
+      "fix": "Changed to \"OpenWolf集成: 24文件提交 (+3248行), .gitignore通配规则, 运行时清",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-06T16:30:20.805Z"
+    }
+  ]
 }
