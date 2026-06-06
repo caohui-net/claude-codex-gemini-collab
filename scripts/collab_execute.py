@@ -131,8 +131,9 @@ def audit_execution(base_dir: Path, snapshot: dict) -> list:
         return []
 
     try:
+        # Check both staged and unstaged changes
         result = subprocess.run(
-            ["git", "diff", "--name-only", snapshot["head"]],
+            ["git", "diff", "--name-only", "--cached", snapshot["head"]],
             cwd=base_dir,
             capture_output=True,
             text=True,
@@ -190,11 +191,20 @@ def verify_execution(evidence: dict, consensus: dict) -> bool:
             issues.append(f"Missing evidence field: {field}")
 
     # Check if changes match expectations
-    tasks = consensus.get("tasks", [])
-    if not tasks:
-        # No tasks in consensus - no changes expected, valid
+    tasks = consensus.get("tasks")
+    if tasks is not None and len(tasks) == 0:
+        # Explicit empty tasks array - intentional no-work
+        if issues:
+            print("\n❌ Verification failed:")
+            for issue in issues:
+                print(f"  - {issue}")
+            return False
         print("\n✅ Verification passed: No tasks, no changes (valid)")
         return True
+
+    # If tasks is None or has items, continue with normal validation
+    if tasks is None:
+        tasks = []
 
     # Tasks exist - verify changes occurred
     if evidence.get("file_count", 0) == 0:

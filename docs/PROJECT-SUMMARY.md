@@ -2,6 +2,101 @@
 
 ## Latest Changes
 
+### Bug Fixes: Execution Logic (2026-06-06)
+
+**Status:** ✅ 测试回归修复完成 (141 tests passing)
+
+**修复内容:**
+1. audit_execution() 无法检测暂存变化
+   - 问题: `git diff --name-only HEAD` 检测不到已暂存文件
+   - 修复: 使用 `git diff --cached --name-only HEAD`
+   
+2. verify_execution() 验证逻辑过早返回
+   - 问题: 缺失 tasks 字段时跳过必需字段检查
+   - 修复: 区分显式空任务数组 `"tasks": []` vs 缺失 tasks 字段
+
+**测试验证:** tests/test_execution_logic.py (2 tests), tests/test_verification.py (5 tests) 全部通过
+
+---
+
+### Phase 1-2 Complete: Execution-Verification Loop (2026-06-06)
+
+**Status:** ✅ 完整实施完成 (32 tests passing)
+
+**实施内容:**
+- Phase 1: 核心框架 (17 tests) - consensus生成、状态机、安全机制、验证
+- Phase 1 Hardening: 安全加固 (13 tests) - 路径验证、快照增强、状态机lifecycle、验证改进
+- Phase 2: 执行逻辑 (2 tests) - 任务解析、文件操作、错误处理
+
+**已解决所有5个Codex blocking issues:**
+- ✅ #1: 执行逻辑实现 (任务解析+文件写入)
+- ✅ #2: 快照增强 (完整工作树+回滚)
+- ✅ #3: 路径验证集成 (执行前后安全检查)
+- ✅ #4: 状态机增强 (VERIFYING phase)
+- ✅ #5: 验证改进 (证据完整性检查)
+
+**端到端流程:** 讨论→共识→批准→快照→验证→执行→审计→验证→完成
+
+---
+
+### Phase 1 Implementation Complete (2026-06-05)
+
+**Status:** ✅ Phase 1 + hardening complete (30 tests passing)
+
+**Objective:** Implement core execution framework based on v3.0 design, then harden per Codex review.
+
+**Phase 1 Initial Implementation (17 tests):**
+
+1. **Phase 1.1: Consensus Contract** (2 tests)
+   - `save_consensus_contract()` in `collab_discuss.py`
+   - Generates `consensus.json` for execution phase
+
+2. **Phase 1.2: State Machine** (5 tests)
+   - Transition table in `execution_state_machine.py`
+   - Validates phase transitions
+
+3. **Phase 1.3: Execution Safety** (7 tests)
+   - User approval, git snapshot, audit trail
+
+4. **Phase 1.4: Verification Logic** (3 tests)
+   - Evidence collection and verification
+
+**Codex Review Feedback:**
+- 5 blocking issues identified (no execution, weak snapshot, no path validation, minimal state machine, insufficient verification)
+- Recommendation: Narrow hardening pass before Phase 2
+
+**Phase 1 Hardening (13 tests):**
+
+1. **Issue #3: Path Validator Integration** (6 tests)
+   - `validate_target_files()` - pre-execution validation
+   - `validate_changed_files()` - post-execution validation
+   - Security policy enforcement in main() flow
+
+2. **Issue #2: Snapshot Enhancement** (7 tests updated)
+   - Changed return from string to dict
+   - Full worktree capture via `git stash create`
+   - Added `rollback_snapshot()` for recovery
+
+3. **Issue #5: Verification Improvement** (5 tests)
+   - Evidence completeness validation
+   - Required field checks
+   - Consensus target matching
+
+4. **Issue #4: State Machine Enhancement** (7 tests)
+   - Added VERIFYING phase
+   - Lifecycle: PLANNING→EXECUTING→VERIFYING→COMPLETED
+
+**Test Coverage:** 30/30 tests passing
+
+**Remaining Work:**
+- Issue #1: Implement execution logic (TODO in collab_execute.py) - Phase 2
+
+**Next Steps:**
+- Phase 2: Task parsing and file operations
+- Integration testing with full workflow
+
+---
+
 ### Phase 1 Implementation Complete (2026-06-05)
 
 **Status:** ✅ All Phase 1 components implemented and tested (17 tests passing)
