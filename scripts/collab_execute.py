@@ -439,6 +439,37 @@ def main():
     print(f"\n📋 Review report saved: {report_path}")
     print(f"   Status: {report.review_status.value}")
 
+    # Phase 3.2: Handle review status
+    if report.review_status in (ReviewStatus.REJECTED, ReviewStatus.NEEDS_CHANGES):
+        # Create feedback file for failed reviews
+        feedback_path = args.base_dir / ".omc/collaboration/tasks" / args.task_id / "feedback.md"
+        feedback_content = f"""# Execution Review Feedback
+
+**Task ID:** {args.task_id}
+**Review Status:** {report.review_status.value}
+**Timestamp:** {report.to_dict().get('timestamp', 'N/A')}
+
+## Issues Found
+
+{chr(10).join(f'- {item}' for item in report.feedback_items)}
+
+## Recommendations
+
+1. Review the issues above
+2. Modify code to address feedback
+3. Re-run execution: `python3 scripts/collab_execute.py {args.task_id}`
+
+## Evidence
+
+- Evidence: `.omc/collaboration/tasks/{args.task_id}/evidence.json`
+- Review Report: `.omc/collaboration/tasks/{args.task_id}/review_report.json`
+"""
+        with open(feedback_path, "w") as f:
+            f.write(feedback_content)
+
+        print(f"\n📝 Feedback created: {feedback_path}")
+        print(f"   Review feedback and address issues before retry")
+
     # Mark as completed or failed based on verification
     if success:
         sm.transition_to(Phase.COMPLETED)

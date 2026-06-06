@@ -2,6 +2,23 @@
 
 ## Latest Changes
 
+### Phase 3.2: Review Status Handling (2026-06-06)
+
+**Status:** ✅ 基础实施完成 (141 tests passing)
+
+**实施内容:**
+- 审核状态处理逻辑
+  - approved → 正常完成流程（已有）
+  - rejected/needs_changes → 生成feedback.md
+- feedback.md内容：
+  - Issues清单（来自verification）
+  - 后续建议（review + modify + re-run）
+  - 证据文件引用
+
+**限制:** 当前为手动循环（需手动重新执行），Phase 3.3将实现自动化迭代
+
+---
+
 ### Phase 3.1: Execution Review Report (2026-06-06)
 
 **Status:** ✅ 实施完成 (141 tests passing)
