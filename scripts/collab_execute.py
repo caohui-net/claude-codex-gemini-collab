@@ -4,6 +4,7 @@ Execution and verification orchestrator for collaboration consensus.
 
 Usage:
     python3 scripts/collab_execute.py <task_id>
+    python3 scripts/collab_execute.py <task_id> --auto-iterate --max-iterations 3
 """
 
 import argparse
@@ -17,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from execution_state_machine import ExecutionStateMachine, Phase
 from path_validator import validate_path
 from execution_review import ExecutionReviewReport, ReviewStatus
+from collab_discuss import run_discussion
 
 
 def load_consensus(base_dir: Path, task_id: str) -> dict:
@@ -319,6 +321,36 @@ def validate_changed_files(changed_files: list, base_dir: Path) -> tuple[bool, l
     return True, []
 
 
+def generate_iteration_topic(original_task_id: str, feedback_items: list, iteration: int) -> str:
+    """Generate deterministic topic for iteration discussion."""
+    issues_summary = "; ".join(feedback_items[:3])  # First 3 issues
+    if len(feedback_items) > 3:
+        issues_summary += f" (+{len(feedback_items) - 3} more)"
+
+    return f"[Iteration {iteration}] Address execution feedback for {original_task_id}: {issues_summary}"
+
+
+def check_termination(base_dir: Path, task_id: str, iteration: int, max_iterations: int) -> tuple[bool, str]:
+    """Check if iteration should terminate. Returns (should_terminate, reason)."""
+    # Max iterations reached
+    if iteration > max_iterations:
+        return True, f"Maximum iterations ({max_iterations}) reached"
+
+    # Check if consensus exists
+    consensus_path = base_dir / ".omc/collaboration/tasks" / task_id / "consensus.json"
+    if not consensus_path.exists():
+        return True, f"No consensus found for {task_id}"
+
+    # Check required artifacts exist
+    task_dir = base_dir / ".omc/collaboration/tasks" / task_id
+    required = ["consensus.json", "review_report.json", "evidence.json"]
+    missing = [f for f in required if not (task_dir / f).exists()]
+    if missing:
+        return True, f"Missing required artifacts: {', '.join(missing)}"
+
+    return False, ""
+
+
 def main():
     parser = argparse.ArgumentParser(description="Execute collaboration consensus")
     parser.add_argument("task_id", help="Task ID to execute")
@@ -326,6 +358,10 @@ def main():
                        help="Base directory (default: current)")
     parser.add_argument("--skip-approval", action="store_true",
                        help="Skip approval prompt (for testing)")
+    parser.add_argument("--auto-iterate", action="store_true",
+                       help="Auto-iterate on rejected/needs_changes reviews")
+    parser.add_argument("--max-iterations", type=int, default=3,
+                       help="Max iteration rounds (default: 3)")
 
     args = parser.parse_args()
 
@@ -468,7 +504,79 @@ def main():
             f.write(feedback_content)
 
         print(f"\n📝 Feedback created: {feedback_path}")
-        print(f"   Review feedback and address issues before retry")
+
+        # Phase 3.3: Auto-iterate if enabled
+        if args.auto_iterate:
+            # Parse iteration number from task_id
+            if "-iter-" in args.task_id:
+                base_task_id, iter_suffix = args.task_id.rsplit("-iter-", 1)
+                current_iter = int(iter_suffix)
+            else:
+                base_task_id = args.task_id
+                current_iter = 0
+
+            next_iter = current_iter + 1
+
+            # Check termination
+            should_terminate, reason = check_termination(args.base_dir, args.task_id, next_iter, args.max_iterations)
+            if should_terminate:
+                print(f"\n⚠️  Iteration terminated: {reason}")
+                print(f"   Human intervention required")
+                sm.transition_to(Phase.FAILED)
+                return 1
+
+            # Generate iteration task_id and topic
+            iter_task_id = f"{base_task_id}-iter-{next_iter}"
+            iter_topic = generate_iteration_topic(base_task_id, report.feedback_items, next_iter)
+
+            print(f"\n🔄 Starting iteration {next_iter}/{args.max_iterations}")
+            print(f"   New task: {iter_task_id}")
+            print(f"   Topic: {iter_topic}")
+
+            # Run discussion for iteration
+            participants = ["codex", "gemini"]  # Default participants
+            exit_code = run_discussion(
+                args.base_dir,
+                iter_task_id,
+                iter_topic,
+                participants,
+                max_rounds=3,
+                hard_max_rounds=10,
+                timeout_sec=180,
+                resume=False
+            )
+
+            if exit_code != 0:
+                print(f"\n❌ Iteration discussion failed")
+                sm.transition_to(Phase.FAILED)
+                return 1
+
+            # Check if consensus reached
+            iter_consensus_path = args.base_dir / ".omc/collaboration/tasks" / iter_task_id / "consensus.json"
+            if not iter_consensus_path.exists():
+                print(f"\n❌ No consensus reached for iteration")
+                print(f"   Human intervention required")
+                sm.transition_to(Phase.FAILED)
+                return 1
+
+            # Recursively execute iteration
+            print(f"\n🔨 Executing iteration consensus")
+            iter_exit = subprocess.run(
+                [
+                    sys.executable,
+                    str(Path(__file__)),
+                    iter_task_id,
+                    "--base-dir", str(args.base_dir),
+                    "--skip-approval",  # Skip approval for iterations
+                    "--auto-iterate" if args.auto_iterate else "",
+                    "--max-iterations", str(args.max_iterations)
+                ],
+                cwd=args.base_dir
+            ).returncode
+
+            return iter_exit
+        else:
+            print(f"   Review feedback and address issues before retry")
 
     # Mark as completed or failed based on verification
     if success:

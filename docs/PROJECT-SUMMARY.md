@@ -2,6 +2,33 @@
 
 ## Latest Changes
 
+### Phase 3.3: Automated Iteration Loop (2026-06-06)
+
+**Status:** ✅ 实施完成 (141 tests passing)
+
+**实施内容:**
+- collab_execute.py添加自动迭代参数
+  - `--auto-iterate`: 启用自动迭代（rejected/needs_changes时）
+  - `--max-iterations`: 最大迭代轮数（默认3）
+- 迭代循环逻辑（基于Codex Round 3共识）
+  - 解析迭代编号：从task_id提取`-iter-{n}`后缀
+  - 确定性topic生成：`generate_iteration_topic()`使用反馈前3项
+  - 终止条件检查：`check_termination()`验证max_iterations、共识存在、必需产物
+  - 新讨论创建：`{original_task_id}-iter-{n}`，引用原始artifacts
+  - 递归执行：subprocess调用自身执行新consensus.json
+- 终止场景处理
+  - 达到max_iterations、无共识、缺失产物、执行失败 → 要求人工介入
+  - approved状态 → 正常结束
+- 新增辅助函数：
+  - `generate_iteration_topic()`: 从feedback生成确定性讨论主题
+  - `check_termination()`: 检查是否应终止迭代
+
+**设计基础:** Codex Phase 3 Round 3共识（新建迭代讨论的最简方案）
+
+**验证:** 141/141 tests passing，无回归
+
+---
+
 ### Phase 3.2: Review Status Handling (2026-06-06)
 
 **Status:** ✅ 基础实施完成 (141 tests passing)
