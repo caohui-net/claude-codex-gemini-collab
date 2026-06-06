@@ -2,9 +2,35 @@
 
 ## Latest Changes
 
+### Collab Skill v0.4.0: Discuss Command + Auto-Init (2026-06-06)
+
+**Status:** ✅ 实施完成
+
+**实施内容:**
+- 发布discuss命令到技能包
+  - 复制collab_discuss.py到`~/.claude/skills/claude-codex-gemini-collab/scripts/`
+  - 复制4个依赖：agent_cli.py, collab_state.py, discussion_enhancements.py, rmux_utils.py
+- 自动初始化功能（v0.4.0新特性）
+  - 检测`.omc/collaboration/`不存在时自动运行init
+  - 用户无需手动初始化，直接使用discuss命令
+  - 修改位置：collab_discuss.py main()函数，resolve_existing_base_dir异常处理
+- SKILL.md更新
+  - 版本号：0.3.1 → 0.4.0
+  - 添加discuss命令完整文档（用法、子命令、auto-init说明）
+  - Commands section添加discuss命令行示例
+
+**问题修复:**
+- 修复用户报告的两个问题：
+  1. 明确指定collab技能却调用`omc ask` → 根因：技能包缺discuss命令
+  2. collab_status.py报错 → 根因：其他项目未初始化（预期行为，现已自动化）
+
+**验证:** 11个Python文件（原7 + 新增4），syntax check通过
+
+---
+
 ### Phase 3.3: Automated Iteration Loop (2026-06-06)
 
-**Status:** ✅ 实施完成 (141 tests passing)
+**Status:** ✅ 实施完成 (146 tests passing)
 
 **实施内容:**
 - collab_execute.py添加自动迭代参数
