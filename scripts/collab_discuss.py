@@ -6,12 +6,14 @@ import json
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
 
 from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
+from collab_init import init_collaboration
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 from discussion_enhancements import check_and_handle_doom_loop, auto_compact_if_needed
 from rmux_utils import check_rmux_available, get_tmux_info
@@ -533,6 +535,30 @@ def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
                          timeout_sec=180, resume=True)
 
 
+def invoke_agent_parallel(
+    agent: str,
+    prompt: str,
+    base_dir: Path,
+    timeout_sec: int,
+    use_tmux: bool,
+    keep_session: bool
+) -> AgentReply:
+    """Invoke single agent (for parallel execution)."""
+    if agent == "codex":
+        return run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
+    elif agent == "gemini":
+        return run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
+    else:
+        return AgentReply(
+            agent=agent,
+            raw_text="",
+            parsed={"error": f"unknown_agent_{agent}"},
+            artifact_path="",
+            elapsed_sec=0,
+            exit_code=1
+        )
+
+
 def run_discussion(
     base_dir: Path,
     task_id: str,
@@ -541,14 +567,55 @@ def run_discussion(
     max_rounds: int = 3,
     hard_max_rounds: int = 10,
     timeout_sec: int = 180,
-    resume: bool = False
+    resume: bool = False,
+    mode: str = "full"
 ) -> int:
-    """Run multi-round discussion until consensus or max rounds."""
+    """Run multi-round discussion until consensus or max rounds.
+
+    mode: 'full' (default) - multi-round persistent, requires init
+          'fast' - single-round stateless, no init required (ccg-style)
+    """
     discussion_start = time.time()
     collab_dir = base_dir / ".omc" / "collaboration"
 
-    if not collab_dir.exists():
-        print("❌ Collaboration not initialized")
+    # Fast mode: single-round stateless, no init required
+    if mode == "fast":
+        print("⚡ [Fast Mode] Single-round stateless discussion (ccg-style)")
+        print(f"💬 Topic: {topic}")
+        print(f"👥 Participants: {', '.join(participants)}")
+        print()
+
+        # Ensure fast artifacts directory
+        fast_artifacts_dir = collab_dir / "artifacts" / "fast"
+        fast_artifacts_dir.mkdir(parents=True, exist_ok=True)
+
+        # Run single round: invoke each agent
+        artifacts_refs = []
+        for participant in participants:
+            print(f"🤖 Invoking {participant}...")
+            try:
+                if participant == "codex":
+                    reply = run_codex(topic, base_dir, timeout_sec=timeout_sec)
+                elif participant == "gemini":
+                    reply = run_gemini(topic, base_dir, timeout_sec=timeout_sec)
+                else:
+                    print(f"⚠️  Unknown participant: {participant}")
+                    continue
+
+                if reply.artifact_path:
+                    artifacts_refs.append(str(reply.artifact_path))
+                    print(f"   ✓ Artifact: {reply.artifact_path}")
+            except Exception as e:
+                print(f"   ❌ {participant} failed: {e}")
+
+        # Output summary
+        discussion_elapsed = time.time() - discussion_start
+        print(f"\n⏱️  Total: {discussion_elapsed:.1f}s")
+        print(f"📁 Artifacts: {', '.join(artifacts_refs) if artifacts_refs else 'none'}")
+        print("\n💡 Fast mode complete. Use full mode for multi-round consensus.")
+        return 0
+    elif not collab_dir.exists():
+        print("❌ Collaboration not initialized. Run: collab init")
         return 1
 
     # Initialize or load task state
@@ -668,12 +735,13 @@ def run_discussion(
 
         replies = []
 
-        # Collect responses from participants
+        # Prepare agents to execute (exclude claude, skip already completed)
+        agents_to_run = []
         for agent in participants:
             if agent == "claude":
-                continue  # Claude is orchestrator, not participant in this MVP
+                continue
 
-            # Check if participant already completed or failed (resume case)
+            # Check if already completed/failed in resume case
             skip_execution = False
             if resume and round_num <= len(task_state["rounds"]):
                 round_state = task_state["rounds"][round_num - 1]
@@ -693,103 +761,105 @@ def run_discussion(
                         skip_execution = True
                         break
 
-            if skip_execution:
-                continue
+            if not skip_execution:
+                agents_to_run.append(agent)
 
-            print(f"⏳ [{agent.capitalize()}] analyzing...")
-            agent_start = time.time()
-
-            # Mark participant as started
-            task_state = start_participant(task_state, round_num, agent)
-            save_task_state(base_dir, task_id, task_state)
-
-            # Check if file-reference mode enabled (token optimization, default: true)
-            use_file_ref = os.environ.get("CCG_USE_FILE_REF", "true").lower() == "true"
-            context_file = None
-            if use_file_ref:
-                context_file = save_discussion_context(
-                    base_dir, task_id, round_num, topic, history, artifacts_refs
-                )
-
-            prompt = build_discussion_prompt(
-                topic, task_id, agent, round_num, history, artifacts_refs, context_file
+        # Prepare context (shared by all agents)
+        use_file_ref = os.environ.get("CCG_USE_FILE_REF", "true").lower() == "true"
+        context_file = None
+        if use_file_ref:
+            context_file = save_discussion_context(
+                base_dir, task_id, round_num, topic, history, artifacts_refs
             )
+        keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
 
-            # use_tmux was detected once before the loop
-            keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
+        # Execute agents in parallel
+        if agents_to_run:
+            print(f"⏳ Invoking {len(agents_to_run)} agent(s) in parallel: {', '.join(agents_to_run)}")
 
-            if agent == "codex":
-                reply = run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
-            elif agent == "gemini":
-                reply = run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
-            else:
-                print(f"❌ Unknown agent: {agent}")
-                continue
+            with ThreadPoolExecutor(max_workers=len(agents_to_run)) as executor:
+                # Submit all agents
+                futures = {}
+                for agent in agents_to_run:
+                    # Mark as started
+                    task_state = start_participant(task_state, round_num, agent)
+                    save_task_state(base_dir, task_id, task_state)
 
-            agent_elapsed = time.time() - agent_start
-            timing_log.append({
-                "round": round_num,
-                "agent": agent,
-                "elapsed_sec": agent_elapsed,
-                "cli_elapsed_sec": reply.elapsed_sec
-            })
+                    prompt = build_discussion_prompt(
+                        topic, task_id, agent, round_num, history, artifacts_refs, context_file
+                    )
 
-            if reply.exit_code != 0:
-                error_msg = str(reply.parsed.get('error', 'unknown'))
-                print(f"❌ Participant execution failed")
-                print(f"   Task: {task_id} | Round: {round_num} | Agent: {agent}")
-                print(f"   Error: execution_failed - {error_msg}")
-                print(f"   State: {get_task_state_file(base_dir, task_id)}")
-                print(f"   Next: python3 scripts/collab_discuss.py status {task_id}")
-                print(f"         python3 scripts/collab_discuss.py resume {task_id} --retry-failed")
-                task_state = fail_participant(task_state, round_num, agent, "execution_failed", error_msg)
-                save_task_state(base_dir, task_id, task_state)
-                continue
+                    agent_start = time.time()
+                    future = executor.submit(
+                        invoke_agent_parallel, agent, prompt, base_dir,
+                        timeout_sec, use_tmux, keep_session
+                    )
+                    futures[future] = (agent, agent_start)
 
-            # Verify protocol compliance: response must use markers
-            if "[RESPONSE_START]" not in reply.raw_text or "[RESPONSE_END]" not in reply.raw_text:
-                print(f"❌ Protocol violation")
-                print(f"   Task: {task_id} | Round: {round_num} | Agent: {agent}")
-                print(f"   Error: format_error - missing [RESPONSE_START]/[RESPONSE_END] markers")
-                print(f"   Raw response: {reply.raw_text[:200]}...")
-                print(f"   State: {get_task_state_file(base_dir, task_id)}")
-                print(f"   Next: python3 scripts/collab_discuss.py status {task_id}")
-                print(f"         python3 scripts/collab_discuss.py resume {task_id}")
-                task_state = fail_participant(task_state, round_num, agent, "format_error", "missing markers")
-                save_task_state(base_dir, task_id, task_state)
-                continue
+                # Collect results as they complete
+                for future in as_completed(futures):
+                    agent, agent_start = futures[future]
+                    agent_elapsed = time.time() - agent_start
 
-            # Save artifact
-            artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
-            artifacts_refs.append(artifact_path)
+                    try:
+                        reply = future.result()
+                    except Exception as e:
+                        print(f"❌ [{agent.capitalize()}] exception: {e}")
+                        task_state = fail_participant(task_state, round_num, agent, "exception", str(e))
+                        save_task_state(base_dir, task_id, task_state)
+                        continue
 
-            # Mark participant as completed
-            task_state = complete_participant(task_state, round_num, agent, artifact_path, reply.parsed if isinstance(reply.parsed, dict) else {})
-            save_task_state(base_dir, task_id, task_state)
+                    timing_log.append({
+                        "round": round_num,
+                        "agent": agent,
+                        "elapsed_sec": agent_elapsed,
+                        "cli_elapsed_sec": reply.elapsed_sec
+                    })
 
-            # Extract summary from parsed response
-            if isinstance(reply.parsed, dict):
-                summary = reply.parsed.get("decision", "")
-                if not summary:
-                    summary = reply.raw_text[:100]
-            else:
-                summary = reply.raw_text[:100]
+                    if reply.exit_code != 0:
+                        error_msg = str(reply.parsed.get('error', 'unknown'))
+                        print(f"❌ [{agent.capitalize()}] failed: {error_msg}")
+                        task_state = fail_participant(task_state, round_num, agent, "execution_failed", error_msg)
+                        save_task_state(base_dir, task_id, task_state)
+                        continue
 
-            # Append discussion message event
-            append_event(
-                base_dir,
-                "discussion_message",
-                agent,
-                task_id,
-                summary,
-                artifacts=[artifact_path],
-                details=reply.parsed if isinstance(reply.parsed, dict) else {}
-            )
+                    # Verify protocol compliance
+                    if "[RESPONSE_START]" not in reply.raw_text or "[RESPONSE_END]" not in reply.raw_text:
+                        print(f"❌ [{agent.capitalize()}] protocol violation: missing markers")
+                        task_state = fail_participant(task_state, round_num, agent, "format_error", "missing markers")
+                        save_task_state(base_dir, task_id, task_state)
+                        continue
 
-            print(f"🗣️  {agent.capitalize()}: {summary}")
-            print(f"   (details: {artifact_path})")
+                    # Save artifact
+                    artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
+                    artifacts_refs.append(artifact_path)
 
-            replies.append(reply)
+                    # Mark completed
+                    task_state = complete_participant(task_state, round_num, agent, artifact_path,
+                                                     reply.parsed if isinstance(reply.parsed, dict) else {})
+                    save_task_state(base_dir, task_id, task_state)
+
+                    # Extract summary
+                    if isinstance(reply.parsed, dict):
+                        summary = reply.parsed.get("decision", "")
+                        if not summary:
+                            summary = reply.raw_text[:100]
+                    else:
+                        summary = reply.raw_text[:100]
+
+                    # Log event
+                    append_event(
+                        base_dir,
+                        "discussion_message",
+                        agent,
+                        task_id,
+                        summary,
+                        artifacts=[artifact_path],
+                        details=reply.parsed if isinstance(reply.parsed, dict) else {}
+                    )
+
+                    print(f"✓ [{agent.capitalize()}] {summary[:60]}...")
+                    replies.append(reply)
 
         # Check if all participants successfully replied
         expected_participant_count = len([p for p in participants if p != "claude"])
@@ -939,6 +1009,7 @@ if __name__ == "__main__":
     discuss_parser.add_argument("task_id", nargs='?', help="Task ID (optional if --topic provided)")
     discuss_parser.add_argument("topic", nargs='?', help="Discussion topic (positional, or use --topic)")
     discuss_parser.add_argument("--topic", dest="topic_flag", help="Discussion topic (alternative to positional)")
+    discuss_parser.add_argument("--mode", choices=["fast", "full"], default="full", help="fast: single-round stateless (ccg-style), full: multi-round persistent (default)")
     discuss_parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
     discuss_parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
     discuss_parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
@@ -983,7 +1054,51 @@ if __name__ == "__main__":
             sys.exit(1)
 
     try:
-        base = resolve_existing_base_dir(args.base_dir)
+        # For discuss --mode=fast, allow running without init
+        if args.command == "discuss" and hasattr(args, 'mode') and args.mode == "fast":
+            # Fast mode: use git root or cwd, no init required
+            if args.base_dir:
+                base = Path(args.base_dir).resolve()
+            else:
+                # Try git root, fallback to cwd
+                try:
+                    import subprocess
+                    result = subprocess.run(
+                        ['git', 'rev-parse', '--show-toplevel'],
+                        capture_output=True, text=True, check=True
+                    )
+                    base = Path(result.stdout.strip())
+                except:
+                    base = Path.cwd()
+        elif args.command == "discuss":
+            # Full mode discuss: auto-init if missing in local context
+            from collab_paths import resolve_init_base_dir
+
+            # Determine intended base directory
+            intended_base = resolve_init_base_dir(args.base_dir) if args.base_dir else None
+            if not intended_base:
+                # Use git root or cwd as intended base
+                try:
+                    import subprocess
+                    result = subprocess.run(
+                        ['git', 'rev-parse', '--show-toplevel'],
+                        capture_output=True, text=True, check=True
+                    )
+                    intended_base = Path(result.stdout.strip())
+                except:
+                    intended_base = Path.cwd()
+
+            collab_dir = intended_base / ".omc" / "collaboration"
+
+            # Auto-init if missing at intended location
+            if not collab_dir.exists():
+                print(f"ℹ️  No collaboration state at {intended_base}. Auto-initializing...")
+                init_collaboration(str(intended_base), source="auto")
+                print(f"✓ Collaboration initialized at: {collab_dir}")
+
+            base = intended_base
+        else:
+            base = resolve_existing_base_dir(args.base_dir)
 
         if args.command == "scan":
             sys.exit(run_scan(base))
@@ -1018,7 +1133,7 @@ if __name__ == "__main__":
             participants = [p.strip() for p in args.participants.split(",")]
             sys.exit(run_discussion(base, task_id, topic, participants,
                                    args.max_rounds, hard_max_rounds=10,
-                                   timeout_sec=args.timeout_sec))
+                                   timeout_sec=args.timeout_sec, mode=args.mode))
         else:
             parser.print_help()
             sys.exit(1)

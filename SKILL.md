@@ -66,7 +66,7 @@ English examples:
 /claude-codex-gemini-collab task "<description>"
 /claude-codex-gemini-collab claim <TASK-ID>
 /claude-codex-gemini-collab complete <TASK-ID>
-/claude-codex-gemini-collab discuss --topic "<topic>" [--max-rounds 3]
+/claude-codex-gemini-collab discuss --topic "<topic>" [--mode fast|full] [--max-rounds 3]
 /claude-codex-gemini-collab repair
 ```
 
@@ -75,15 +75,20 @@ English examples:
 **Purpose:** Initiate multi-round discussion where Claude orchestrates Codex and Gemini responses to reach consensus on a topic.
 
 **Trigger:**
-- Command: `/claude-codex-gemini-collab discuss --topic "<topic>" [--max-rounds 3]`
+- Command: `/claude-codex-gemini-collab discuss --topic "<topic>" [--mode fast|full] [--max-rounds 3]`
 - Natural language: "让Codex和Gemini讨论X", "启动讨论：Y", "Claude orchestrate Codex/Gemini discussing X"
 
 **Parameters:**
 - `--topic` (required): Discussion topic
-- `--max-rounds` (optional): Maximum rounds (default: 3, range: 1-10)
+- `--mode` (optional): Discussion mode (default: full)
+  - `full`: Multi-round persistent discussion with consensus detection (requires init)
+  - `fast`: Single-round stateless discussion, ccg-style (no init required)
+- `--max-rounds` (optional): Maximum rounds (default: 3, range: 1-10, forced to 1 in fast mode)
 - Participants: Codex and Gemini (orchestrated by Claude)
 
-**Prerequisites:** Must run `init` first to establish collaboration state.
+**Prerequisites:**
+- `full` mode: Must run `init` first to establish collaboration state
+- `fast` mode: No init required (stateless)
 
 **Behavior:**
 - Does NOT auto-create task
@@ -95,9 +100,44 @@ English examples:
 /claude-codex-gemini-collab discuss --topic "API设计方案评审" --max-rounds 5
 ```
 
+**Mode Comparison:**
+
+| Feature | fast mode | full mode |
+|---------|-----------|-----------|
+| Rounds | Single (1) | Multi (default 3) |
+| State | Stateless | Persistent event-sourced |
+| Init | Not required | Required |
+| Consensus | Claude synthesis | Consensus detection |
+| Artifacts | `.omc/collaboration/artifacts/fast/` | `.omc/collaboration/artifacts/` |
+| Use case | Quick consultation (ccg-style) | Formal discussion with history |
+
 **vs omc ask:**
 - `omc ask`: Single external consultation, one-shot advice
-- `discuss`: Multi-round collaborative discussion with consensus detection
+- `discuss --mode=fast`: Replaces ccg, single-round parallel consultation
+- `discuss --mode=full`: Multi-round collaborative discussion with consensus detection
+
+**Parallel Execution (v0.4.3+):**
+
+Agents now execute in parallel using ThreadPoolExecutor instead of sequential execution:
+- **Before:** Codex (5s) → wait → Gemini (180s) = 185s total
+- **After:** max(Codex 5s, Gemini 180s) = 180s total
+- Benefits: Faster consensus, non-blocking architecture, better timeout handling
+
+**Gemini Configuration:**
+
+Gemini CLI requires valid API configuration in `~/.gemini/.env`:
+```bash
+GOOGLE_GEMINI_BASE_URL=<valid-endpoint>
+GEMINI_API_KEY=<your-api-key>
+GEMINI_MODEL=gemini-3-pro-preview
+```
+
+**Known Issue:** If Gemini endpoint returns 404 or times out, discussion will complete with Codex-only results. Check `~/.gemini/.env` if Gemini consistently fails.
+
+**Troubleshooting:**
+- Gemini timeout → Check `~/.gemini/.env` endpoint validity
+- Only Codex artifacts → Verify Gemini API key and endpoint
+- Use `--participants codex` to skip Gemini temporarily
 
 ## Protocol Rules
 
