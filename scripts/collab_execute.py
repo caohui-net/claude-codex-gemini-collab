@@ -189,19 +189,24 @@ def verify_execution(evidence: dict, consensus: dict) -> bool:
         if field not in evidence:
             issues.append(f"Missing evidence field: {field}")
 
-    # Check if any changes occurred
+    # Check if changes match expectations
+    tasks = consensus.get("tasks", [])
+    if not tasks:
+        # No tasks in consensus - no changes expected, valid
+        print("\n✅ Verification passed: No tasks, no changes (valid)")
+        return True
+
+    # Tasks exist - verify changes occurred
     if evidence.get("file_count", 0) == 0:
         issues.append("No file changes detected")
 
     # Validate against consensus expectations
-    tasks = consensus.get("tasks", [])
-    if tasks:
-        target_files = {task.get("target_file") for task in tasks if task.get("target_file")}
-        changed_files = set(evidence.get("changed_files", []))
+    target_files = {task.get("target_file") for task in tasks if task.get("target_file")}
+    changed_files = set(evidence.get("changed_files", []))
 
-        # Check if any expected targets were modified
-        if target_files and not target_files.intersection(changed_files):
-            issues.append(f"Expected targets not modified: {target_files}")
+    # Check if any expected targets were modified
+    if target_files and not target_files.intersection(changed_files):
+        issues.append(f"Expected targets not modified: {target_files}")
 
     if issues:
         print("\n❌ Verification failed:")
@@ -305,8 +310,45 @@ def main():
     # Transition to executing phase
     sm.transition_to(Phase.EXECUTING)
 
-    # TODO: Implement actual execution logic
-    print("\n⚠️  Execution logic not yet implemented")
+    # Execute tasks from consensus
+    tasks = consensus.get("tasks", [])
+    if not tasks:
+        print("\n⚠️  No tasks in consensus, skipping execution")
+    else:
+        print(f"\n🔨 Executing {len(tasks)} task(s)...")
+        for i, task in enumerate(tasks, 1):
+            target_file = task.get("target_file")
+            content = task.get("content", "")
+            action = task.get("action", "write")
+
+            if not target_file:
+                print(f"  [{i}] Skipped: no target_file")
+                continue
+
+            target_path = args.base_dir / target_file
+
+            try:
+                if action == "write":
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+                    target_path.write_text(content, encoding="utf-8")
+                    print(f"  [{i}] ✓ {target_file}")
+
+                    # Add to git index so audit detects changes
+                    try:
+                        subprocess.run(
+                            ["git", "add", str(target_path)],
+                            cwd=args.base_dir,
+                            capture_output=True,
+                            check=False  # Don't fail if no git
+                        )
+                    except Exception:
+                        pass  # Ignore git errors
+                else:
+                    print(f"  [{i}] ✗ Unknown action: {action}")
+            except Exception as e:
+                print(f"  [{i}] ✗ {target_file}: {e}")
+                sm.transition_to(Phase.FAILED)
+                return 1
 
     # Safety: Audit changes after execution
     changed_files = audit_execution(args.base_dir, snapshot)
