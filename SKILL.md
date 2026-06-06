@@ -3,7 +3,7 @@ name: claude-codex-gemini-collab
 displayName: Multi-Agent Collab
 aliases: [collab, tricollab]
 description: Use when the user wants persistent Claude/Codex/Gemini collaboration state, task creation, claim/complete, or handoff to Codex/Gemini. Prefer this over omc ask for collaboration protocol operations; do not use for one-off advisor questions.
-version: 0.4.1
+version: 0.4.2
 ---
 
 # Claude-Codex-Gemini Collaboration Skill
@@ -163,6 +163,33 @@ Creates:
 - `state.json` (initialized)
 - `events.jsonl` (empty)
 - `tasks/`, `artifacts/`, `locks/` subdirectories
+
+### discuss
+
+Orchestrates multi-agent discussion between Codex and Gemini to reach consensus on a topic.
+
+```bash
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_discuss.py discuss --topic "topic description" [--participants codex,gemini] [--max-rounds 3]
+```
+
+**How it works:**
+- Script handles ALL agent invocation internally via `agent_cli.py`
+- Claude should ONLY execute the script and wait for results
+- Do NOT manually spawn agents or use Agent tool
+- Script orchestrates rounds, collects responses, detects consensus
+
+Features:
+- Auto-initializes collaboration if not found (v0.4.0+)
+- Generates task ID from topic if not provided
+- Saves discussion artifacts to `.omc/collaboration/artifacts/`
+- Generates consensus contract in `.omc/collaboration/tasks/{task_id}/consensus.json`
+
+Subcommands:
+- `resume <TASK-ID>`: Resume interrupted discussion
+- `status <TASK-ID>`: Show discussion status
+- `conclude <TASK-ID> "decision"`: Manually conclude with decision
+- `history <TASK-ID>`: Show discussion history
+- `scan`: Scan for incomplete discussions
 
 ### validate
 
