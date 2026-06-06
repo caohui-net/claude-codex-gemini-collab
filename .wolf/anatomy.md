@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T16:36:02.634Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T16:37:23.558Z
 > Files: 519 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -547,4 +547,4 @@
 
 ## docs/
 
-- `PROJECT-SUMMARY.md` — Project Summary (~4200 tok)
+- `PROJECT-SUMMARY.md` — Project Summary (~4274 tok)
