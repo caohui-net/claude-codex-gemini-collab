@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-06
+
+### Fixed
+
+- **Cross-Project Skill Invocation** - SKILL.md now uses absolute paths
+  - Changed all `python3 scripts/` to `python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/`
+  - Skill now works when invoked from any project directory
+  - Previously failed with "File not found" when invoked from non-CCG projects
+  - Root cause: Relative paths only resolved in CCG project directory
+  - Verified: Script execution from `/school-ai-chat-cc` works correctly
+
 ## [0.5.0] - 2026-06-06
 
 ### Added

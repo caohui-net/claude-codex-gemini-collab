@@ -2,6 +2,26 @@
 
 ## Latest Changes
 
+### v0.4.1 Bug Fix: Cross-Project Skill Invocation (2026-06-06)
+
+**Status:** ✅ 完成
+
+**问题:** collab技能在非CCG项目调用失败
+- 错误: `python3: can't open file '/path/to/other-project/scripts/collab_discuss.py': No such file or directory`
+- 根因: SKILL.md使用相对路径`python3 scripts/...`
+- 影响: 技能只在CCG项目目录有效，跨项目调用失败
+
+**修复:**
+- 全部改为绝对路径: `python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/...`
+- 11处路径更新（init, validate, status, task, claim, handoff, complete, repair）
+- 版本号: 0.3.1 → 0.4.1
+
+**验证:** school-ai-chat-cc项目成功调用collab_status.py
+
+**文件变更:** SKILL.md (12行修改)
+
+---
+
 ### v0.5.0 Documentation Update (2026-06-06)
 
 **Status:** ✅ 完成
