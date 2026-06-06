@@ -12,13 +12,19 @@ REQUIRED_FILES = [
     "scripts/collab_task.py",
     "scripts/collab_event.py",
     "scripts/collab_discuss.py",
+    "scripts/collab_execute.py",
     "scripts/agent_cli.py",
     "scripts/collab_state.py",
+    "scripts/collab_paths.py",
     "scripts/discussion_enhancements.py",
     "scripts/rmux_utils.py",
     "scripts/ccg_client.py",
     "scripts/loop_detector.py",
     "scripts/context_compactor.py",
+    "scripts/execution_review.py",
+    "scripts/execution_state_machine.py",
+    "scripts/path_validator.py",
+    "scripts/mcp_adapter.py",
 ]
 
 # Installation targets
