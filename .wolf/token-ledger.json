@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-06-06T16:25:30.583Z",
   "lifetime": {
-    "total_tokens_estimated": 2704,
-    "total_reads": 4,
-    "total_writes": 0,
+    "total_tokens_estimated": 4745,
+    "total_reads": 7,
+    "total_writes": 6,
     "total_sessions": 1,
-    "anatomy_hits": 2,
-    "anatomy_misses": 2,
-    "repeated_reads_blocked": 0,
-    "estimated_savings_vs_bare_cli": 400
+    "anatomy_hits": 4,
+    "anatomy_misses": 3,
+    "repeated_reads_blocked": 2,
+    "estimated_savings_vs_bare_cli": 2152
   },
   "sessions": [
     {
@@ -66,6 +66,71 @@
         "writes_count": 0,
         "repeated_reads_blocked": 0,
         "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-06-06-0025",
+      "started": "2026-06-06T16:25:34.248Z",
+      "ended": "2026-06-06T16:33:00.702Z",
+      "reads": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/docs/PROJECT-SUMMARY.md",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/session-context.json",
+          "tokens_estimated": 1352,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.gitignore",
+          "tokens_estimated": 194,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.gitignore",
+          "tokens_estimated": 140,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/docs/PROJECT-SUMMARY.md",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/session-context.json",
+          "tokens_estimated": 51,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/session-context.json",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/session-context.json",
+          "tokens_estimated": 39,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.gitignore",
+          "tokens_estimated": 32,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1546,
+        "output_tokens_estimated": 495,
+        "reads_count": 3,
+        "writes_count": 6,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 2
       }
     }
   ],
