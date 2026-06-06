@@ -3,7 +3,7 @@ name: claude-codex-gemini-collab
 displayName: Multi-Agent Collab
 aliases: [collab, tricollab]
 description: Use when the user wants persistent Claude/Codex/Gemini collaboration state, task creation, claim/complete, or handoff to Codex/Gemini. Prefer this over omc ask for collaboration protocol operations; do not use for one-off advisor questions.
-version: 0.4.2
+version: 0.4.3
 ---
 
 # Claude-Codex-Gemini Collaboration Skill

@@ -2,6 +2,27 @@
 
 ## Latest Changes
 
+### v0.4.3 Bug Fix: Missing Module Dependencies (2026-06-06)
+
+**Status:** ✅ 完成
+
+**问题:** 技能安装缺少Python模块依赖
+- 错误: `ModuleNotFoundError: No module named 'ccg_client'` (以及loop_detector等)
+- 根因: `sync_skill_install.py`只复制SKILL.md，不复制Python模块
+- 影响: 从其他项目调用discuss命令时导入失败
+
+**修复:**
+- 创建`scripts/install_skill.py`全量安装脚本
+- 复制14个文件：SKILL.md + 13个Python模块
+- 模块清单: collab_init, collab_validate, collab_status, collab_task, collab_event, collab_discuss, agent_cli, collab_state, discussion_enhancements, rmux_utils, ccg_client, loop_detector, context_compactor
+- 安装目标: `~/.claude/skills/` 和 `~/.omc/skills/`
+
+**验证:** school-ai-chat-cc项目成功调用，无模块导入错误
+
+**文件变更:** scripts/install_skill.py (新增60行)
+
+---
+
 ### v0.4.2 Bug Fix: Discuss Command Agent Invocation (2026-06-06)
 
 **Status:** ✅ 完成
