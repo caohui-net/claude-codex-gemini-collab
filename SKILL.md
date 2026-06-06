@@ -3,7 +3,7 @@ name: claude-codex-gemini-collab
 displayName: Multi-Agent Collab
 aliases: [collab, tricollab]
 description: Use when the user wants persistent Claude/Codex/Gemini collaboration state, task creation, claim/complete, or handoff to Codex/Gemini. Prefer this over omc ask for collaboration protocol operations; do not use for one-off advisor questions.
-version: 0.3.1
+version: 0.4.1
 ---
 
 # Claude-Codex-Gemini Collaboration Skill
@@ -154,7 +154,7 @@ English examples:
 Creates collaboration directory structure and initializes protocol.
 
 ```bash
-python3 scripts/collab_init.py
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_init.py
 ```
 
 Creates:
@@ -169,7 +169,7 @@ Creates:
 Runs read-only collaboration journal/state validation.
 
 ```bash
-python3 scripts/collab_validate.py
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_validate.py
 ```
 
 Checks:
@@ -185,7 +185,7 @@ This command does not repair or mutate collaboration files.
 Shows current collaboration state.
 
 ```bash
-python3 scripts/collab_status.py [--task TASK-ID]
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_status.py [--task TASK-ID]
 ```
 
 Displays:
@@ -205,7 +205,7 @@ With `--task` flag:
 Creates new collaboration task.
 
 ```bash
-python3 scripts/collab_task.py create "<description>"
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_task.py create "<description>"
 ```
 
 - Generates task ID
@@ -218,7 +218,7 @@ python3 scripts/collab_task.py create "<description>"
 Claims an open task (atomic operation).
 
 ```bash
-python3 scripts/collab_task.py claim <TASK-ID>
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_task.py claim <TASK-ID>
 ```
 
 - Acquires journal lock
@@ -232,14 +232,14 @@ python3 scripts/collab_task.py claim <TASK-ID>
 Prepares handoff to other agent (filesystem only).
 
 ```bash
-python3 scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target-agent>" --target-agent <target-agent>
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_event.py handoff_requested <agent> <TASK-ID> "handoff to <target-agent>" --target-agent <target-agent>
 ```
 
 Example:
 ```bash
-python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to codex" --target-agent codex
-python3 scripts/collab_event.py handoff_requested claude TASK-1 "handoff to gemini" --target-agent gemini
-python3 scripts/collab_event.py handoff_requested gemini TASK-2 "handoff to codex" --target-agent codex
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_event.py handoff_requested claude TASK-1 "handoff to codex" --target-agent codex
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_event.py handoff_requested claude TASK-1 "handoff to gemini" --target-agent gemini
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_event.py handoff_requested gemini TASK-2 "handoff to codex" --target-agent codex
 ```
 
 - Appends `handoff_requested` event with `details.target_agent`
@@ -253,7 +253,7 @@ Does NOT auto-invoke codex/gemini (user must do manually via /oh-my-claudecode:a
 Marks task as completed.
 
 ```bash
-python3 scripts/collab_task.py complete <TASK-ID>
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_task.py complete <TASK-ID>
 ```
 
 - Appends `completed` event
@@ -265,7 +265,7 @@ python3 scripts/collab_task.py complete <TASK-ID>
 Attempts to repair corrupted collaboration state.
 
 ```bash
-python3 scripts/collab_validate.py repair
+python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_validate.py repair
 ```
 
 - Backs up current files
