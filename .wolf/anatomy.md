@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T18:00:24.374Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T18:09:12.822Z
 > Files: 523 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/skills/claude-codex-gemini-collab/
@@ -9,7 +9,7 @@
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~11990 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~12353 tok)
 
 ## ./
 
