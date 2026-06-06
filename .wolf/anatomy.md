@@ -1,17 +1,25 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T16:51:59.006Z
-> Files: 519 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T18:00:24.374Z
+> Files: 523 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../.claude/skills/claude-codex-gemini-collab/
+
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2632 tok)
+
+## ../../.claude/skills/claude-codex-gemini-collab/scripts/
+
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~11990 tok)
 
 ## ./
 
 - `.gitignore` — Git ignore rules (~224 tok)
-- `CHANGELOG.md` — Changelog (~2668 tok)
+- `CHANGELOG.md` — Changelog (~2868 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
 - `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1771 tok)
 - `pyproject.toml` — Python project configuration (~186 tok)
-- `README.md` — Project documentation (~2480 tok)
+- `README.md` — Project documentation (~2484 tok)
 - `response.json` (~469 tok)
 - `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2415 tok)
 
@@ -547,4 +555,12 @@
 
 ## docs/
 
-- `PROJECT-SUMMARY.md` — Project Summary (~4538 tok)
+- `PROJECT-SUMMARY.md` — Project Summary (~4709 tok)
+
+## scripts/
+
+- `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~514 tok)
+
+## tests/
+
+- `cross-project-test-plan.md` — CCG Skill Cross-Project Test Plan (~525 tok)

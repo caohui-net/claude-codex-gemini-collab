@@ -32,6 +32,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-06T16:44:04.775Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-06-06T17:55:18.290Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/skills/claude-codex-gemini-collab/scripts/collab_discuss.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 11→16 lines (2 removed) | Also: if not collab_dir.exists():; print(\"❌ Collaboration not initialized\") | Also: max_rounds = 1; hard_max_rounds = 1",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-06T17:59:40.686Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-06-06T17:58:01.232Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/skills/claude-codex-gemini-collab/SKILL.md",
+      "root_cause": "Had `init`",
+      "fix": "Changed to `full`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T17:58:01.232Z"
     }
   ]
 }
