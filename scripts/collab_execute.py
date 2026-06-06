@@ -561,19 +561,18 @@ def main():
 
             # Recursively execute iteration
             print(f"\n🔨 Executing iteration consensus")
-            iter_exit = subprocess.run(
-                [
-                    sys.executable,
-                    str(Path(__file__)),
-                    iter_task_id,
-                    "--base-dir", str(args.base_dir),
-                    "--skip-approval",  # Skip approval for iterations
-                    "--auto-iterate" if args.auto_iterate else "",
-                    "--max-iterations", str(args.max_iterations)
-                ],
-                cwd=args.base_dir
-            ).returncode
+            iter_cmd = [
+                sys.executable,
+                str(Path(__file__)),
+                iter_task_id,
+                "--base-dir", str(args.base_dir),
+                "--skip-approval",  # Skip approval for iterations
+                "--max-iterations", str(args.max_iterations)
+            ]
+            if args.auto_iterate:
+                iter_cmd.append("--auto-iterate")
 
+            iter_exit = subprocess.run(iter_cmd, cwd=args.base_dir).returncode
             return iter_exit
         else:
             print(f"   Review feedback and address issues before retry")
