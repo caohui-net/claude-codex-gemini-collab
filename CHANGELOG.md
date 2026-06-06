@@ -4,6 +4,59 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-06
+
+### Added
+
+- **Execution-Verification Loop** - Complete implementation of consensus execution with verification
+  - Phase 1: Core framework (consensus contract, state machine, execution safety, verification logic)
+  - Phase 2: Execution logic (task parsing, file operations, error handling)
+  - Phase 3: Review feedback system (ExecutionReviewReport, status handling, automated iteration)
+- **Auto-Iteration** - Automatic retry loop for rejected/needs_changes consensus
+  - `--auto-iterate` flag enables automatic iteration
+  - `--max-iterations` parameter controls iteration limit (default: 3)
+  - Deterministic topic generation from feedback
+  - Termination condition checking
+- **OpenWolf Integration** - Project management system for token optimization and learning
+  - `.wolf/cerebrum.md` - Learning and memory system (user preferences, key learnings, bug history)
+  - `.wolf/anatomy.md` - File navigation index with token estimates
+  - `.wolf/buglog.json` - Bug tracking and fix history
+  - `.wolf/memory.md` - Session history log
+  - Lifecycle hooks for automated tracking
+- **collab_execute.py** - New execution subcommand
+  - Loads consensus.json and executes approved tasks
+  - Pre-execution validation (path security, required fields)
+  - Git snapshot before execution with rollback capability
+  - Post-execution audit trail and verification
+  - Evidence collection (changed files, test results, build results)
+  - Review report generation with status (approved/rejected/needs_changes)
+
+### Enhanced
+
+- **Discussion Enhancements** - Auto-triggered during discussion rounds
+  - Doom loop detection (stuck/repeating patterns)
+  - Context compaction (compress old rounds to prevent token overflow)
+  - MCP adapter for standardized tool access
+- **State Machine** - Added VERIFYING phase to lifecycle
+  - PLANNING → EXECUTING → VERIFYING → COMPLETED
+  - Transition validation prevents invalid jumps
+- **Verification Logic** - Evidence completeness validation
+  - Required field checks
+  - Consensus target matching
+  - Test/build result validation
+
+### Fixed
+
+- **Execution Logic Bugs** - Resolved 2 critical verification issues
+  - audit_execution() now uses `git diff --cached` to detect staged changes
+  - verify_execution() distinguishes explicit empty tasks vs missing tasks field
+
+### Verified
+
+- 146/146 tests passing (Phase 1-3 implementation + verification)
+- Codex review consensus on Phase 1-3 design
+- End-to-end workflow: discuss → consensus → approve → execute → verify → iterate
+
 ## [0.4.0] - 2026-06-02
 
 ### Added
