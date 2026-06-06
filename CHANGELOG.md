@@ -11,8 +11,8 @@ All notable changes to this project will be documented in this file.
 - **Missing Module Dependencies** - Created comprehensive installation script
   - Issue: `ModuleNotFoundError` when invoking skill from other projects
   - Root cause: `sync_skill_install.py` only copied SKILL.md, not Python module dependencies
-  - Missing modules: ccg_client, loop_detector, context_compactor, discussion_enhancements, rmux_utils, collab_state
-  - Fix: Created `scripts/install_skill.py` that copies all 14 required files (SKILL.md + 13 Python modules)
+  - Missing modules: ccg_client, loop_detector, context_compactor, discussion_enhancements, rmux_utils, collab_state, collab_paths, execution_review, execution_state_machine, path_validator, mcp_adapter
+  - Fix: Created `scripts/install_skill.py` that copies all 20 required files (SKILL.md + 19 Python modules)
   - Installation targets: `~/.claude/skills/claude-codex-gemini-collab/` and `~/.omc/skills/claude-codex-gemini-collab/`
   - Verified: Successfully invoked from school-ai-chat-cc project with no import errors
 

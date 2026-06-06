@@ -16,16 +16,17 @@ This skill enables Claude to orchestrate Codex and Gemini collaboration via shar
 
 ## Installation
 
-### 1. Sync to all installation paths
+### 1. Install skill with all dependencies
 
 ```bash
-python3 scripts/sync_skill_install.py
+python3 scripts/install_skill.py
 ```
 
-This syncs SKILL.md to:
-- `.omc/skills/claude-codex-gemini-collab/`
+This installs 20 files to:
 - `~/.claude/skills/claude-codex-gemini-collab/`
 - `~/.omc/skills/claude-codex-gemini-collab/`
+
+Includes: SKILL.md + 19 Python modules (all dependencies)
 
 ### 2. Configure skillOverrides (required)
 
