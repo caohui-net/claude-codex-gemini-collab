@@ -56,3 +56,6 @@ Thumbs.db
 .omc/skills/
 .claude/
 response.json
+
+# OMC runtime artifacts in any subdirectory
+**/.omc/
