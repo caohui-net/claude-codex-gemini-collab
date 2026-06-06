@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from execution_state_machine import ExecutionStateMachine, Phase
 from path_validator import validate_path
+from execution_review import ExecutionReviewReport, ReviewStatus
 
 
 def load_consensus(base_dir: Path, task_id: str) -> dict:
@@ -180,8 +181,50 @@ def collect_evidence(base_dir: Path, task_id: str, changed_files: list) -> dict:
     return evidence
 
 
-def verify_execution(evidence: dict, consensus: dict) -> bool:
-    """Verify execution succeeded based on evidence completeness."""
+def generate_review_report(
+    task_id: str,
+    consensus: dict,
+    changed_files: list,
+    verification_success: bool,
+    verification_issues: list = None
+) -> ExecutionReviewReport:
+    """Generate execution review report."""
+    if verification_issues is None:
+        verification_issues = []
+
+    # Determine review status based on verification
+    if verification_success:
+        review_status = ReviewStatus.APPROVED
+    else:
+        review_status = ReviewStatus.REJECTED
+
+    # Extract command info from consensus tasks
+    tasks = consensus.get("tasks", [])
+    command = f"Execute {len(tasks)} task(s)" if tasks else "No tasks"
+
+    # Build failure summary from verification issues
+    failure_summary = "; ".join(verification_issues) if verification_issues else ""
+
+    report = ExecutionReviewReport(
+        task_id=task_id,
+        command=command,
+        exit_code=0 if verification_success else 1,
+        changed_files=changed_files,
+        failure_summary=failure_summary,
+        log_reference=f".omc/collaboration/tasks/{task_id}/evidence.json",
+        review_status=review_status,
+        feedback_items=verification_issues
+    )
+
+    return report
+
+
+def verify_execution(evidence: dict, consensus: dict) -> tuple[bool, list]:
+    """Verify execution succeeded based on evidence completeness.
+
+    Returns:
+        tuple: (success: bool, issues: list[str])
+    """
     issues = []
 
     # Check evidence completeness
@@ -198,9 +241,9 @@ def verify_execution(evidence: dict, consensus: dict) -> bool:
             print("\n❌ Verification failed:")
             for issue in issues:
                 print(f"  - {issue}")
-            return False
+            return False, issues
         print("\n✅ Verification passed: No tasks, no changes (valid)")
-        return True
+        return True, []
 
     # If tasks is None or has items, continue with normal validation
     if tasks is None:
@@ -222,10 +265,10 @@ def verify_execution(evidence: dict, consensus: dict) -> bool:
         print("\n❌ Verification failed:")
         for issue in issues:
             print(f"  - {issue}")
-        return False
+        return False, issues
 
     print("\n✅ Verification passed: Evidence complete")
-    return True
+    return True, []
 
 
 def validate_target_files(consensus: dict, base_dir: Path) -> tuple[bool, list]:
@@ -377,7 +420,24 @@ def main():
     evidence = collect_evidence(args.base_dir, args.task_id, changed_files)
 
     # Verification: Verify execution success
-    success = verify_execution(evidence, consensus)
+    success, issues = verify_execution(evidence, consensus)
+
+    # Generate execution review report
+    report = generate_review_report(
+        args.task_id,
+        consensus,
+        changed_files,
+        success,
+        issues
+    )
+
+    # Save review report
+    report_path = args.base_dir / ".omc/collaboration/tasks" / args.task_id / "review_report.json"
+    with open(report_path, "w") as f:
+        json.dump(report.to_dict(), f, indent=2)
+
+    print(f"\n📋 Review report saved: {report_path}")
+    print(f"   Status: {report.review_status.value}")
 
     # Mark as completed or failed based on verification
     if success:

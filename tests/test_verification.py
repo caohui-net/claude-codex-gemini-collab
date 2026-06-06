@@ -42,9 +42,10 @@ def test_verify_execution_with_changes():
     }
     consensus = {"decision": "Test"}
 
-    success = verify_execution(evidence, consensus)
+    success, issues = verify_execution(evidence, consensus)
 
     assert success is True
+    assert issues == []
 
 
 def test_verify_execution_no_changes():
@@ -57,9 +58,10 @@ def test_verify_execution_no_changes():
     }
     consensus = {"decision": "Test"}
 
-    success = verify_execution(evidence, consensus)
+    success, issues = verify_execution(evidence, consensus)
 
     assert success is False
+    assert "No file changes detected" in issues
 
 
 def test_verify_execution_missing_fields():
@@ -67,9 +69,11 @@ def test_verify_execution_missing_fields():
     evidence = {"file_count": 3}  # Missing required fields
     consensus = {"decision": "Test"}
 
-    success = verify_execution(evidence, consensus)
+    success, issues = verify_execution(evidence, consensus)
 
     assert success is False
+    assert len(issues) > 0
+    assert any("Missing evidence field" in issue for issue in issues)
 
 
 def test_verify_execution_target_mismatch():
@@ -85,9 +89,10 @@ def test_verify_execution_target_mismatch():
         "tasks": [{"target_file": "src/main.py"}]
     }
 
-    success = verify_execution(evidence, consensus)
+    success, issues = verify_execution(evidence, consensus)
 
     assert success is False
+    assert any("Expected targets not modified" in issue for issue in issues)
 
 
 if __name__ == "__main__":

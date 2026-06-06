@@ -2,6 +2,26 @@
 
 ## Latest Changes
 
+### Phase 3.1: Execution Review Report (2026-06-06)
+
+**Status:** ✅ 实施完成 (141 tests passing)
+
+**实施内容:**
+- ExecutionReviewReport结构定义（execution_review.py）
+  - ReviewStatus枚举：approved, rejected, needs_changes
+  - 结构化报告字段：task_id, command, exit_code, changed_files, test_results, build_results, failure_summary, log_reference, review_status, feedback_items
+- collab_execute.py集成报告生成
+  - verify_execution现返回tuple (bool, list[str])提供详细issues
+  - generate_review_report()基于验证结果生成报告
+  - 报告保存到`.omc/collaboration/tasks/{task_id}/review_report.json`
+- 测试更新：所有verify_execution调用解包tuple返回值
+
+**设计基础:** Codex Phase 3共识方案（执行后代码审核反馈机制）
+
+**下一步:** Phase 3.2 - 审核状态机和反馈流程（rejected/needs_changes回流讨论）
+
+---
+
 ### Bug Fixes: Execution Logic (2026-06-06)
 
 **Status:** ✅ 测试回归修复完成 (141 tests passing)
