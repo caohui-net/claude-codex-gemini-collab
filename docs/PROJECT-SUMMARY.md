@@ -2,6 +2,25 @@
 
 ## Latest Changes
 
+### v0.5.0 Documentation Update (2026-06-06)
+
+**Status:** ✅ 完成
+
+**实施内容:**
+- 更新CHANGELOG.md
+  - 添加v0.5.0发布说明
+  - 记录Phase 1-3执行验证循环实现
+  - 记录OpenWolf集成
+  - 记录自动迭代功能
+- 更新README.md
+  - Overview添加执行能力描述
+  - 新增Execution Features章节（用法、工作流、审核状态）
+  - 添加collab_execute.py使用示例
+
+**文件变更:** 2个文件 (+93行)
+
+---
+
 ### OpenWolf Integration (2026-06-06)
 
 **Status:** ✅ 完成
