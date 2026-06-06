@@ -2,6 +2,33 @@
 
 ## Latest Changes
 
+### OpenWolf Integration (2026-06-06)
+
+**Status:** ✅ 完成
+
+**实施内容:**
+- 集成OpenWolf项目管理系统
+  - `.wolf/OPENWOLF.md`: 操作协议和规则
+  - `.wolf/cerebrum.md`: 学习记忆系统（用户偏好、关键学习、错误记录）
+  - `.wolf/anatomy.md`: 文件导航索引（token估算）
+  - `.wolf/buglog.json`: Bug追踪和修复历史
+  - `.wolf/memory.md`: 会话历史日志
+  - `.wolf/hooks/`: 生命周期自动化脚本
+- 项目指令入口
+  - `CLAUDE.md`: 指向`.wolf/OPENWOLF.md`
+- .gitignore改进
+  - 添加`**/.omc/`通配规则覆盖所有子目录
+  - 清理`scripts/.omc/`和`tests/.omc/`运行时产物
+
+**效果:**
+- Token优化: 通过anatomy.md避免重复读取文件
+- 跨会话学习: cerebrum.md记录项目约定和用户偏好
+- Bug防重复: buglog.json防止重复相同错误
+
+**文件变更:** 24个文件 (+3248行)
+
+---
+
 ### Collab Skill v0.4.0: Discuss Command + Auto-Init (2026-06-06)
 
 **Status:** ✅ 实施完成
