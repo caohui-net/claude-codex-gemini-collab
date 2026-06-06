@@ -2,6 +2,30 @@
 
 ## Latest Changes
 
+### v0.4.2 Bug Fix: Discuss Command Agent Invocation (2026-06-06)
+
+**Status:** ✅ 完成
+
+**问题:** collab技能discuss命令触发错误agent调用
+- 错误: `Agent type 'oh-my-claudecode:ask' not found`
+- 根因: SKILL.md缺少discuss实现说明
+- 影响: Claude误认为需要手动spawn agents
+
+**修复:**
+- 添加discuss实现章节到SKILL.md
+- 说明脚本内部处理所有agent调用
+- 警告Claude不要手动spawn agents
+- 版本号: 0.4.1 → 0.4.2
+
+**实现细节:**
+- 脚本通过`agent_cli.py`内部调用Codex/Gemini
+- Claude只需执行脚本并等待结果
+- 记录subcommands: resume, status, conclude, history, scan
+
+**文件变更:** SKILL.md (+28行, -1行)
+
+---
+
 ### v0.4.1 Bug Fix: Cross-Project Skill Invocation (2026-06-06)
 
 **Status:** ✅ 完成

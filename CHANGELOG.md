@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-06
+
+### Fixed
+
+- **Discuss Command Agent Invocation** - Added missing implementation section to SKILL.md
+  - Added discuss implementation section explaining script handles agent invocation internally
+  - Clarified Claude should NOT manually spawn agents or use Agent tool
+  - Script uses `agent_cli.py` to invoke Codex/Gemini internally
+  - Root cause: Missing implementation guidance caused Claude to incorrectly attempt spawning `oh-my-claudecode:ask` as agent type
+  - Error message: "Agent type 'oh-my-claudecode:ask' not found"
+  - Documented subcommands: resume, status, conclude, history, scan
+
 ## [0.4.1] - 2026-06-06
 
 ### Fixed
