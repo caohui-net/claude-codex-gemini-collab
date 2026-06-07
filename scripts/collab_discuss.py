@@ -17,6 +17,7 @@ from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_init import init_collaboration
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from collab_status_display import show_runtime_status
 from discussion_enhancements import check_and_handle_doom_loop, auto_compact_if_needed
 from models import Challenge, Conflict, ConsensusArtifact, Response
 from rmux_utils import check_rmux_available, get_tmux_info
@@ -2525,6 +2526,10 @@ if __name__ == "__main__":
                 sys.exit(1)
 
             participants = [p.strip() for p in args.participants.split(",")]
+
+            # Display runtime status before starting discussion
+            show_runtime_status(str(base))
+
             sys.exit(run_discussion(base, task_id, topic, participants,
                                    args.max_rounds, hard_max_rounds=10,
                                    timeout_sec=args.timeout_sec, mode=args.mode,

@@ -1,44 +1,61 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-07T14:10:11.257Z
-> Files: 544 tracked | Anatomy hits: 0 | Misses: 0
-
-## ../../.claude/
-
-- `CLAUDE.md` — oh-my-claudecode - Intelligent Multi-Agent Orchestration (~2440 tok)
-
-## ../../.claude/hooks/
-
-- `check-explicit-tool-directive.sh` — Hook: UserPromptSubmit - Check for explicit tool directives (~263 tok)
-
-## ../../.claude/skills/claude-codex-gemini-collab/
-
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2855 tok)
-
-## ../../.claude/skills/claude-codex-gemini-collab/scripts/
-
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~12596 tok)
-
-## ../graduation-leave-system/.claude/skills/claude-codex-collab/
-
-- `SKILL.md` — Claude-Codex Collaboration Skill (~1007 tok)
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-07T18:10:27.593Z
+> Files: 524 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
 - `.gitignore` — Git ignore rules (~224 tok)
-- `CHANGELOG.md` — Changelog (~3244 tok)
+- `agentmemory-integration-plan.md` — agentmemory整合方案 (~2629 tok)
+- `CHANGELOG.md` — Change log (~3244 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
+- `findings.md` — TASK-20260607-1157 Findings (~608 tok)
 - `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1835 tok)
-- `pyproject.toml` — Claude-Codex-Gemini Collaboration Framework (~185 tok)
+- `progress.md` — TASK-20260607-1157 Progress (~718 tok)
+- `pyproject.toml` — Python project configuration (~198 tok)
 - `README.md` — Project documentation (~2788 tok)
 - `response.json` (~469 tok)
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2933 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3072 tok)
+- `skills-lock.json` (~561 tok)
+- `task_plan.md` — TASK-20260607-1157 Plan (~390 tok)
+
+## .agents/skills/commit-context/
+
+- `SKILL.md` — Declares name (~397 tok)
+
+## .agents/skills/commit-history/
+
+- `SKILL.md` (~355 tok)
+
+## .agents/skills/forget/
+
+- `SKILL.md` (~430 tok)
+
+## .agents/skills/handoff/
+
+- `SKILL.md` (~497 tok)
+
+## .agents/skills/recall/
+
+- `SKILL.md` (~337 tok)
+
+## .agents/skills/recap/
+
+- `SKILL.md` (~358 tok)
+
+## .agents/skills/remember/
+
+- `SKILL.md` (~389 tok)
+
+## .agents/skills/session-history/
+
+- `SKILL.md` (~302 tok)
 
 ## .claude/
 
 - `settings.json` (~441 tok)
-- `settings.local.json` (~942 tok)
+- `settings.local.json` (~1543 tok)
 
 ## .claude/rules/
 
@@ -46,8 +63,9 @@
 
 ## .omc/
 
-- `daemon-audit.log` (~125609 tok)
-- `project-memory.json` (~2513 tok)
+- `daemon-audit.log` (~129685 tok)
+- `project-memory.json` (~3363 tok)
+- `project-state.json` (~154 tok)
 - `session-context.json` (~477 tok)
 
 ## .omc/artifacts/ask/
@@ -117,6 +135,7 @@
 - `codex-task-20260601-17-claude-codex-gemini-omc-ask-p0-p4-events-js-2026-06-01T10-19-57-247Z.md` — codex advisor artifact (~26283 tok)
 - `codex-task-20260601-17-round-2-gemini-ux-gemini-ux-1-cli-4-start-s-2026-06-01T10-22-28-531Z.md` — codex advisor artifact (~14827 tok)
 - `codex-taskless-completion-policy-discussion-round-2-your-recommend-2026-05-31T03-45-19-134Z.md` — codex advisor artifact (~17847 tok)
+- `codex-test-codex-codex-2026-06-07T10-23-20-445Z.md` — codex advisor artifact (~211 tok)
 - `gemini-1-7-1-2-3-4-5-6-7-1-4-5-7-task-state-schema-phase-execution--2026-06-05T05-18-55-528Z.md` — gemini advisor artifact (~1950 tok)
 - `gemini-1-collab-py-handoff-base-dir-bug-2-handoff-lifecycle-bug-ter-2026-06-01T06-36-23-219Z.md` — gemini advisor artifact (~840 tok)
 - `gemini-5-commits-critical-handoff-bug-troubleshooting-doctor-fix-co-2026-06-01T06-24-52-927Z.md` — gemini advisor artifact (~937 tok)
@@ -137,6 +156,7 @@
 - `gemini-release-ready-critical-bugs-53-6-commits-pending-ux-2026-06-01T07-04-30-781Z.md` — gemini advisor artifact (~2404 tok)
 - `gemini-task-20260601-17-round-2-codex-codex-1-cli-discuss-topic-max-2026-06-01T10-22-56-563Z.md` — gemini advisor artifact (~1207 tok)
 - `gemini-task-20260601-17-ux-claude-codex-gemini-omc-ask-p0-p4-discus-2026-06-01T10-20-15-081Z.md` — gemini advisor artifact (~1469 tok)
+- `gemini-test-timeout-10-2026-06-06T18-24-28-817Z.md` — gemini advisor artifact (~16117 tok)
 - `gemini-ux-priority-1-skill-md-alias-bug-skilloverrides-priority-2-h-2026-06-01T03-47-50-672Z.md` — gemini advisor artifact (~2281 tok)
 - `gemini-ux-sync-doctor-unified-entry-point-readme-md-claude-code-ux--2026-06-01T04-04-14-759Z.md` — gemini advisor artifact (~1214 tok)
 - `gemini-ux-troubleshooting-doctor-fix-commands-1-2-3-4-project-statu-2026-06-01T04-13-38-074Z.md` — gemini advisor artifact (~1524 tok)
@@ -150,6 +170,10 @@
 - `recovery-semantics.md` — Discussion Task Recovery Semantics (~1689 tok)
 - `state-schema.md` — Discussion Task State Schema (~1108 tok)
 - `state.json` (~53 tok)
+
+## .omc/collaboration/actions/
+
+- `agent-codex_review-code_1780811792947.json` (~35 tok)
 
 ## .omc/collaboration/artifacts/
 
@@ -169,16 +193,28 @@
 - `20260601-0409-task-01-completion-summary.md` — TASK-20260601-01 Completion Summary (~461 tok)
 - `code-review-report.md` — PraisonAI集成实现 - 代码审查报告 (~983 tok)
 - `context-compaction-design.md` — Context Compaction Design for CCG Discussions (~1061 tok)
+- `DISCUSS-并行测试-1-1-1780771043-discuss-r1-codex-20260606-183739.md` — RTK - Rust Token Killer (Codex CLI) (~523 tok)
 - `DISCUSS-测试-简单共识检查-1780372285-discuss-r1-codex-20260602-035135.md` (~46 tok)
 - `DISCUSS-测试-简单共识检查-1780372285-discuss-r1-gemini-20260602-035232.md` (~65 tok)
 - `DISCUSS-测试连通性-1780367537-discuss-r1-codex-20260602-023310.md` (~45 tok)
 - `DISCUSS-测试连通性-1780367537-discuss-r1-gemini-20260602-023333.md` (~53 tok)
 - `DISCUSS-测试讨论功能是否正常-1780381145-discuss-r1-codex-20260602-062012.md` (~49 tok)
 - `DISCUSS-测试讨论功能是否正常-1780381145-discuss-r1-gemini-20260602-062026.md` — Declares is (~64 tok)
+- `DISCUSS-测试FAST模式基础功能-1780768557-discuss-r1-codex-20260606-175611.md` — RTK - Rust Token Killer (Codex CLI) (~518 tok)
 - `DISCUSS-测试SOFT限制-验证3轮后提示CONTINUE而非强制结束-1780372638-discuss-r1-codex-20260602-035727.md` (~54 tok)
 - `DISCUSS-测试SOFT限制-验证3轮后提示CONTINUE而非强制结束-1780372638-discuss-r1-gemini-20260602-035738.md` (~64 tok)
 - `DISCUSS-测试TMUX自动检测功能-1780454736-discuss-r1-codex-20260603-024551.md` — RTK - Rust Token Killer (Codex CLI) (~521 tok)
 - `DISCUSS-测试TMUX自动检测功能-1780454736-discuss-r2-codex-20260603-024925.md` — Discussion Context (~1117 tok)
+- `DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r0-claude-20260607-135031.md` — Pre-Discuss Initial Analysis (~221 tok)
+- `DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r1-gemini-20260607-135209.md` (~1795 tok)
+- `DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r2-gemini-20260607-135504.md` — Declares d (~3520 tok)
+- `DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r3-codex-20260607-135921.md` — Add parent directory to path (~19558 tok)
+- `DISCUSS-代码审查-自动智能路由系统实现-新增文件-1780838632-discuss-r0-claude-20260607-132352.md` — Pre-Discuss Initial Analysis (~197 tok)
+- `DISCUSS-代码审查-自动智能路由系统实现-新增文件-1780838632-discuss-r1-codex-20260607-132636.md` (~18529 tok)
+- `DISCUSS-代码审查-自动智能路由系统实现-新增文件-1780838632-discuss-r1-gemini-20260607-132445.md` (~1201 tok)
+- `DISCUSS-代码审查-自动智能路由系统实现-新增文件-1780838632-discuss-r2-codex-20260607-132933.md` — Declares in (~18355 tok)
+- `DISCUSS-代码审查-自动智能路由系统实现-新增文件-1780838632-discuss-r2-gemini-20260607-132710.md` (~885 tok)
+- `DISCUSS-代码审查-自动智能路由系统实现-新增文件-1780838632-discuss-r3-codex-20260607-133210.md` — Declares in (~21288 tok)
 - `DISCUSS-代码审查V2-修复所有BLOCKING-ISSUES-1780386257-discuss-r1-codex-20260602-074614.md` (~524 tok)
 - `DISCUSS-代码审查V2-修复所有BLOCKING-ISSUES-1780386257-discuss-r1-gemini-20260602-074815.md` (~157 tok)
 - `DISCUSS-代码审查V2-修复所有BLOCKING-ISSUES-1780386257-discuss-r2-codex-20260602-075107.md` (~355 tok)
@@ -203,6 +239,21 @@
 - `DISCUSS-代码REVIEW-SCRIPTS全局化PHASE-1初步实现-1780426452-discuss-r1-gemini-20260602-185750.md` (~431 tok)
 - `DISCUSS-代码REVIEW-SCRIPTS全局化PHASE-1初步实现-1780426452-discuss-r2-codex-20260602-185831.md` (~255 tok)
 - `DISCUSS-端到端验证TMUX优化-测试自动检测-缓存-1780453287-discuss-r1-codex-20260603-022152.md` — Discussion Context (~556 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r1-codex-20260607-091139.md` — Discussion Context (~1126 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r2-codex-20260607-091445.md` — RTK - Rust Token Killer (Codex CLI) (~2475 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r2-gemini-20260607-091505.md` (~902 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r3-codex-20260607-091553.md` — Discussion Context (~6360 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r3-gemini-20260607-091603.md` (~1072 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r4-codex-20260607-091705.md` — Claude的整合方案提议 (~14192 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r4-gemini-20260607-091623.md` (~567 tok)
+- `DISCUSS-多智能体协作架构整合方案-用户需求-整合AGENTMEMORY跨项目协同能力与COLLAB讨论机制-1780823469-discuss-r5-codex-20260607-091758.md` — Discussion Context (~7144 tok)
+- `DISCUSS-合并CCG功能到COLLAB-设计-MODE-1780768071-discuss-r1-codex-20260606-174820.md` — RTK - Rust Token Killer (Codex CLI) (~760 tok)
+- `DISCUSS-合并CCG功能到COLLAB-设计-MODE-1780768071-discuss-r2-codex-20260606-175149.md` — Discussion Context (~1537 tok)
+- `DISCUSS-合并CCG功能到COLLAB-设计-MODE-1780768071-discuss-r3-codex-20260606-175520.md` — Discussion Context (~6165 tok)
+- `DISCUSS-合并CCG功能到COLLAB-设计-MODE-1780768307-discuss-r1-codex-20260606-175212.md` — RTK - Rust Token Killer (Codex CLI) (~897 tok)
+- `DISCUSS-合并CCG功能到COLLAB-设计-MODE-1780768307-discuss-r2-codex-20260606-175611.md` — RTK - Rust Token Killer (Codex CLI) (~12016 tok)
+- `DISCUSS-合并CCG功能到COLLAB-设计-MODE-1780768307-discuss-r3-codex-20260606-175948.md` — Discussion Context (~4839 tok)
+- `DISCUSS-基于AGENTMEMORY与CLAUDE-MEM的对比分析-讨论如何将AGENTMEMORY的多智能体协作能力-1780808271-discuss-r1-codex-20260607-045820.md` — Discussion Context (~885 tok)
 - `DISCUSS-架构修复验证-针对CODEX识别的阻塞问题-CLI包装依赖未打包SCRIPTS-1780429768-discuss-r1-codex-20260602-195248.md` (~316 tok)
 - `DISCUSS-架构修复验证-针对CODEX识别的阻塞问题-CLI包装依赖未打包SCRIPTS-1780429768-discuss-r1-gemini-20260602-195438.md` — Declares correctly (~250 tok)
 - `DISCUSS-架构修复验证-针对CODEX识别的阻塞问题-CLI包装依赖未打包SCRIPTS-1780429768-discuss-r2-codex-20260602-195517.md` (~274 tok)
@@ -211,6 +262,12 @@
 - `DISCUSS-将COLLAB_DISCUSS-PY的PROMPT构造改为文件引用方式以节省TOKEN-1-1780394391-discuss-r2-codex-20260602-100049.md` (~200 tok)
 - `DISCUSS-将COLLAB_DISCUSS-PY的PROMPT构造改为文件引用方式以节省TOKEN-1-1780394391-discuss-r3-codex-20260602-100326.md` (~216 tok)
 - `DISCUSS-将COLLAB_DISCUSS-PY的PROMPT构造改为文件引用方式以节省TOKEN-1-1780394391-discuss-r3-gemini-20260602-100403.md` (~108 tok)
+- `DISCUSS-快速验证并行-1780771160-discuss-r1-codex-20260606-183937.md` — Discussion Context (~504 tok)
+- `DISCUSS-设计自动智能路由功能-任务分类器-自动分配逻辑-1780836394-discuss-r0-claude-20260607-124634.md` — Pre-Discuss Initial Analysis (~171 tok)
+- `DISCUSS-设计自动智能路由功能-任务分类器-自动分配逻辑-1780836394-discuss-r1-codex-20260607-124718.md` — RTK - Rust Token Killer (Codex CLI) (~1766 tok)
+- `DISCUSS-设计自动智能路由功能-任务分类器-自动分配逻辑-1780836394-discuss-r1-gemini-20260607-124851.md` (~1952 tok)
+- `DISCUSS-设计自动智能路由功能-任务分类器-自动分配逻辑-1780836394-discuss-r2-codex-20260607-124948.md` — Discussion Context (~5770 tok)
+- `DISCUSS-设计自动智能路由功能-任务分类器-自动分配逻辑-1780836394-discuss-r3-codex-20260607-125128.md` — Discussion Context (~11932 tok)
 - `DISCUSS-剩余P1问题修复方案-已完成修复-P0-1780344074-discuss-r1-codex-20260601-200228.md` (~324 tok)
 - `DISCUSS-剩余P1问题修复方案-已完成修复-P0-1780344074-discuss-r1-gemini-20260601-200300.md` (~149 tok)
 - `DISCUSS-实施评审-RMUX集成代码完成-新增文件-1780385894-discuss-r1-codex-20260602-073914.md` (~270 tok)
@@ -227,6 +284,16 @@
 - `DISCUSS-问题分析-为什么用户明确指定技能-如-1780499871-discuss-r1-codex-20260603-151812.md` — Discussion Context (~614 tok)
 - `DISCUSS-问题分析-为什么用户明确指定技能-如-1780499871-discuss-r2-codex-20260603-152141.md` — Discussion Context (~1322 tok)
 - `DISCUSS-问题分析-为什么用户明确指定技能-如-1780499871-discuss-r3-codex-20260603-152514.md` — RTK - Rust Token Killer (Codex CLI) (~2726 tok)
+- `DISCUSS-显式工具指令优先级修复-CLAUDE与GEMINI独立分析-背景-1780822716-discuss-r1-codex-20260607-090019.md` — Meta Commands (~23644 tok)
+- `DISCUSS-显式工具指令优先级修复-CLAUDE与GEMINI独立分析-背景-1780822716-discuss-r1-gemini-20260607-085943.md` (~1198 tok)
+- `DISCUSS-显式工具指令优先级修复-CLAUDE与GEMINI独立分析-背景-1780822716-discuss-r2-codex-20260607-090128.md` — Discussion Context (~16094 tok)
+- `DISCUSS-显式工具指令优先级修复-CLAUDE与GEMINI独立分析-背景-1780822716-discuss-r2-gemini-20260607-090104.md` (~817 tok)
+- `DISCUSS-显式工具指令优先级修复-CLAUDE与GEMINI独立分析-背景-1780822716-discuss-r3-codex-20260607-090228.md` — RTK - Rust Token Killer (Codex CLI) (~14167 tok)
+- `DISCUSS-显式工具指令优先级修复方案评审-问题-用户明确说-1780822233-discuss-r1-codex-20260607-085120.md` — RTK - Rust Token Killer (Codex CLI) (~799 tok)
+- `DISCUSS-显式工具指令优先级修复方案评审-问题-用户明确说-1780822233-discuss-r2-codex-20260607-085408.md` — Discussion Context (~843 tok)
+- `DISCUSS-显式工具指令优先级修复方案评审-问题-用户明确说-1780822233-discuss-r2-gemini-20260607-085413.md` (~723 tok)
+- `DISCUSS-显式工具指令优先级修复方案评审-问题-用户明确说-1780822233-discuss-r3-codex-20260607-085445.md` — RTK - Rust Token Killer (Codex CLI) (~3367 tok)
+- `DISCUSS-显式工具指令优先级修复方案评审-问题-用户明确说-1780822233-discuss-r3-gemini-20260607-085543.md` (~1233 tok)
 - `DISCUSS-项目完成度评估-V0-2-1780371664-discuss-r1-codex-20260602-034114.md` (~109 tok)
 - `DISCUSS-项目完成度评估-V0-2-1780371664-discuss-r1-gemini-20260602-034130.md` (~187 tok)
 - `DISCUSS-项目完成度评估与下一阶段规划-当前状态-PHASE-1780342369-discuss-r1-codex-20260601-193435.md` (~335 tok)
@@ -259,6 +326,12 @@
 - `DISCUSS-协作架构问题-1-当前DISCUSS是否类似OMC-1780422802-discuss-r1-gemini-20260602-175917.md` (~398 tok)
 - `DISCUSS-协作架构问题-1-当前DISCUSS是否类似OMC-1780422802-discuss-r2-codex-20260602-175942.md` (~120 tok)
 - `DISCUSS-协作架构问题-1-当前DISCUSS是否类似OMC-1780422802-discuss-r2-gemini-20260602-180005.md` (~145 tok)
+- `DISCUSS-修复方案讨论-自动路由代码审查发现的8个阻塞问题-CODEX-1780839283-discuss-r0-claude-20260607-133443.md` — Pre-Discuss Initial Analysis (~219 tok)
+- `DISCUSS-修复方案讨论-自动路由代码审查发现的8个阻塞问题-CODEX-1780839283-discuss-r1-gemini-20260607-133609.md` (~1594 tok)
+- `DISCUSS-修复方案讨论-自动路由代码审查发现的8个阻塞问题-CODEX-1780839283-discuss-r2-codex-20260607-133742.md` (~23603 tok)
+- `DISCUSS-修复方案讨论-自动路由代码审查发现的8个阻塞问题-CODEX-1780839283-discuss-r2-gemini-20260607-133711.md` (~1121 tok)
+- `DISCUSS-修复方案讨论-自动路由代码审查发现的8个阻塞问题-CODEX-1780839283-discuss-r3-codex-20260607-133955.md` — RTK - Rust Token Killer (Codex CLI) (~20253 tok)
+- `DISCUSS-修复方案讨论-自动路由代码审查发现的8个阻塞问题-CODEX-1780839283-discuss-r3-gemini-20260607-133911.md` (~1472 tok)
 - `DISCUSS-验证DISCUSSION_ENHANCEMENTS-PY集成实现-已完成集成代码-1780620414-discuss-r1-codex-20260605-004806.md` (~23279 tok)
 - `DISCUSS-验证DISCUSSION_ENHANCEMENTS-PY集成实现-已完成集成代码-1780620414-discuss-r2-codex-20260605-005218.md` — RTK - Rust Token Killer (Codex CLI) (~17465 tok)
 - `DISCUSS-验证DISCUSSION_ENHANCEMENTS-PY集成实现-已完成集成代码-1780620414-discuss-r2-gemini-20260605-005246.md` (~602 tok)
@@ -291,6 +364,8 @@
 - `DISCUSS-ALL-BLOCKING-ISSUES-1780368747-discuss-r1-gemini-20260602-025324.md` (~72 tok)
 - `DISCUSS-BUG修复进展与剩余工作评估-已完成修复-已COMMIT-1780380292-discuss-r1-codex-20260602-060518.md` (~222 tok)
 - `DISCUSS-BUG修复进展与剩余工作评估-已完成修复-已COMMIT-1780380292-discuss-r1-gemini-20260602-060552.md` (~195 tok)
+- `DISCUSS-COLLAB-FULL模式自动INIT方案-当检测到无-1780769132-discuss-r1-codex-20260606-180616.md` — RTK - Rust Token Killer (Codex CLI) (~13747 tok)
+- `DISCUSS-COLLAB-FULL模式自动INIT方案-当检测到无-1780769132-discuss-r2-codex-20260606-181006.md` — RTK - Rust Token Killer (Codex CLI) (~7479 tok)
 - `DISCUSS-EVALUATE-V0-1-1780368025-discuss-r1-codex-20260602-024226.md` (~375 tok)
 - `DISCUSS-EVALUATE-V0-1-1780368025-discuss-r1-gemini-20260602-024513.md` (~248 tok)
 - `DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-codex-20260602-024534.md` (~366 tok)
@@ -352,6 +427,11 @@
 - `DISCUSS-PHASE-3补充完成最终验证-新增-1780429463-discuss-r1-codex-20260602-194521.md` (~318 tok)
 - `DISCUSS-PHASE-3补充完成最终验证-新增-1780429463-discuss-r1-gemini-20260602-194927.md` (~183 tok)
 - `DISCUSS-PHASE-3补充完成最终验证-新增-1780429463-discuss-r2-codex-20260602-195132.md` (~241 tok)
+- `DISCUSS-PHASE-3高级功能实现方案讨论-1780827832-discuss-r1-codex-20260607-102437.md` — Discussion Context (~5038 tok)
+- `DISCUSS-PHASE-3高级功能实现方案讨论-1780827832-discuss-r1-gemini-20260607-102500.md` (~1162 tok)
+- `DISCUSS-PHASE-3高级功能实现方案讨论-1780827832-discuss-r2-codex-20260607-102537.md` — RTK - Rust Token Killer (Codex CLI) (~7739 tok)
+- `DISCUSS-PHASE-3高级功能实现方案讨论-1780827832-discuss-r3-codex-20260607-102841.md` — Discussion Context (~11544 tok)
+- `DISCUSS-PHASE-3高级功能实现方案讨论-1780827832-discuss-r3-gemini-20260607-102911.md` (~1041 tok)
 - `DISCUSS-PHASE-3需求分析-执行验证循环完成后-1780740903-discuss-r1-codex-20260606-101532.md` — RTK - Rust Token Killer (Codex CLI) (~649 tok)
 - `DISCUSS-PHASE-3需求分析-执行验证循环完成后-1780740903-discuss-r1-gemini-20260606-101618.md` (~605 tok)
 - `DISCUSS-PHASE-3需求分析-执行验证循环完成后-1780740903-discuss-r2-codex-20260606-101650.md` — Discussion Context (~2058 tok)
@@ -493,113 +573,7 @@
 - `TASK-37-WRAPPER-DESIGN-discuss-r1-gemini-20260601-191732.md` (~196 tok)
 - `TASK-37-WRAPPER-DESIGN-discuss-r2-codex-20260601-191820.md` (~221 tok)
 - `TASK-37-WRAPPER-DESIGN-discuss-r2-gemini-20260601-192007.md` (~95 tok)
-- `TASK-37-WRAPPER-DESIGN-discuss-r3-codex-20260601-192034.md` (~194 tok)
-- `TASK-37-WRAPPER-DESIGN-discuss-r3-gemini-20260601-192044.md` (~137 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r1-codex-20260601-182547.md` (~357 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r1-gemini-20260601-182703.md` (~256 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r1-gemini-20260601-182735.md` (~215 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r2-codex-20260601-182827.md` (~336 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r2-codex-20260601-182828.md` (~368 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r2-gemini-20260601-182911.md` (~188 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r2-gemini-20260601-183011.md` (~228 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r3-codex-20260601-183006.md` (~312 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r3-codex-20260601-183053.md` (~340 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r3-gemini-20260601-183100.md` (~181 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r3-gemini-20260601-183215.md` (~307 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r4-codex-20260601-183222.md` (~296 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r5-codex-20260601-183350.md` (~363 tok)
-- `TASK-3C-HARDENING-FINAL-REVIEW-discuss-r5-gemini-20260601-183740.md` (~295 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r1-codex-20260601-180747.md` (~352 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r1-gemini-20260601-180814.md` (~161 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r2-codex-20260601-180932.md` (~366 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r2-gemini-20260601-180956.md` (~151 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r3-codex-20260601-181121.md` (~365 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r3-gemini-20260601-181203.md` (~323 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r4-codex-20260601-181402.md` (~322 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r4-gemini-20260601-181419.md` (~194 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r5-codex-20260601-181628.md` — Declares signature (~443 tok)
-- `TASK-3C-HARDENING-FIXES-REVIEW-discuss-r5-gemini-20260601-181639.md` (~205 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r1-codex-20260601-175126.md` (~459 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r1-gemini-20260601-175149.md` (~300 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r2-codex-20260601-175304.md` (~466 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r2-gemini-20260601-175315.md` (~250 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r3-codex-20260601-175412.md` (~450 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r3-gemini-20260601-175424.md` (~284 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r4-codex-20260601-175550.md` (~378 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r4-gemini-20260601-175604.md` (~256 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r5-codex-20260601-175716.md` (~376 tok)
-- `TASK-3C-HARDENING-REVIEW-discuss-r5-gemini-20260601-175730.md` (~303 tok)
-- `TASK-3D-DOC-SCOPE-discuss-r1-codex-20260601-185402.md` (~151 tok)
-- `TASK-3D-DOC-SCOPE-discuss-r1-gemini-20260601-185432.md` (~80 tok)
-- `TASK-3D-DOC-SCOPE-discuss-r2-codex-20260601-185454.md` (~143 tok)
-- `TASK-3D-DOC-SCOPE-discuss-r2-gemini-20260601-185517.md` (~128 tok)
-- `TASK-4A-DISCUSSION-MVP-PLAN-discuss-r1-codex-20260601-185745.md` (~302 tok)
-- `TASK-4A-DISCUSSION-MVP-PLAN-discuss-r1-gemini-20260601-185818.md` (~362 tok)
-- `TASK-4A-DISCUSSION-MVP-PLAN-discuss-r2-codex-20260601-185851.md` (~327 tok)
-- `TASK-4A-DISCUSSION-MVP-PLAN-discuss-r2-gemini-20260601-185928.md` (~203 tok)
-- `TASK-ALL-RESPONDED-SEMANTICS-discuss-r1-codex-20260601-184342.md` (~147 tok)
-- `TASK-ALL-RESPONDED-SEMANTICS-discuss-r1-gemini-20260601-184359.md` (~189 tok)
-- `TASK-CODEX-PROTOCOL-discuss-r1-codex-20260601-152701.md` (~23 tok)
-- `TASK-DAEMON-INTEGRATION-discuss-r1-codex-20260601-161540.md` (~160 tok)
-- `TASK-DAEMON-INTEGRATION-discuss-r1-gemini-20260601-161552.md` (~141 tok)
-- `TASK-DAEMON-INTEGRATION-discuss-r2-codex-20260601-161615.md` (~140 tok)
-- `TASK-DAEMON-INTEGRATION-discuss-r2-gemini-20260601-161630.md` (~231 tok)
-- `TASK-DEPENDENCY-BLOCKER-discuss-r1-codex-20260601-155649.md` (~160 tok)
-- `TASK-DEPENDENCY-BLOCKER-discuss-r1-gemini-20260601-155703.md` (~140 tok)
-- `TASK-DEPENDENCY-BLOCKER-discuss-r2-codex-20260601-155722.md` (~150 tok)
-- `TASK-DEPENDENCY-BLOCKER-discuss-r2-gemini-20260601-155740.md` (~167 tok)
-- `TASK-E2E-TEST-discuss-r1-codex-20260601-164329.md` (~50 tok)
-- `TASK-E2E-TEST-discuss-r1-gemini-20260601-164344.md` (~52 tok)
-- `TASK-INTEGRATION-REVIEW-discuss-r1-codex-20260601-163453.md` (~183 tok)
-- `TASK-INTEGRATION-REVIEW-discuss-r1-gemini-20260601-163526.md` (~172 tok)
-- `TASK-INTEGRATION-REVIEW-discuss-r2-codex-20260601-163621.md` (~198 tok)
-- `TASK-INTEGRATION-REVIEW-discuss-r2-gemini-20260601-163641.md` (~153 tok)
-- `TASK-INTEGRATION-REVIEW-discuss-r3-codex-20260601-163747.md` (~205 tok)
-- `TASK-INTEGRATION-REVIEW-discuss-r3-gemini-20260601-163812.md` (~178 tok)
-- `TASK-NEXT-PHASE-discuss-r1-codex-20260601-154237.md` (~239 tok)
-- `TASK-NEXT-PHASE-discuss-r1-gemini-20260601-154251.md` (~274 tok)
-- `TASK-NEXT-PHASE-discuss-r2-codex-20260601-154321.md` (~247 tok)
-- `TASK-NEXT-PHASE-discuss-r2-gemini-20260601-154338.md` (~124 tok)
 
 ## .omc/collaboration/artifacts/.omc/state/
 
 - `last-tool-error.json` (~118 tok)
-
-## .omc/collaboration/design/
-
-- `auto-routing-audit-trigger.md` — 审计触发机制 - 自动智能路由 (~358 tok)
-- `auto-routing-compatibility.md` — 兼容性契约 - 自动智能路由 (~326 tok)
-- `auto-routing-taxonomy.md` — 任务分类Taxonomy - 自动智能路由 (~396 tok)
-- `auto-routing-ui-rules.md` — UI任务识别规则 - Gemini专用 (~277 tok)
-
-## ccg_collab/coordination/
-
-- `agentmemory.py` — AgentMemoryCoordination: acquire_lock, release_lock, send_signal, wait_signal + 2 more (~1019 tok)
-
-## ccg_collab/scripts/
-
-- `collab_audit.py` — Audit workflow for three-party code review. (~644 tok)
-- `collab_classify.py` — Classify and route collaboration tasks. (~966 tok)
-- `collab_event.py` — Atomic event operations for collaboration protocol. (~5829 tok)
-- `collab_override.py` — Manual routing override for collaboration tasks. (~1240 tok)
-- `collab_state.py` — Pure state reduction functions for collaboration protocol. (~3260 tok)
-- `task_classifier.py` — class: classify_task, route_to_agents (~1767 tok)
-
-## docs/
-
-- `agentmemory-integration-progress.md` — agentmemory Integration Progress (~1168 tok)
-- `architecture-integration-consensus.md` — 多智能体协作架构整合共识 (~1514 tok)
-- `PROJECT-SUMMARY.md` — Project Summary (~6113 tok)
-
-## scripts/
-
-- `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~514 tok)
-
-## tests/
-
-- `cross-project-test-plan.md` — CCG Skill Cross-Project Test Plan (~525 tok)
-- `debug_agentmemory.py` — Debug agentmemory trigger responses. (~505 tok)
-- `debug_signal.py` — Debug signal operations. (~433 tok)
-- `test_agentmemory_integration.py` — Test agentmemory backend integration with iii-sdk. (~735 tok)
-- `test_routing_cli_integration.py` — Integration tests for routing CLI persistence. (~1550 tok)
-- `test_task_classifier.py` — Tests for task classifier. (~950 tok)
