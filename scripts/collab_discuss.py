@@ -9,19 +9,75 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 
 from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_init import init_collaboration
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 from discussion_enhancements import check_and_handle_doom_loop, auto_compact_if_needed
+from models import Challenge, Response
 from rmux_utils import check_rmux_available, get_tmux_info
 from collab_state import (
     init_task_state, load_task_state, save_task_state,
     start_round, start_participant, complete_participant, fail_participant,
     complete_round, get_pending_participants, get_task_state_file
 )
+
+
+def make_response_id(task_id: str, round_num: int, agent: str) -> str:
+    """Build a stable response ID used for cross-response references."""
+    safe_agent = agent.lower().strip() or "unknown"
+    return f"{task_id}-r{round_num}-{safe_agent}"
+
+
+def normalize_string_list(value: Any) -> List[str]:
+    """Return a clean list of strings from user/agent supplied JSON."""
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def normalize_challenges(value: Any) -> List[Dict[str, str]]:
+    """Normalize targeted challenge dictionaries."""
+    if not isinstance(value, list):
+        return []
+
+    challenges = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        challenge = Challenge(
+            target_agent=str(item.get("target_agent", "")).strip(),
+            target_response_id=str(item.get("target_response_id", "")).strip(),
+            question=str(item.get("question", "")).strip(),
+            rationale=str(item.get("rationale", "")).strip(),
+        )
+        if challenge.target_agent and challenge.target_response_id and challenge.question:
+            challenges.append(challenge.to_dict())
+    return challenges
+
+
+def normalize_action_items(value: Any) -> List[Dict[str, Any]]:
+    """Normalize action item dictionaries without requiring a separate schema import."""
+    if not isinstance(value, list):
+        return []
+
+    action_items = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        task = str(item.get("task", "")).strip()
+        owner = str(item.get("owner", "")).strip()
+        if not task:
+            continue
+        action_items.append({
+            "owner": owner,
+            "task": task,
+            "due": item.get("due"),
+            "verification": item.get("verification"),
+        })
+    return action_items
 
 
 def compress_history(events: List[Dict], task_id: str, max_recent: int = 2) -> str:
@@ -58,7 +114,11 @@ def save_discussion_context(
     round_num: int,
     topic: str,
     history: str,
-    artifacts: List[str]
+    artifacts: List[str],
+    previous_responses: Optional[List[Dict[str, Any]]] = None,
+    open_questions: Optional[List[str]] = None,
+    targeted_challenges: Optional[List[Dict[str, str]]] = None,
+    pre_discuss: Optional[Dict[str, str]] = None,
 ) -> str:
     """Save discussion context to file, return relative path."""
     context_dir = base_dir / ".omc" / "collaboration" / "context"
@@ -78,12 +138,64 @@ def save_discussion_context(
 
 """
 
+    if pre_discuss:
+        content += f"""## Pre-Discuss Initial Analysis
+
+Response ID: {pre_discuss.get("response_id", "")}
+Artifact: {pre_discuss.get("artifact", "")}
+
+{pre_discuss.get("summary", "")}
+
+"""
+
     if history:
         content += f"""## Previous Discussion
 
 {history}
 
 """
+
+    if previous_responses:
+        content += "## Previous Responses\n\n"
+        for response in previous_responses:
+            content += f"### {response.get('id', '')} ({response.get('agent', 'unknown')})\n\n"
+            decision = response.get("decision") or response.get("content") or ""
+            if decision:
+                content += f"Decision: {decision}\n\n"
+            reasoning = response.get("reasoning") or ""
+            if reasoning:
+                content += f"Reasoning: {reasoning}\n\n"
+            if response.get("blocking_issues"):
+                content += "Blocking issues:\n"
+                for issue in response["blocking_issues"]:
+                    content += f"- {issue}\n"
+                content += "\n"
+            if response.get("targeted_challenges"):
+                content += "Targeted challenges raised:\n"
+                for challenge in response["targeted_challenges"]:
+                    content += (
+                        f"- To {challenge.get('target_agent', 'unknown')} "
+                        f"on {challenge.get('target_response_id', '')}: "
+                        f"{challenge.get('question', '')}\n"
+                    )
+                content += "\n"
+
+    if open_questions:
+        content += "## Open Questions\n\n"
+        for question in open_questions:
+            content += f"- {question}\n"
+        content += "\n"
+
+    if targeted_challenges:
+        content += "## Unresolved Targeted Challenges\n\n"
+        for challenge in targeted_challenges:
+            content += (
+                f"- To {challenge.get('target_agent', 'unknown')} "
+                f"on {challenge.get('target_response_id', '')}: "
+                f"{challenge.get('question', '')} "
+                f"(Rationale: {challenge.get('rationale', '')})\n"
+            )
+        content += "\n"
 
     if artifacts:
         content += "## Referenced Artifacts\n\n"
@@ -102,7 +214,10 @@ def build_discussion_prompt(
     round_num: int,
     history: str,
     artifacts: List[str],
-    context_file: Optional[str] = None
+    context_file: Optional[str] = None,
+    previous_responses: Optional[List[Dict[str, Any]]] = None,
+    open_questions: Optional[List[str]] = None,
+    targeted_challenges: Optional[List[Dict[str, str]]] = None,
 ) -> str:
     """Build discussion prompt with context (file reference or inline)."""
 
@@ -119,11 +234,26 @@ Respond with structured JSON wrapped in markers:
   "consensus": true/false,
   "decision": "your position or agreed decision",
   "blocking_issues": ["issue1", "issue2"] or [],
-  "reasoning": "why you agree/disagree"
+  "reasoning": "why you agree/disagree",
+  "previous_responses": ["response_id_you_directly_addressed"],
+  "targeted_challenges": [
+    {{
+      "target_agent": "agent name",
+      "target_response_id": "response id",
+      "question": "specific challenge or question",
+      "rationale": "why this challenge matters"
+    }}
+  ],
+  "dissent": "reservation or minority opinion, or null",
+  "evidence": ["specific evidence supporting your position"],
+  "action_items": [
+    {{"owner": "agent/person", "task": "specific action", "due": "optional", "verification": "how to verify"}}
+  ]
 }}
 [RESPONSE_END]
 
 IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
+Directly cite at least one relevant Previous Response ID when prior responses exist.
 Output ONLY the markers and JSON, nothing else.
 """
         return prompt
@@ -140,17 +270,57 @@ You are {agent}. Respond with structured JSON wrapped in markers:
   "consensus": true/false,
   "decision": "your position or agreed decision",
   "blocking_issues": ["issue1", "issue2"] or [],
-  "reasoning": "why you agree/disagree"
+  "reasoning": "why you agree/disagree",
+  "previous_responses": ["response_id_you_directly_addressed"],
+  "targeted_challenges": [
+    {{
+      "target_agent": "agent name",
+      "target_response_id": "response id",
+      "question": "specific challenge or question",
+      "rationale": "why this challenge matters"
+    }}
+  ],
+  "dissent": "reservation or minority opinion, or null",
+  "evidence": ["specific evidence supporting your position"],
+  "action_items": [
+    {{"owner": "agent/person", "task": "specific action", "due": "optional", "verification": "how to verify"}}
+  ]
 }}
 [RESPONSE_END]
 
 IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
+Directly cite at least one relevant Previous Response ID when prior responses exist.
 Output ONLY the markers and JSON, nothing else.
 
 """
 
     if history:
         prompt += f"Previous discussion:\n{history}\n\n"
+
+    if previous_responses:
+        prompt += "Previous responses available for direct citation:\n"
+        for response in previous_responses:
+            prompt += (
+                f"- {response.get('id', '')} ({response.get('agent', 'unknown')}): "
+                f"{response.get('decision') or response.get('content') or ''}\n"
+            )
+        prompt += "\n"
+
+    if open_questions:
+        prompt += "Open questions:\n"
+        for question in open_questions:
+            prompt += f"- {question}\n"
+        prompt += "\n"
+
+    if targeted_challenges:
+        prompt += "Unresolved targeted challenges:\n"
+        for challenge in targeted_challenges:
+            prompt += (
+                f"- To {challenge.get('target_agent', 'unknown')} "
+                f"on {challenge.get('target_response_id', '')}: "
+                f"{challenge.get('question', '')}\n"
+            )
+        prompt += "\n"
 
     if artifacts:
         prompt += f"Referenced artifacts:\n"
@@ -175,8 +345,10 @@ def save_consensus_contract(base_dir: Path, task_id: str, task_state: dict):
         "achieved_at": datetime.now(timezone.utc).isoformat(),
         "decision": task_state['final_consensus']['decision'],
         "round": task_state['final_consensus'].get('round'),
-        "tasks": [],  # Minimal implementation - can be parsed later
-        "blocking_issues": []
+        "dissent": task_state['final_consensus'].get('dissent'),
+        "evidence": task_state['final_consensus'].get('evidence', []),
+        "tasks": task_state['final_consensus'].get('action_items', []),
+        "blocking_issues": task_state['final_consensus'].get('blocking_issues', [])
     }
 
     output_path = base_dir / ".omc/collaboration/tasks" / task_id / "consensus.json"
@@ -186,14 +358,26 @@ def save_consensus_contract(base_dir: Path, task_id: str, task_state: dict):
         json.dump(consensus, f, indent=2, ensure_ascii=False)
 
 
-def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
-    """Judge if consensus reached from agent replies."""
-    # No replies means no consensus
+def check_consensus(replies: List[AgentReply]) -> Dict[str, Any]:
+    """Return detailed consensus status and dissent from agent replies."""
     if not replies:
-        return False, []
+        return {
+            "consensus": False,
+            "blocking_issues": [],
+            "dissent": None,
+            "agreeing_agents": [],
+            "dissenting_agents": [],
+            "evidence": [],
+            "action_items": [],
+        }
 
     all_agree = True
     blocking_issues = []
+    dissent_parts = []
+    agreeing_agents = []
+    dissenting_agents = []
+    evidence = []
+    action_items = []
 
     for reply in replies:
         parsed = reply.parsed
@@ -201,13 +385,47 @@ def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
             consensus = parsed.get("consensus", False)
             issues = parsed.get("blocking_issues", [])
 
-            if not consensus:
+            if consensus:
+                agreeing_agents.append(reply.agent)
+            else:
                 all_agree = False
+                dissenting_agents.append(reply.agent)
 
             if isinstance(issues, list):
-                blocking_issues.extend(issues)
+                blocking_issues.extend(str(issue) for issue in issues if str(issue).strip())
 
-    return all_agree, blocking_issues
+            dissent = parsed.get("dissent")
+            if dissent:
+                dissent_parts.append(f"[{reply.agent}] {dissent}")
+            elif not consensus:
+                reason = parsed.get("reasoning") or parsed.get("decision") or "No dissent detail provided"
+                dissent_parts.append(f"[{reply.agent}] {reason}")
+
+            evidence.extend(normalize_string_list(parsed.get("evidence", [])))
+            action_items.extend(normalize_action_items(parsed.get("action_items", [])))
+        else:
+            all_agree = False
+            dissenting_agents.append(reply.agent)
+            dissent_parts.append(f"[{reply.agent}] Unparseable response")
+
+    return {
+        "consensus": all_agree,
+        "blocking_issues": blocking_issues,
+        "dissent": "\n".join(dissent_parts) if dissent_parts else None,
+        "agreeing_agents": agreeing_agents,
+        "dissenting_agents": dissenting_agents,
+        "evidence": evidence,
+        "action_items": action_items,
+    }
+
+
+def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
+    """Judge if consensus reached from agent replies.
+
+    Kept as a compatibility wrapper for existing callers/tests.
+    """
+    detail = check_consensus(replies)
+    return detail["consensus"], detail["blocking_issues"]
 
 
 def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, content: str) -> str:
@@ -221,6 +439,155 @@ def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, cont
 
     artifact_path.write_text(content)
     return str(artifact_path.relative_to(base_dir))
+
+
+def dedupe_preserve_order(items: List[str]) -> List[str]:
+    """Deduplicate strings while preserving first-seen order."""
+    seen = set()
+    result = []
+    for item in items:
+        key = str(item).strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        result.append(key)
+    return result
+
+
+def normalize_parsed_response(parsed: Dict[str, Any], task_id: str, round_num: int, agent: str) -> Dict[str, Any]:
+    """Normalize a parsed agent response to the Phase 1 protocol shape."""
+    normalized = dict(parsed)
+    normalized["id"] = str(normalized.get("id") or make_response_id(task_id, round_num, agent))
+    normalized["previous_responses"] = normalize_string_list(normalized.get("previous_responses", []))
+    normalized["targeted_challenges"] = normalize_challenges(normalized.get("targeted_challenges", []))
+    normalized["blocking_issues"] = normalize_string_list(normalized.get("blocking_issues", []))
+    normalized["evidence"] = normalize_string_list(normalized.get("evidence", []))
+    normalized["action_items"] = normalize_action_items(normalized.get("action_items", []))
+    return normalized
+
+
+def create_pre_discuss_analysis(base_dir: Path, task_id: str, topic: str) -> Dict[str, str]:
+    """Create Claude's initial analysis document for the Pre-discuss stage."""
+    response_id = make_response_id(task_id, 0, "claude")
+    content = f"""# Pre-Discuss Initial Analysis
+
+Response ID: {response_id}
+Agent: claude
+
+## Topic
+
+{topic}
+
+## Initial Analysis
+
+- Clarify the decision or implementation change requested by the topic.
+- Identify compatibility, state persistence, and verification risks before participants respond.
+- Ask Codex and Gemini to challenge this framing directly and cite prior response IDs.
+
+## Open Questions
+
+- What assumptions in the initial framing are weakest?
+- Which compatibility contracts must remain stable?
+- What evidence or tests are required before concluding?
+"""
+    artifact_path = save_artifact(base_dir, task_id, 0, "claude", content)
+    return {
+        "response_id": response_id,
+        "agent": "claude",
+        "artifact": artifact_path,
+        "summary": "Claude initial framing: clarify scope, challenge assumptions, preserve compatibility, and require evidence.",
+        "content": content,
+    }
+
+
+def ensure_pre_discuss(
+    base_dir: Path,
+    task_id: str,
+    topic: str,
+    task_state: Dict[str, Any],
+    artifacts_refs: List[str],
+) -> Dict[str, Any]:
+    """Ensure the task has a Pre-discuss initial analysis artifact."""
+    pre_discuss = task_state.get("pre_discuss")
+    if pre_discuss:
+        artifact = pre_discuss.get("artifact")
+        if artifact and artifact not in artifacts_refs:
+            artifacts_refs.append(artifact)
+        return task_state
+
+    pre_discuss = create_pre_discuss_analysis(base_dir, task_id, topic)
+    task_state["pre_discuss"] = pre_discuss
+    files = task_state.setdefault("artifacts", {}).setdefault("files", [])
+    if pre_discuss["artifact"] not in files:
+        files.append(pre_discuss["artifact"])
+    if pre_discuss["artifact"] not in artifacts_refs:
+        artifacts_refs.append(pre_discuss["artifact"])
+    save_task_state(base_dir, task_id, task_state)
+    return task_state
+
+
+def collect_protocol_context(task_state: Dict[str, Any], task_id: str) -> Dict[str, Any]:
+    """Collect previous responses, open questions, and challenges from task state."""
+    previous_responses = []
+    open_questions = []
+    targeted_challenges = []
+
+    pre_discuss = task_state.get("pre_discuss")
+    if pre_discuss:
+        previous_responses.append({
+            "id": pre_discuss.get("response_id") or make_response_id(task_id, 0, "claude"),
+            "agent": "claude",
+            "content": pre_discuss.get("summary", ""),
+            "decision": pre_discuss.get("summary", ""),
+            "reasoning": "Initial framing for the discussion.",
+            "blocking_issues": [],
+            "previous_responses": [],
+            "targeted_challenges": [],
+        })
+        open_questions.extend([
+            "What assumptions in Claude's initial framing are weakest?",
+            "Which compatibility contracts must remain stable?",
+            "What evidence or tests are required before concluding?",
+        ])
+
+    for round_state in task_state.get("rounds", []):
+        round_num = round_state.get("round_number")
+        if isinstance(round_num, int):
+            consensus_check = round_state.get("consensus_check", {})
+            open_questions.extend(normalize_string_list(consensus_check.get("blocking_issues", [])))
+
+            for participant in round_state.get("participants", []):
+                if participant.get("status") != "completed":
+                    continue
+                agent = participant.get("agent", "unknown")
+                parsed = participant.get("parsed_response")
+                if not isinstance(parsed, dict):
+                    continue
+                normalized = normalize_parsed_response(parsed, task_id, round_num, agent)
+                challenges = normalized.get("targeted_challenges", [])
+                response = Response(
+                    id=normalized["id"],
+                    agent=agent,
+                    content=normalized.get("decision") or normalized.get("reasoning") or "",
+                    previous_responses=normalized.get("previous_responses", []),
+                    targeted_challenges=[Challenge(**challenge) for challenge in challenges],
+                    consensus=normalized.get("consensus"),
+                    decision=normalized.get("decision"),
+                    reasoning=normalized.get("reasoning"),
+                    blocking_issues=normalized.get("blocking_issues", []),
+                    dissent=normalized.get("dissent"),
+                    evidence=normalized.get("evidence", []),
+                )
+                response_dict = response.to_dict()
+                previous_responses.append(response_dict)
+                open_questions.extend(response_dict.get("blocking_issues", []))
+                targeted_challenges.extend(challenges)
+
+    return {
+        "previous_responses": previous_responses,
+        "open_questions": dedupe_preserve_order(open_questions),
+        "targeted_challenges": targeted_challenges,
+    }
 
 
 def parse_discussion_artifacts(base_dir: Path, task_id: str) -> List[Dict]:
@@ -264,10 +631,16 @@ def parse_discussion_artifacts(base_dir: Path, task_id: str) -> List[Dict]:
             results.append({
                 "round": round_num,
                 "agent": agent,
+                "id": content.get("id") or make_response_id(task_id, round_num, agent),
                 "consensus": content.get("consensus", False),
                 "decision": content.get("decision", ""),
                 "reasoning": content.get("reasoning", ""),
-                "blocking_issues": content.get("blocking_issues", [])
+                "blocking_issues": normalize_string_list(content.get("blocking_issues", [])),
+                "previous_responses": normalize_string_list(content.get("previous_responses", [])),
+                "targeted_challenges": normalize_challenges(content.get("targeted_challenges", [])),
+                "dissent": content.get("dissent"),
+                "evidence": normalize_string_list(content.get("evidence", [])),
+                "action_items": normalize_action_items(content.get("action_items", [])),
             })
         except (json.JSONDecodeError, ValueError):
             continue
@@ -294,6 +667,12 @@ def format_history_text(history: List[Dict], summary: bool = False) -> str:
             output.append(f"  Decision: {decision}")
             if item["reasoning"]:
                 output.append(f"  Reasoning: {item['reasoning']}")
+            if item.get("previous_responses"):
+                output.append(f"  References: {', '.join(item['previous_responses'])}")
+            if item.get("targeted_challenges"):
+                output.append(f"  Challenges: {len(item['targeted_challenges'])}")
+            if item.get("dissent"):
+                output.append(f"  Dissent: {item['dissent']}")
             if item["blocking_issues"]:
                 output.append(f"  Blocking: {', '.join(item['blocking_issues'])}")
             output.append("")
@@ -647,6 +1026,15 @@ def run_discussion(
 
     artifacts_refs = []
     timing_log = []
+    last_consensus_detail = {
+        "consensus": False,
+        "blocking_issues": [],
+        "dissent": None,
+        "agreeing_agents": [],
+        "dissenting_agents": [],
+        "evidence": [],
+        "action_items": [],
+    }
 
     # Determine starting round
     start_round_num = 1
@@ -660,6 +1048,23 @@ def run_discussion(
         # Collect existing artifacts
         for artifact in task_state["artifacts"]["files"]:
             artifacts_refs.append(artifact)
+
+    task_state = ensure_pre_discuss(base_dir, task_id, topic, task_state, artifacts_refs)
+    if task_state.get("pre_discuss") and not task_state.get("pre_discuss_event_logged"):
+        append_event(
+            base_dir,
+            "discussion_message",
+            "claude",
+            task_id,
+            "Pre-discuss initial analysis prepared",
+            artifacts=[task_state["pre_discuss"].get("artifact")],
+            details={
+                "stage": "pre_discuss",
+                "response_id": task_state["pre_discuss"].get("response_id"),
+            }
+        )
+        task_state["pre_discuss_event_logged"] = True
+        save_task_state(base_dir, task_id, task_state)
 
     # Detect tmux availability once before discussion loop
     use_tmux_env = os.environ.get("CCG_USE_TMUX", "").lower()
@@ -732,6 +1137,7 @@ def run_discussion(
         # Refresh events after round start
         events = read_events(collab_dir / "events.jsonl")
         history = compress_history(events, task_id)
+        protocol_context = collect_protocol_context(task_state, task_id)
 
         replies = []
 
@@ -769,7 +1175,16 @@ def run_discussion(
         context_file = None
         if use_file_ref:
             context_file = save_discussion_context(
-                base_dir, task_id, round_num, topic, history, artifacts_refs
+                base_dir,
+                task_id,
+                round_num,
+                topic,
+                history,
+                artifacts_refs,
+                previous_responses=protocol_context["previous_responses"],
+                open_questions=protocol_context["open_questions"],
+                targeted_challenges=protocol_context["targeted_challenges"],
+                pre_discuss=task_state.get("pre_discuss"),
             )
         keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
 
@@ -786,7 +1201,16 @@ def run_discussion(
                     save_task_state(base_dir, task_id, task_state)
 
                     prompt = build_discussion_prompt(
-                        topic, task_id, agent, round_num, history, artifacts_refs, context_file
+                        topic,
+                        task_id,
+                        agent,
+                        round_num,
+                        history,
+                        artifacts_refs,
+                        context_file,
+                        previous_responses=protocol_context["previous_responses"],
+                        open_questions=protocol_context["open_questions"],
+                        targeted_challenges=protocol_context["targeted_challenges"],
                     )
 
                     agent_start = time.time()
@@ -831,6 +1255,9 @@ def run_discussion(
                         continue
 
                     # Save artifact
+                    if isinstance(reply.parsed, dict):
+                        reply.parsed = normalize_parsed_response(reply.parsed, task_id, round_num, agent)
+
                     artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
                     artifacts_refs.append(artifact_path)
 
@@ -867,14 +1294,35 @@ def run_discussion(
             print(f"⚠️  Not all required participants completed successfully. Consensus blocked.")
             consensus = False
             blocking = ["Not all required participants completed successfully (some failed or were skipped)."]
+            last_consensus_detail = {
+                "consensus": False,
+                "blocking_issues": blocking,
+                "dissent": "Not all required participants completed successfully.",
+                "agreeing_agents": [],
+                "dissenting_agents": [
+                    p for p in participants
+                    if p != "claude" and p not in [reply.agent for reply in replies]
+                ],
+                "evidence": [],
+                "action_items": [],
+            }
         else:
             # Judge consensus
-            consensus, blocking = judge_consensus(replies)
+            last_consensus_detail = check_consensus(replies)
+            consensus = last_consensus_detail["consensus"]
+            blocking = last_consensus_detail["blocking_issues"]
 
         # Mark round as completed
         task_state = complete_round(task_state, round_num, consensus, blocking,
                                    actual_responded=len(replies),
                                    expected_count=expected_participant_count)
+        task_state["rounds"][round_num - 1]["consensus_check"].update({
+            "dissent": last_consensus_detail.get("dissent"),
+            "agreeing_agents": last_consensus_detail.get("agreeing_agents", []),
+            "dissenting_agents": last_consensus_detail.get("dissenting_agents", []),
+            "evidence": last_consensus_detail.get("evidence", []),
+            "action_items": last_consensus_detail.get("action_items", []),
+        })
         save_task_state(base_dir, task_id, task_state)
 
         # Append round end event
@@ -912,7 +1360,11 @@ def run_discussion(
             task_state['final_consensus'] = {
                 'reached': True,
                 'decision': final_decision,
-                'round': round_num
+                'round': round_num,
+                'dissent': last_consensus_detail.get("dissent"),
+                'evidence': last_consensus_detail.get("evidence", []),
+                'action_items': last_consensus_detail.get("action_items", []),
+                'blocking_issues': blocking,
             }
             task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
             save_task_state(base_dir, task_id, task_state)
@@ -927,7 +1379,11 @@ def run_discussion(
                 'system',
                 task_id,
                 f"Consensus reached in round {round_num}",
-                details={'consensus': True, 'decision': final_decision}
+                details={
+                    'consensus': True,
+                    'decision': final_decision,
+                    'dissent': last_consensus_detail.get("dissent"),
+                }
             )
 
             print(f"\n✅ Consensus reached in round {round_num}!")
@@ -956,7 +1412,9 @@ def run_discussion(
         task_state['final_consensus'] = {
             'reached': False,
             'reason': 'hard_round_limit_reached',
-            'decision': ''
+            'decision': '',
+            'dissent': last_consensus_detail.get("dissent"),
+            'blocking_issues': last_consensus_detail.get("blocking_issues", []),
         }
         task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
         save_task_state(base_dir, task_id, task_state)
@@ -967,7 +1425,11 @@ def run_discussion(
             'system',
             task_id,
             f"Discussion stopped: hard limit ({hard_max_rounds} rounds) reached",
-            details={'consensus': False, 'reason': 'hard_round_limit_reached'}
+            details={
+                'consensus': False,
+                'reason': 'hard_round_limit_reached',
+                'dissent': last_consensus_detail.get("dissent"),
+            }
         )
 
         print(f"🛑 Hard limit reached: {hard_max_rounds} rounds without consensus")
