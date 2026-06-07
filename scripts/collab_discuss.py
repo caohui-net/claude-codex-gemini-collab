@@ -2528,7 +2528,9 @@ if __name__ == "__main__":
             participants = [p.strip() for p in args.participants.split(",")]
 
             # Display runtime status before starting discussion
-            show_runtime_status(str(base))
+            show_runtime_status(str(base), task_id=task_id, topic=topic,
+                              participants=participants, mode=args.mode,
+                              max_rounds=args.max_rounds)
 
             sys.exit(run_discussion(base, task_id, topic, participants,
                                    args.max_rounds, hard_max_rounds=10,
