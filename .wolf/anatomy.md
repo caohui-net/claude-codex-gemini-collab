@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-07T14:06:06.173Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-07T14:10:11.257Z
 > Files: 544 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/
@@ -26,7 +26,7 @@
 ## ./
 
 - `.gitignore` — Git ignore rules (~224 tok)
-- `CHANGELOG.md` — Changelog (~2868 tok)
+- `CHANGELOG.md` — Changelog (~3244 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
 - `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1835 tok)

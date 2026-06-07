@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-06-06T16:25:30.583Z",
   "lifetime": {
-    "total_tokens_estimated": 696443,
-    "total_reads": 768,
-    "total_writes": 576,
+    "total_tokens_estimated": 722859,
+    "total_reads": 798,
+    "total_writes": 618,
     "total_sessions": 14,
-    "anatomy_hits": 276,
-    "anatomy_misses": 416,
+    "anatomy_hits": 290,
+    "anatomy_misses": 432,
     "repeated_reads_blocked": 265,
-    "estimated_savings_vs_bare_cli": 426578
+    "estimated_savings_vs_bare_cli": 429378
   },
   "sessions": [
     {
@@ -9396,6 +9396,464 @@
         "writes_count": 6,
         "repeated_reads_blocked": 0,
         "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-06-07-2156",
+      "started": "2026-06-07T13:56:30.925Z",
+      "ended": "2026-06-07T14:07:49.971Z",
+      "reads": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-codex-20260602-024534.md",
+          "tokens_estimated": 366,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-gemini-20260602-024607.md",
+          "tokens_estimated": 64,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-claude-codex-gemini-collab/9e78d64d-daa5-4814-8e83-8d5cf583c34a/tasks/br257sb9s.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r3-codex-20260607-135921.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r2-gemini-20260607-135504.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 1248,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 112,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 102,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_audit.py",
+          "tokens_estimated": 410,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 156,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 1214,
+          "action": "create"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 134,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 573,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 79,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 416,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1678,
+        "output_tokens_estimated": 3271,
+        "reads_count": 7,
+        "writes_count": 10,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-06-07-2156",
+      "started": "2026-06-07T13:56:30.925Z",
+      "ended": "2026-06-07T14:08:56.331Z",
+      "reads": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-codex-20260602-024534.md",
+          "tokens_estimated": 366,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-gemini-20260602-024607.md",
+          "tokens_estimated": 64,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-claude-codex-gemini-collab/9e78d64d-daa5-4814-8e83-8d5cf583c34a/tasks/br257sb9s.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r3-codex-20260607-135921.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r2-gemini-20260607-135504.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 1248,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 112,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 102,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_audit.py",
+          "tokens_estimated": 410,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 156,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 1214,
+          "action": "create"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 134,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 573,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 79,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 416,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1678,
+        "output_tokens_estimated": 3271,
+        "reads_count": 7,
+        "writes_count": 10,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-06-07-2156",
+      "started": "2026-06-07T13:56:30.925Z",
+      "ended": "2026-06-07T14:10:39.217Z",
+      "reads": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-codex-20260602-024534.md",
+          "tokens_estimated": 366,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-gemini-20260602-024607.md",
+          "tokens_estimated": 64,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-claude-codex-gemini-collab/9e78d64d-daa5-4814-8e83-8d5cf583c34a/tasks/br257sb9s.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r3-codex-20260607-135921.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r2-gemini-20260607-135504.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 1248,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/CHANGELOG.md",
+          "tokens_estimated": 2868,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 112,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 102,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_audit.py",
+          "tokens_estimated": 410,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 156,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 1214,
+          "action": "create"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 134,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 573,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 79,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 416,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/CHANGELOG.md",
+          "tokens_estimated": 442,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4546,
+        "output_tokens_estimated": 3713,
+        "reads_count": 8,
+        "writes_count": 11,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-06-07-2156",
+      "started": "2026-06-07T13:56:30.925Z",
+      "ended": "2026-06-07T14:11:20.076Z",
+      "reads": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-codex-20260602-024534.md",
+          "tokens_estimated": 366,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-EVALUATE-V0-1-1780368025-discuss-r2-gemini-20260602-024607.md",
+          "tokens_estimated": 64,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-claude-codex-gemini-collab/9e78d64d-daa5-4814-8e83-8d5cf583c34a/tasks/br257sb9s.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r3-codex-20260607-135921.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.omc/collaboration/artifacts/DISCUSS-代码审查-自动路由修复验证-已完成修复-1780840231-discuss-r2-gemini-20260607-135504.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 1248,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/CHANGELOG.md",
+          "tokens_estimated": 2868,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 112,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_classify.py",
+          "tokens_estimated": 102,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_audit.py",
+          "tokens_estimated": 410,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_override.py",
+          "tokens_estimated": 156,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 1214,
+          "action": "create"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 134,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/ccg_collab/scripts/collab_event.py",
+          "tokens_estimated": 573,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 79,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/tests/test_routing_cli_integration.py",
+          "tokens_estimated": 416,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/CHANGELOG.md",
+          "tokens_estimated": 442,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4546,
+        "output_tokens_estimated": 3713,
+        "reads_count": 8,
+        "writes_count": 11,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 4
       }
     }
   ],
