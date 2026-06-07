@@ -15,28 +15,61 @@ def override_routing(base_dir, task_id, agent, reason):
     base = Path(base_dir).resolve()
     collab_dir = base / ".omc" / "collaboration"
 
+    # Validate inputs
+    if not reason or not reason.strip():
+        print(f"❌ Override reason cannot be empty")
+        return 1
+
+    # Agent whitelist
+    valid_agents = ["claude", "codex", "gemini"]
+    if agent not in valid_agents:
+        print(f"❌ Invalid agent '{agent}'. Valid: {', '.join(valid_agents)}")
+        return 1
+
+    # Check task exists
     events = read_events(collab_dir / "events.jsonl")
-    next_id = max((e.get('id', 0) for e in events), default=0) + 1
+    task_exists = any(
+        e.get("type") == "task_created" and e.get("task_id") == task_id
+        for e in events
+    )
+    if not task_exists:
+        print(f"❌ Task {task_id} not found")
+        return 1
 
-    event = {
-        "id": next_id,
-        "type": "manual_override",
-        "agent": "claude",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "task_id": task_id,
-        "summary": f"Manual override: assign to {agent}",
-        "details": {
+    # Find previous routing decision
+    previous_route = None
+    for event in reversed(events):
+        if event.get("task_id") == task_id:
+            if event.get("type") == "classify_requested":
+                previous_route = event.get("details", {}).get("assigned_agents")
+                break
+            elif event.get("type") == "manual_override":
+                previous_route = [event.get("details", {}).get("assigned_agent")]
+                break
+
+    # Append override event
+    rc = append_event(
+        base,
+        event_type="manual_override",
+        agent="claude",
+        task_id=task_id,
+        summary=f"Manual override: assign to {agent}",
+        details={
             "assigned_agent": agent,
-            "reason": reason,
-            "override_by": "claude"
+            "reason": reason.strip(),
+            "override_by": "claude",
+            "previous_route": previous_route or []
         }
-    }
+    )
 
-    with (collab_dir / "events.jsonl").open('a') as f:
-        f.write(json.dumps(event) + '\n')
+    if rc != 0:
+        print(f"❌ Failed to append manual_override event")
+        return 1
 
-    print(f"✓ Event {next_id} appended: manual_override")
+    print(f"✓ Event appended: manual_override")
     print(f"✓ Task {task_id} reassigned to {agent}")
+    if previous_route:
+        print(f"  Previous: {', '.join(previous_route) if isinstance(previous_route, list) else previous_route}")
     print(f"📝 Reason: {reason}")
     return 0
 

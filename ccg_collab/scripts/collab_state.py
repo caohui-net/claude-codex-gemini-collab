@@ -24,6 +24,15 @@ STATUS_MAP = {
     "discussion_round_start": "discussion",
     "discussion_round_end": "discussion",
     "discussion_concluded": "discussion",
+    # Automatic routing events
+    "classify_requested": "routing",
+    "route_decided": "routing",
+    "manual_override": "routing",
+    # Execution and audit events
+    "code_completed": "ready_for_audit",
+    "audit_started": "auditing",
+    "audit_completed": "audit_completed",
+    "audit_failed": "audit_failed",
 }
 
 ACTIVE_CLAIM_STATUSES = {

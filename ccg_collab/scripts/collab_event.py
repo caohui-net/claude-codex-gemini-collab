@@ -418,6 +418,46 @@ def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, 
         print(f"✓ Event {next_id} appended: {event_type}")
         print(f"✓ State updated: status={event['status']}, last_event_id={next_id}")
 
+        # Auto-trigger audit after code_completed (Task #12)
+        if event_type == "code_completed" and task_id:
+            # Check if audit already exists (idempotent)
+            audit_exists = any(
+                e.get("task_id") == task_id and
+                e.get("type") in ["audit_started", "audit_completed", "audit_failed"]
+                for e in events_with_new
+            )
+
+            if not audit_exists:
+                # Create audit event inline to avoid lock recursion
+                audit_id = f"AUDIT-{task_id}"
+                audit_event = {
+                    "id": next_id + 1,
+                    "type": "audit_started",
+                    "agent": "claude",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "summary": "Auto-triggered three-party audit after code completion",
+                    "task_id": task_id,
+                    "status": STATUS_MAP.get("audit_started", "auditing"),
+                    "details": {
+                        "audit_id": audit_id,
+                        "required_agents": ["claude", "codex", "gemini"],
+                        "status": "pending",
+                        "trigger": "auto_code_completed"
+                    }
+                }
+
+                # Append audit event
+                with events_file.open('a') as f:
+                    f.write(json.dumps(audit_event) + '\n')
+
+                # Update state with audit event
+                events_with_audit = events_with_new + [audit_event]
+                state = rebuild_state(events_with_audit)
+                state["workflow_id"] = "claude-codex-gemini-collab"
+                write_state_atomically(collab_dir, agent, state)
+
+                print(f"✓ Auto-triggered audit: {audit_id}")
+
         return 0
 
     finally:

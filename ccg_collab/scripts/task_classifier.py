@@ -119,23 +119,26 @@ def classify_task(description: str, file_paths: Optional[List[str]] = None) -> C
         )
 
     best_type = max(scores.items(), key=lambda x: x[1])
-    task_type, confidence = best_type
+    original_type, confidence = best_type
 
     # Check if confidence meets threshold
-    threshold = TASK_TYPE_RULES[task_type]["confidence_threshold"]
+    threshold = TASK_TYPE_RULES[original_type]["confidence_threshold"]
     if confidence < threshold:
-        # Fallback to mixed if below threshold
+        # Fallback to mixed but preserve original evidence
         task_type = "mixed"
         confidence = max(0.60, confidence)
+    else:
+        task_type = original_type
 
     # Assess risk level
     risk_level = _assess_risk_level(description, file_paths)
 
+    # Use original_type for matched_rules and capabilities to preserve evidence
     return ClassificationResult(
         task_type=task_type,
         confidence=confidence,
-        matched_rules=matched_rules.get(task_type, []),
-        required_capabilities=TASK_TYPE_RULES.get(task_type, {}).get("required_capabilities", []),
+        matched_rules=matched_rules.get(original_type, []),
+        required_capabilities=TASK_TYPE_RULES.get(original_type, {}).get("required_capabilities", []),
         risk_level=risk_level,
     )
 
@@ -172,7 +175,7 @@ def route_to_agents(classification: ClassificationResult) -> List[str]:
         "audit": ["codex"],
         "reasoning": ["claude"],
         "discussion": ["claude", "codex", "gemini"],
-        "mixed": ["claude", "codex"],  # Claude coordinates, Codex helps
+        "mixed": ["gemini", "codex"],  # Cross-domain: UI + code/logic
     }
 
     return routing_map.get(task_type, ["claude"])

@@ -15,14 +15,9 @@ def trigger_audit(base_dir, task_id):
     base = Path(base_dir).resolve()
     collab_dir = base / ".omc" / "collaboration"
 
-    if not acquire_lock(collab_dir, "claude", "none", "trigger audit"):
-        print("❌ Failed to acquire lock")
-        return 1
-
+    # Check if audit already running (idempotency)
     try:
         events = read_events(collab_dir / "events.jsonl")
-
-        # Check if audit already running (idempotency)
         for event in reversed(events):
             if event.get("task_id") == task_id:
                 if event.get("type") == "audit_started":
@@ -31,38 +26,34 @@ def trigger_audit(base_dir, task_id):
                 if event.get("type") in ["audit_completed", "audit_failed"]:
                     print(f"ℹ️  Audit already completed for {task_id}")
                     return 0
-
-        # Create audit record
-        next_id = max((e.get('id', 0) for e in events), default=0) + 1
-        audit_id = f"AUDIT-{task_id}"
-
-        event = {
-            "id": next_id,
-            "type": "audit_started",
-            "agent": "claude",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "task_id": task_id,
-            "summary": f"Started three-party audit",
-            "details": {
-                "audit_id": audit_id,
-                "required_agents": ["claude", "codex", "gemini"],
-                "status": "pending",
-            }
-        }
-
-        with (collab_dir / "events.jsonl").open('a') as f:
-            f.write(json.dumps(event) + '\n')
-
-        print(f"✓ Event {next_id} appended: audit_started")
-        print(f"✓ Audit ID: {audit_id}")
-        print(f"📋 Required agents: claude, codex, gemini")
-        return 0
-
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error reading events: {e}")
         return 1
-    finally:
-        release_lock(collab_dir, "claude")
+
+    # Create audit record
+    audit_id = f"AUDIT-{task_id}"
+
+    rc = append_event(
+        base,
+        event_type="audit_started",
+        agent="claude",
+        task_id=task_id,
+        summary=f"Started three-party audit",
+        details={
+            "audit_id": audit_id,
+            "required_agents": ["claude", "codex", "gemini"],
+            "status": "pending",
+        }
+    )
+
+    if rc != 0:
+        print(f"❌ Failed to append audit_started event")
+        return 1
+
+    print(f"✓ Event appended: audit_started")
+    print(f"✓ Audit ID: {audit_id}")
+    print(f"📋 Required agents: claude, codex, gemini")
+    return 0
 
 
 def main():

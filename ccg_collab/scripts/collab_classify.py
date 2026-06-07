@@ -42,31 +42,55 @@ def classify_and_route(base_dir, task_id):
     print(f"  Routed to: {', '.join(agents)}")
     print(f"  Capabilities: {', '.join(result.required_capabilities)}")
 
-    # Prepare classification event
+    # Append classification event (分类结果，保留assigned_agents兼容性)
     classification_data = {
         "task_type": result.task_type,
         "confidence": result.confidence,
         "risk_level": result.risk_level,
         "matched_rules": result.matched_rules,
         "required_capabilities": result.required_capabilities,
+        "assigned_agents": agents,  # 保留以兼容旧override explain
+    }
+
+    classify_rc = append_event(
+        base,
+        event_type="classify_requested",
+        agent="claude",
+        task_id=task_id,
+        summary=f"Classified task as {result.task_type}",
+        details=classification_data
+    )
+
+    if classify_rc != 0:
+        print(f"❌ Failed to append classify_requested event")
+        return 1
+
+    print(f"✓ Event appended: classify_requested")
+
+    # Append routing decision event (路由决策)
+    routing_data = {
         "assigned_agents": agents,
+        "task_type": result.task_type,
+        "confidence": result.confidence,
+        "required_capabilities": result.required_capabilities,
+        "route_reason": f"Auto-routed based on {result.task_type} classification",
+        "classifier_version": "1.0",
     }
 
-    next_id = max((e.get('id', 0) for e in events), default=0) + 1
-    event = {
-        "id": next_id,
-        "type": "classify_requested",
-        "agent": "claude",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "task_id": task_id,
-        "summary": f"Classified task as {result.task_type}",
-        "details": classification_data,
-    }
+    route_rc = append_event(
+        base,
+        event_type="route_decided",
+        agent="claude",
+        task_id=task_id,
+        summary=f"Routed to {', '.join(agents)}",
+        details=routing_data
+    )
 
-    with (collab_dir / "events.jsonl").open('a') as f:
-        f.write(json.dumps(event) + '\n')
+    if route_rc != 0:
+        print(f"❌ Failed to append route_decided event")
+        return 1
 
-    print(f"✓ Event {next_id} appended: classify_requested")
+    print(f"✓ Event appended: route_decided")
     return 0
 
 

@@ -80,6 +80,198 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-06T18:09:12.833Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-06-07T07:28:39.208Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/debug_agentmemory.py",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 20→31 lines (4 removed) | Also: print(\"=== Testing Lease Acquire (with camelCase f; \"actionId\": \"test-resource\",",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-07T07:31:13.638Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-06-07T07:33:40.108Z",
+      "error_message": "Incorrect value in code",
+      "file": "tests/debug_agentmemory.py",
+      "root_cause": "Had \"id\"",
+      "fix": "Changed to \"action\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T07:33:40.108Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-06-07T07:36:15.666Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/test_agentmemory_integration.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 16→33 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T07:36:15.666Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-06-07T07:54:56.298Z",
+      "error_message": "Significant refactor of ",
+      "file": "docs/agentmemory-integration-progress.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 12→11 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T07:54:56.298Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-06-07T07:57:04.194Z",
+      "error_message": "Significant refactor of ",
+      "file": ".omc/session-context.json",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 24→30 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T07:57:04.194Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-06-07T08:43:24.732Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/hooks/check-explicit-tool-directive.sh",
+      "root_cause": "Had '(collab|ccg|omc|autopilot|ralph|ultrawork|team|ra",
+      "fix": "Changed to '(collab|ccg|omc|autopilot|ralph|ultrawork|team|ra",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T08:43:24.732Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-06-07T10:42:12.675Z",
+      "error_message": "Incorrect value in code",
+      "file": "pyproject.toml",
+      "root_cause": "Had \"0.1.0\"",
+      "fix": "Changed to \"0.4.0\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "toml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T10:42:12.675Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-06-07T10:42:13.555Z",
+      "error_message": "Significant refactor of ",
+      "file": "PRODUCTION-READY.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→4 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T10:42:13.555Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-06-07T13:15:17.321Z",
+      "error_message": "Significant refactor of ",
+      "file": "ccg_collab/scripts/task_classifier.py",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 19→24 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T13:15:17.321Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-06-07T13:43:08.657Z",
+      "error_message": "Significant refactor of ",
+      "file": "ccg_collab/scripts/collab_override.py",
+      "root_cause": "14 lines replaced/restructured",
+      "fix": "Rewrote 29→62 lines (14 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T13:43:08.657Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-06-07T13:46:09.375Z",
+      "error_message": "Significant refactor of ",
+      "file": "ccg_collab/scripts/collab_classify.py",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 25→50 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T13:46:09.376Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-06-07T13:49:52.611Z",
+      "error_message": "Significant refactor of ",
+      "file": "tests/test_task_classifier.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 5→6 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T13:49:52.611Z"
     }
   ]
 }

@@ -1,15 +1,27 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-06T18:09:12.822Z
-> Files: 523 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-07T14:06:06.173Z
+> Files: 544 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../.claude/
+
+- `CLAUDE.md` — oh-my-claudecode - Intelligent Multi-Agent Orchestration (~2440 tok)
+
+## ../../.claude/hooks/
+
+- `check-explicit-tool-directive.sh` — Hook: UserPromptSubmit - Check for explicit tool directives (~263 tok)
 
 ## ../../.claude/skills/claude-codex-gemini-collab/
 
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2632 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2855 tok)
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~12353 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~12596 tok)
+
+## ../graduation-leave-system/.claude/skills/claude-codex-collab/
+
+- `SKILL.md` — Claude-Codex Collaboration Skill (~1007 tok)
 
 ## ./
 
@@ -17,11 +29,11 @@
 - `CHANGELOG.md` — Changelog (~2868 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
-- `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1771 tok)
-- `pyproject.toml` — Python project configuration (~186 tok)
-- `README.md` — Project documentation (~2484 tok)
+- `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1835 tok)
+- `pyproject.toml` — Claude-Codex-Gemini Collaboration Framework (~185 tok)
+- `README.md` — Project documentation (~2788 tok)
 - `response.json` (~469 tok)
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2415 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2933 tok)
 
 ## .claude/
 
@@ -36,7 +48,7 @@
 
 - `daemon-audit.log` (~125609 tok)
 - `project-memory.json` (~2513 tok)
-- `session-context.json` (~1388 tok)
+- `session-context.json` (~477 tok)
 
 ## .omc/artifacts/ask/
 
@@ -553,9 +565,31 @@
 
 - `last-tool-error.json` (~118 tok)
 
+## .omc/collaboration/design/
+
+- `auto-routing-audit-trigger.md` — 审计触发机制 - 自动智能路由 (~358 tok)
+- `auto-routing-compatibility.md` — 兼容性契约 - 自动智能路由 (~326 tok)
+- `auto-routing-taxonomy.md` — 任务分类Taxonomy - 自动智能路由 (~396 tok)
+- `auto-routing-ui-rules.md` — UI任务识别规则 - Gemini专用 (~277 tok)
+
+## ccg_collab/coordination/
+
+- `agentmemory.py` — AgentMemoryCoordination: acquire_lock, release_lock, send_signal, wait_signal + 2 more (~1019 tok)
+
+## ccg_collab/scripts/
+
+- `collab_audit.py` — Audit workflow for three-party code review. (~644 tok)
+- `collab_classify.py` — Classify and route collaboration tasks. (~966 tok)
+- `collab_event.py` — Atomic event operations for collaboration protocol. (~5829 tok)
+- `collab_override.py` — Manual routing override for collaboration tasks. (~1240 tok)
+- `collab_state.py` — Pure state reduction functions for collaboration protocol. (~3260 tok)
+- `task_classifier.py` — class: classify_task, route_to_agents (~1767 tok)
+
 ## docs/
 
-- `PROJECT-SUMMARY.md` — Project Summary (~4709 tok)
+- `agentmemory-integration-progress.md` — agentmemory Integration Progress (~1168 tok)
+- `architecture-integration-consensus.md` — 多智能体协作架构整合共识 (~1514 tok)
+- `PROJECT-SUMMARY.md` — Project Summary (~6113 tok)
 
 ## scripts/
 
@@ -564,3 +598,8 @@
 ## tests/
 
 - `cross-project-test-plan.md` — CCG Skill Cross-Project Test Plan (~525 tok)
+- `debug_agentmemory.py` — Debug agentmemory trigger responses. (~505 tok)
+- `debug_signal.py` — Debug signal operations. (~433 tok)
+- `test_agentmemory_integration.py` — Test agentmemory backend integration with iii-sdk. (~735 tok)
+- `test_routing_cli_integration.py` — Integration tests for routing CLI persistence. (~1550 tok)
+- `test_task_classifier.py` — Tests for task classifier. (~950 tok)
