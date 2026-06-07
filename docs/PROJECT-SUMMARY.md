@@ -2,6 +2,30 @@
 
 ## Latest Changes
 
+### Phase 2 Implementation Complete (2026-06-07)
+
+**Status:** ✅ 完成
+
+**任务:** TASK-20260607-1153 - Phase 2 agentmemory集成
+**执行者:** Codex (via collab handoff)
+**验证:** 17 tests passed, 80 core regression passed
+
+**实施内容:**
+- 新增 `scripts/agentmemory_bridge.py`: recall_consensus()/save_consensus()，可选iii-sdk集成
+- 扩展 `scripts/collab_discuss.py`: 讨论前recall历史共识，讨论后save结构化artifact，--scope参数
+- 扩展 `scripts/models.py`: 新增ConsensusArtifact数据结构
+- 扩展 `ccg_collab/coordination/agentmemory.py`: lazy import iii, recall_memories()/save_memory()
+- 更新测试: test_discussion.py (17 passed), test_agentmemory_integration.py (1 passed)
+
+**关键能力:**
+- 跨会话记忆：讨论前自动检索相关历史共识
+- 持久化共识：结构化存储decision/dissent/evidence/action_items
+- 跨项目scope：支持project-specific/cross-project/global分类
+
+**下一步:** Phase 3 - 高级功能（冲突检测、命名空间、权限控制）
+
+---
+
 ### Phase 1 Implementation Complete (2026-06-07)
 
 **Status:** ✅ 完成
