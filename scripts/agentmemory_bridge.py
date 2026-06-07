@@ -76,7 +76,15 @@ class AgentMemoryBridge:
         """Save a structured consensus artifact as long-term memory."""
         topic = str(artifact.get("topic") or "discussion consensus")
         tags = [str(tag) for tag in artifact.get("tags", []) if str(tag).strip()]
-        concepts = dedupe([topic, "discussion_consensus", artifact.get("project_scope"), *tags])
+        concepts = dedupe([
+            topic,
+            "discussion_consensus",
+            artifact.get("project_scope"),
+            artifact.get("namespace"),
+            artifact.get("status"),
+            f"version:{artifact.get('version', 1)}",
+            *tags,
+        ])
         content = json.dumps(
             {"type": "discussion_consensus", **artifact},
             ensure_ascii=False,

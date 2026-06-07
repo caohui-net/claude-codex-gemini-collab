@@ -4,10 +4,11 @@
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, List, Dict, Optional
 
@@ -17,7 +18,7 @@ from collab_event import append_event, read_events, read_state
 from collab_init import init_collaboration
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 from discussion_enhancements import check_and_handle_doom_loop, auto_compact_if_needed
-from models import Challenge, ConsensusArtifact, Response
+from models import Challenge, Conflict, ConsensusArtifact, Response
 from rmux_utils import check_rmux_available, get_tmux_info
 from collab_state import (
     init_task_state, load_task_state, save_task_state,
@@ -82,6 +83,11 @@ def normalize_action_items(value: Any) -> List[Dict[str, Any]]:
 
 
 VALID_CONSENSUS_SCOPES = {"project-specific", "cross-project", "global"}
+CONSENSUS_TTL_DAYS = {
+    "project-specific": 365,
+    "cross-project": 730,
+    "global": None,
+}
 
 
 def normalize_consensus_scope(value: Optional[str]) -> Optional[str]:
@@ -243,20 +249,257 @@ def parse_memory_content(hit: Dict[str, Any]) -> Dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {}
 
 
+def get_consensus_field(consensus: Any, field: str, default: Any = None) -> Any:
+    """Read a field from a memory hit, parsed content, or object-like consensus."""
+    if isinstance(consensus, dict):
+        parsed = parse_memory_content(consensus)
+        if field in parsed:
+            return parsed.get(field)
+        if field in consensus:
+            return consensus.get(field)
+        if field == "id":
+            return consensus.get("id") or consensus.get("memory_id") or consensus.get("uuid")
+        return default
+    return getattr(consensus, field, default)
+
+
+def consensus_id(consensus: Any) -> Optional[str]:
+    """Return a stable identifier from a historical consensus hit."""
+    value = get_consensus_field(consensus, "id")
+    return str(value) if value else None
+
+
+def parse_iso_datetime(value: Any) -> Optional[datetime]:
+    """Parse an ISO timestamp into an aware datetime when possible."""
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = str(value).strip()
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        try:
+            parsed = datetime.fromisoformat(text)
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def consensus_expires_at(created_at: Optional[str], ttl_days: Optional[int]) -> Optional[str]:
+    """Calculate an expiry timestamp for a consensus artifact."""
+    if ttl_days is None:
+        return None
+    created = parse_iso_datetime(created_at) or datetime.now(timezone.utc)
+    return (created + timedelta(days=ttl_days)).isoformat()
+
+
+def is_consensus_expired(consensus: Any, now: Optional[datetime] = None) -> bool:
+    """Return whether a historical consensus is past its TTL/expiry timestamp."""
+    status = str(get_consensus_field(consensus, "status", "") or "").lower()
+    if status == "expired":
+        return True
+
+    expires_at = parse_iso_datetime(get_consensus_field(consensus, "expires_at"))
+    if not expires_at:
+        created_at = get_consensus_field(consensus, "created_at")
+        ttl_days = get_consensus_field(consensus, "ttl_days")
+        try:
+            ttl = int(ttl_days) if ttl_days is not None else None
+        except (TypeError, ValueError):
+            ttl = None
+        expires_text = consensus_expires_at(created_at, ttl)
+        expires_at = parse_iso_datetime(expires_text)
+    if not expires_at:
+        return False
+
+    return (now or datetime.now(timezone.utc)) >= expires_at
+
+
+def build_consensus_namespace(base_dir: Path, project_scope: str) -> str:
+    """Build explicit namespace metadata for consensus memory."""
+    scope = normalize_consensus_scope(project_scope) or "project-specific"
+    if scope == "global":
+        return "global"
+    if scope == "cross-project":
+        return "cross-project"
+    return f"project:{project_name_for_memory(base_dir)}"
+
+
+def build_consensus_permission(project_scope: str, participants: List[str]) -> Dict[str, Any]:
+    """Return read/write/override policy metadata for a consensus scope."""
+    scope = normalize_consensus_scope(project_scope) or "project-specific"
+    actors = dedupe_preserve_order(["system", *participants])
+    if scope == "global":
+        return {
+            "read": ["all"],
+            "write": ["system", "maintainer"],
+            "override": ["system", "maintainer"],
+            "participants": participants,
+        }
+    if scope == "cross-project":
+        return {
+            "read": ["all"],
+            "write": actors,
+            "override": dedupe_preserve_order([*actors, "maintainer"]),
+            "participants": participants,
+        }
+    return {
+        "read": ["system", "project", *participants],
+        "write": actors,
+        "override": actors,
+        "participants": participants,
+    }
+
+
+def has_consensus_permission(permission: Dict[str, Any], actor: str, action: str) -> bool:
+    """Check whether an actor is allowed by consensus permission metadata."""
+    allowed = permission.get(action, [])
+    if not isinstance(allowed, list):
+        return False
+    actor_key = str(actor or "").strip()
+    return "all" in allowed or actor_key in allowed
+
+
+def detect_consensus_version(topic: str, related_consensus: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Find the latest same-topic consensus and return next version metadata."""
+    topic_key = topic.strip().lower()
+    result = {"version": 1, "previous_version_id": None}
+    if not topic_key:
+        return result
+
+    latest_version = 0
+    latest_id = None
+    for hit in related_consensus:
+        memory_type = str(get_consensus_field(hit, "type", "") or "")
+        if memory_type != "discussion_consensus":
+            continue
+        old_topic = str(get_consensus_field(hit, "topic", "") or "").strip().lower()
+        if old_topic == topic_key:
+            memory_id = consensus_id(hit)
+            try:
+                version = int(get_consensus_field(hit, "version", 1) or 1)
+            except (TypeError, ValueError):
+                version = 1
+            if version >= latest_version:
+                latest_version = version
+                latest_id = str(memory_id) if memory_id else None
+
+    if latest_version:
+        result["version"] = latest_version + 1
+        result["previous_version_id"] = latest_id
+    return result
+
+
 def detect_supersedes(topic: str, related_consensus: List[Dict[str, Any]]) -> Optional[str]:
     """Choose a directly matching historical consensus to supersede, if any."""
-    topic_key = topic.strip().lower()
-    if not topic_key:
-        return None
-    for hit in related_consensus:
-        parsed = parse_memory_content(hit)
-        if str(parsed.get("type", "")) != "discussion_consensus":
+    version_info = detect_consensus_version(topic, related_consensus)
+    return version_info.get("previous_version_id")
+
+
+def significant_terms(text: str) -> set:
+    """Extract coarse terms for overlap checks in semantic-opposite heuristics."""
+    stop_words = {
+        "the", "and", "for", "with", "from", "this", "that", "into", "use",
+        "using", "add", "remove", "disable", "enable", "avoid", "require",
+        "requires", "required", "discussion", "consensus", "topic", "new",
+        "old", "decision", "方案", "讨论", "共识", "实现", "功能", "使用",
+    }
+    terms = set()
+    for word in re.findall(r"[A-Za-z0-9_\-]{3,}|[\u4e00-\u9fff]{2,}", text.lower()):
+        if word not in stop_words:
+            terms.add(word)
+    return terms
+
+
+def intent_markers(text: str) -> set:
+    """Classify broad intent markers used by semantic-opposite detection."""
+    lowered = text.lower()
+    markers = set()
+    phrase_groups = {
+        "enable": ["enable", "add", "use", "adopt", "persist", "save", "store", "allow", "require", "启用", "使用", "保存", "持久化", "允许", "要求"],
+        "disable": ["disable", "remove", "delete", "avoid", "stop", "drop", "deprecate", "do not use", "don't use", "do not save", "禁止", "禁用", "移除", "删除", "避免", "不要", "不使用"],
+        "global": ["global", "all projects", "organization-wide", "workspace-wide", "全局", "所有项目", "全部项目"],
+        "project": ["project-specific", "current project", "this repo", "local only", "per-project", "本项目", "当前项目", "项目级"],
+        "mandatory": ["must", "require", "mandatory", "always", "必须", "要求", "强制"],
+        "optional": ["optional", "may", "best effort", "graceful", "fallback", "可选", "按需", "降级"],
+    }
+    for marker, phrases in phrase_groups.items():
+        if any(phrase in lowered for phrase in phrases):
+            markers.add(marker)
+    return markers
+
+
+def semantic_opposite(new_topic: str, old_decision: str) -> bool:
+    """Heuristic semantic-opposite check for topic-vs-decision contradictions."""
+    if not new_topic or not old_decision:
+        return False
+
+    topic_markers = intent_markers(new_topic)
+    decision_markers = intent_markers(old_decision)
+    opposite_pairs = [
+        ("enable", "disable"),
+        ("global", "project"),
+        ("mandatory", "optional"),
+    ]
+    has_opposite_intent = any(
+        (left in topic_markers and right in decision_markers)
+        or (right in topic_markers and left in decision_markers)
+        for left, right in opposite_pairs
+    )
+    if not has_opposite_intent:
+        return False
+
+    topic_terms = significant_terms(new_topic)
+    decision_terms = significant_terms(old_decision)
+    if topic_terms and decision_terms:
+        return bool(topic_terms & decision_terms)
+
+    combined = f"{new_topic} {old_decision}".lower()
+    return any(term in combined for term in ["agentmemory", "consensus", "共识", "持久化"])
+
+
+def check_conflicts(new_topic: str, related: List[Any]) -> List[Dict[str, Any]]:
+    """Detect semantic conflicts between a new discussion topic and old consensus."""
+    conflicts = []
+    for old in related or []:
+        if is_consensus_expired(old):
             continue
-        old_topic = str(parsed.get("topic") or "").strip().lower()
-        if old_topic == topic_key:
-            memory_id = hit.get("id") or hit.get("memory_id") or parsed.get("id")
-            return str(memory_id) if memory_id else None
-    return None
+        old_decision = str(get_consensus_field(old, "decision", "") or "")
+        if not semantic_opposite(new_topic, old_decision):
+            continue
+
+        try:
+            confidence = float(get_consensus_field(old, "confidence", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            confidence = 0.0
+        old_id = consensus_id(old) or "unknown"
+        conflict = Conflict(
+            old_consensus_id=old_id,
+            reason=f"New topic contradicts historical decision: {old_decision}",
+            severity="high" if confidence > 0.8 else "medium",
+            old_decision=old_decision,
+            confidence=confidence,
+            project=str(get_consensus_field(old, "project", "") or get_consensus_field(old, "namespace", "") or "") or None,
+        )
+        conflicts.append(conflict.to_dict())
+    return conflicts
+
+
+def filter_active_consensus(related: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """Split historical consensus hits into active and expired lists."""
+    active = []
+    expired = []
+    for hit in related or []:
+        item = dict(hit)
+        if is_consensus_expired(item):
+            item["status"] = "expired"
+            expired.append(item)
+        else:
+            active.append(item)
+    return {"active": active, "expired": expired}
 
 
 def extract_consensus_tags(topic: str, project_scope: str, participants: List[str]) -> List[str]:
@@ -315,6 +558,11 @@ def build_consensus_artifact(
         requested_scope=requested_scope,
     )
     related = task_state.get("agentmemory", {}).get("related_consensus", [])
+    created_at = datetime.now(timezone.utc).isoformat()
+    ttl_days = CONSENSUS_TTL_DAYS.get(project_scope)
+    version_info = detect_consensus_version(topic, related)
+    namespace = build_consensus_namespace(base_dir, project_scope)
+    permission = build_consensus_permission(project_scope, participants)
     return ConsensusArtifact(
         topic=topic,
         participants=participants,
@@ -324,11 +572,18 @@ def build_consensus_artifact(
         action_items=action_items,
         project_scope=project_scope,
         confidence=estimate_consensus_confidence(final_consensus),
-        supersedes=detect_supersedes(topic, related),
+        supersedes=version_info.get("previous_version_id"),
         tags=extract_consensus_tags(topic, project_scope, participants),
         task_id=task_id,
         round=final_consensus.get("round"),
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=created_at,
+        namespace=namespace,
+        permission=permission,
+        ttl_days=ttl_days,
+        expires_at=consensus_expires_at(created_at, ttl_days),
+        version=version_info["version"],
+        previous_version_id=version_info.get("previous_version_id"),
+        status="active",
     )
 
 
@@ -340,16 +595,27 @@ def recall_related_consensus(
 ) -> Dict[str, Any]:
     """Recall related historical consensus from agentmemory."""
     if os.environ.get("CCG_AGENTMEMORY_DISABLED", "").lower() == "true":
-        return {"enabled": False, "related_consensus": [], "error": "disabled by CCG_AGENTMEMORY_DISABLED"}
+        return {
+            "enabled": False,
+            "related_consensus": [],
+            "expired_consensus": [],
+            "potential_conflicts": [],
+            "error": "disabled by CCG_AGENTMEMORY_DISABLED",
+        }
 
     projects = memory_projects_for_recall(base_dir, requested_scope)
     try:
         bridge = AgentMemoryBridge()
         related = bridge.recall_consensus(topic, projects, limit=limit)
+        split = filter_active_consensus(related)
+        active = split["active"]
+        conflicts = check_conflicts(topic, active)
         return {
             "enabled": True,
             "projects": projects,
-            "related_consensus": related,
+            "related_consensus": active,
+            "expired_consensus": split["expired"],
+            "potential_conflicts": conflicts,
             "error": None,
         }
     except Exception as exc:
@@ -357,6 +623,8 @@ def recall_related_consensus(
             "enabled": False,
             "projects": projects,
             "related_consensus": [],
+            "expired_consensus": [],
+            "potential_conflicts": [],
             "error": str(exc),
         }
 
@@ -389,6 +657,10 @@ def save_consensus_to_agentmemory(
         requested_scope=requested_scope or agentmemory_state.get("requested_scope"),
     )
     project = memory_project_for_scope(base_dir, artifact.project_scope)
+    if not has_consensus_permission(artifact.permission, "system", "write"):
+        agentmemory_state["consensus_artifact"] = artifact.to_dict()
+        agentmemory_state["save_error"] = "system actor lacks write permission for consensus scope"
+        return {"saved": False, "project": project, "artifact": artifact.to_dict(), "error": agentmemory_state["save_error"]}
 
     if os.environ.get("CCG_AGENTMEMORY_DISABLED", "").lower() == "true":
         agentmemory_state["consensus_artifact"] = artifact.to_dict()
@@ -459,6 +731,7 @@ def save_discussion_context(
     targeted_challenges: Optional[List[Dict[str, str]]] = None,
     pre_discuss: Optional[Dict[str, str]] = None,
     related_consensus: Optional[List[Dict[str, Any]]] = None,
+    potential_conflicts: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Save discussion context to file, return relative path."""
     context_dir = base_dir / ".omc" / "collaboration" / "context"
@@ -487,6 +760,16 @@ def save_discussion_context(
             content += f"### {memory_id} ({project})\n\n"
             content += f"Title: {title}\n\n"
             content += f"{summarize_memory_hit(item)}\n\n"
+
+    if potential_conflicts:
+        content += "## Potential Consensus Conflicts\n\n"
+        for conflict in potential_conflicts:
+            content += (
+                f"- {conflict.get('severity', 'medium').upper()}: "
+                f"{conflict.get('old_consensus_id', 'unknown')} - "
+                f"{conflict.get('reason', '')}\n"
+            )
+        content += "\n"
 
     if pre_discuss:
         content += f"""## Pre-Discuss Initial Analysis
@@ -569,6 +852,7 @@ def build_discussion_prompt(
     open_questions: Optional[List[str]] = None,
     targeted_challenges: Optional[List[Dict[str, str]]] = None,
     related_consensus: Optional[List[Dict[str, Any]]] = None,
+    potential_conflicts: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Build discussion prompt with context (file reference or inline)."""
 
@@ -606,6 +890,7 @@ Respond with structured JSON wrapped in markers:
 IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
 Directly cite at least one relevant Previous Response ID when prior responses exist.
 Consider Related Historical Consensus when present, and call out conflicts explicitly.
+Treat Potential Consensus Conflicts as required review items when present.
 Output ONLY the markers and JSON, nothing else.
 """
         return prompt
@@ -643,6 +928,7 @@ You are {agent}. Respond with structured JSON wrapped in markers:
 IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
 Directly cite at least one relevant Previous Response ID when prior responses exist.
 Consider Related Historical Consensus when present, and call out conflicts explicitly.
+Treat Potential Consensus Conflicts as required review items when present.
 Output ONLY the markers and JSON, nothing else.
 
 """
@@ -653,6 +939,16 @@ Output ONLY the markers and JSON, nothing else.
             memory_id = item.get("id") or item.get("memory_id") or f"related-{idx}"
             project = item.get("project") or "unknown"
             prompt += f"- {memory_id} ({project}): {summarize_memory_hit(item)}\n"
+        prompt += "\n"
+
+    if potential_conflicts:
+        prompt += "Potential consensus conflicts:\n"
+        for conflict in potential_conflicts:
+            prompt += (
+                f"- {conflict.get('severity', 'medium').upper()} "
+                f"{conflict.get('old_consensus_id', 'unknown')}: "
+                f"{conflict.get('reason', '')}\n"
+            )
         prompt += "\n"
 
     if history:
@@ -1041,6 +1337,192 @@ def format_history_text(history: List[Dict], summary: bool = False) -> str:
     return "\n".join(output)
 
 
+def quality_rate(numerator: int, denominator: int) -> float:
+    """Return a rounded 0..1 metric rate."""
+    if denominator <= 0:
+        return 0.0
+    return round(numerator / denominator, 4)
+
+
+def is_executable_action_item(item: Dict[str, Any]) -> bool:
+    """Action item is executable when it has owner/task/due/verification."""
+    if not isinstance(item, dict):
+        return False
+    return all(str(item.get(field) or "").strip() for field in ("owner", "task", "due", "verification"))
+
+
+def iter_completed_responses(task_state: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Return parsed completed participant responses from a task state."""
+    responses = []
+    for round_state in task_state.get("rounds", []):
+        for participant in round_state.get("participants", []):
+            parsed = participant.get("parsed_response")
+            if participant.get("status") == "completed" and isinstance(parsed, dict):
+                responses.append(parsed)
+    return responses
+
+
+def calculate_quality_metrics(task_state: Dict[str, Any]) -> Dict[str, Any]:
+    """Calculate Phase 3 quality metrics for a single discussion task."""
+    responses = iter_completed_responses(task_state)
+    total_responses = len(responses)
+    cited_responses = sum(1 for response in responses if normalize_string_list(response.get("previous_responses", [])))
+
+    final_consensus = task_state.get("final_consensus", {})
+    action_items = normalize_action_items(final_consensus.get("action_items", []))
+    if not action_items:
+        for response in responses:
+            action_items.extend(normalize_action_items(response.get("action_items", [])))
+
+    executable_actions = sum(1 for item in action_items if is_executable_action_item(item))
+    related_count = len(task_state.get("agentmemory", {}).get("related_consensus", []) or [])
+
+    return {
+        "citation_rate": {
+            "cited_responses": cited_responses,
+            "total_responses": total_responses,
+            "rate": quality_rate(cited_responses, total_responses),
+            "target": 0.60,
+        },
+        "action_item_executable_rate": {
+            "executable_action_items": executable_actions,
+            "total_action_items": len(action_items),
+            "rate": quality_rate(executable_actions, len(action_items)),
+            "target": 0.80,
+        },
+        "history_reuse_hit_rate": {
+            "hit": related_count > 0,
+            "related_consensus_count": related_count,
+            "rate": 1.0 if related_count > 0 else 0.0,
+            "target": 0.40,
+        },
+    }
+
+
+def attach_quality_metrics(task_state: Dict[str, Any]) -> Dict[str, Any]:
+    """Attach latest quality metrics to task state."""
+    task_state["quality_metrics"] = calculate_quality_metrics(task_state)
+    return task_state
+
+
+def load_all_discussion_states(base_dir: Path) -> List[Dict[str, Any]]:
+    """Load all valid discussion task states."""
+    state_dir = base_dir / ".omc" / "collaboration" / "state"
+    if not state_dir.exists():
+        return []
+
+    states = []
+    for state_file in sorted(state_dir.glob("*.json")):
+        try:
+            data = json.loads(state_file.read_text())
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and data.get("task_id") and data.get("topic"):
+            states.append(data)
+    return states
+
+
+def aggregate_quality_metrics(states: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Aggregate Phase 3 metrics across discussion tasks."""
+    total_responses = 0
+    cited_responses = 0
+    total_actions = 0
+    executable_actions = 0
+    reuse_hits = 0
+
+    task_summaries = []
+    for state in states:
+        metrics = calculate_quality_metrics(state)
+        citation = metrics["citation_rate"]
+        actions = metrics["action_item_executable_rate"]
+        reuse = metrics["history_reuse_hit_rate"]
+
+        total_responses += citation["total_responses"]
+        cited_responses += citation["cited_responses"]
+        total_actions += actions["total_action_items"]
+        executable_actions += actions["executable_action_items"]
+        reuse_hits += 1 if reuse["hit"] else 0
+        task_summaries.append({
+            "task_id": state.get("task_id"),
+            "topic": state.get("topic"),
+            "status": state.get("status"),
+            "metrics": metrics,
+        })
+
+    total_tasks = len(states)
+    return {
+        "total_tasks": total_tasks,
+        "citation_rate": {
+            "cited_responses": cited_responses,
+            "total_responses": total_responses,
+            "rate": quality_rate(cited_responses, total_responses),
+            "target": 0.60,
+        },
+        "action_item_executable_rate": {
+            "executable_action_items": executable_actions,
+            "total_action_items": total_actions,
+            "rate": quality_rate(executable_actions, total_actions),
+            "target": 0.80,
+        },
+        "history_reuse_hit_rate": {
+            "hit_tasks": reuse_hits,
+            "total_tasks": total_tasks,
+            "rate": quality_rate(reuse_hits, total_tasks),
+            "target": 0.40,
+        },
+        "tasks": task_summaries,
+    }
+
+
+def format_percent(value: float) -> str:
+    """Format a 0..1 metric as a percentage."""
+    return f"{value * 100:.1f}%"
+
+
+def run_quality_dashboard(base_dir: Path, format_type: str = "text") -> int:
+    """Show Phase 3 quality metrics dashboard."""
+    states = load_all_discussion_states(base_dir)
+    dashboard = aggregate_quality_metrics(states)
+
+    if format_type == "json":
+        print(json.dumps(dashboard, indent=2, ensure_ascii=False))
+        return 0
+
+    citation = dashboard["citation_rate"]
+    actions = dashboard["action_item_executable_rate"]
+    reuse = dashboard["history_reuse_hit_rate"]
+
+    print("📊 Consensus Quality Dashboard")
+    print(f"   Tasks: {dashboard['total_tasks']}")
+    print(
+        "   Citation rate: "
+        f"{format_percent(citation['rate'])} "
+        f"({citation['cited_responses']}/{citation['total_responses']}, target {format_percent(citation['target'])})"
+    )
+    print(
+        "   Action item executable rate: "
+        f"{format_percent(actions['rate'])} "
+        f"({actions['executable_action_items']}/{actions['total_action_items']}, target {format_percent(actions['target'])})"
+    )
+    print(
+        "   History consensus reuse hit rate: "
+        f"{format_percent(reuse['rate'])} "
+        f"({reuse['hit_tasks']}/{reuse['total_tasks']}, target {format_percent(reuse['target'])})"
+    )
+
+    if dashboard["tasks"]:
+        print("\nRecent tasks:")
+        for task in dashboard["tasks"][-5:]:
+            metrics = task["metrics"]
+            print(
+                f"   {task['task_id']}: "
+                f"cite {format_percent(metrics['citation_rate']['rate'])}, "
+                f"actions {format_percent(metrics['action_item_executable_rate']['rate'])}, "
+                f"reuse {'hit' if metrics['history_reuse_hit_rate']['hit'] else 'miss'}"
+            )
+    return 0
+
+
 def run_history(base_dir: Path, task_id: str, format_type: str = "text", summary: bool = False) -> int:
     """Show discussion history for a task."""
     history = parse_discussion_artifacts(base_dir, task_id)
@@ -1160,6 +1642,14 @@ def run_status(base_dir: Path, task_id: str) -> int:
     print(f"   Topic: {task_state['topic']}")
     print(f"   Created: {task_state['created_at']}")
 
+    metrics = task_state.get("quality_metrics") or calculate_quality_metrics(task_state)
+    citation = metrics["citation_rate"]
+    actions = metrics["action_item_executable_rate"]
+    reuse = metrics["history_reuse_hit_rate"]
+    print(f"   Citation rate: {format_percent(citation['rate'])}")
+    print(f"   Action executable rate: {format_percent(actions['rate'])}")
+    print(f"   History reuse: {'hit' if reuse['hit'] else 'miss'}")
+
     if task_state['status'] == 'completed':
         print(f"   Completed: {task_state['completed_at']}")
         print(f"   Consensus: {task_state['final_consensus']['reached']}")
@@ -1207,6 +1697,7 @@ def run_conclude(base_dir: Path, task_id: str, decision: str) -> int:
     }
     task_state['status'] = 'completed'
     task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
+    task_state = attach_quality_metrics(task_state)
 
     # Save state
     save_result = save_consensus_to_agentmemory(base_dir, task_id, task_state)
@@ -1413,11 +1904,15 @@ def run_discussion(
             "recall_enabled": recall_result.get("enabled", False),
             "recall_projects": recall_result.get("projects", []),
             "related_consensus": recall_result.get("related_consensus", []),
+            "expired_consensus": recall_result.get("expired_consensus", []),
+            "potential_conflicts": recall_result.get("potential_conflicts", []),
             "recall_error": recall_result.get("error"),
         })
         save_task_state(base_dir, task_id, task_state)
         if agentmemory_state["related_consensus"]:
             print(f"🧠 Recalled {len(agentmemory_state['related_consensus'])} related consensus item(s) from agentmemory")
+            if agentmemory_state.get("potential_conflicts"):
+                print(f"⚠️  Detected {len(agentmemory_state['potential_conflicts'])} potential historical consensus conflict(s)")
         elif agentmemory_state.get("recall_error"):
             print(f"⚠️  agentmemory recall skipped: {agentmemory_state['recall_error']}")
         else:
@@ -1593,6 +2088,7 @@ def run_discussion(
                 targeted_challenges=protocol_context["targeted_challenges"],
                 pre_discuss=task_state.get("pre_discuss"),
                 related_consensus=task_state.get("agentmemory", {}).get("related_consensus", []),
+                potential_conflicts=task_state.get("agentmemory", {}).get("potential_conflicts", []),
             )
         keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
 
@@ -1620,6 +2116,7 @@ def run_discussion(
                         open_questions=protocol_context["open_questions"],
                         targeted_challenges=protocol_context["targeted_challenges"],
                         related_consensus=task_state.get("agentmemory", {}).get("related_consensus", []),
+                        potential_conflicts=task_state.get("agentmemory", {}).get("potential_conflicts", []),
                     )
 
                     agent_start = time.time()
@@ -1732,6 +2229,7 @@ def run_discussion(
             "evidence": last_consensus_detail.get("evidence", []),
             "action_items": last_consensus_detail.get("action_items", []),
         })
+        task_state = attach_quality_metrics(task_state)
         save_task_state(base_dir, task_id, task_state)
 
         # Append round end event
@@ -1776,6 +2274,7 @@ def run_discussion(
                 'blocking_issues': blocking,
             }
             task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
+            task_state = attach_quality_metrics(task_state)
             save_task_state(base_dir, task_id, task_state)
 
             # Save consensus contract for execution phase
@@ -1833,6 +2332,7 @@ def run_discussion(
             'blocking_issues': last_consensus_detail.get("blocking_issues", []),
         }
         task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
+        task_state = attach_quality_metrics(task_state)
         save_task_state(base_dir, task_id, task_state)
 
         append_event(
@@ -1925,6 +2425,10 @@ if __name__ == "__main__":
     # Scan subcommand
     subparsers.add_parser("scan", help="Scan for incomplete tasks")
 
+    # Dashboard subcommand
+    dashboard_parser = subparsers.add_parser("dashboard", help="Show consensus quality metrics dashboard")
+    dashboard_parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
+
     args = parser.parse_args()
 
     # Handle legacy usage (no subcommand)
@@ -1990,6 +2494,8 @@ if __name__ == "__main__":
 
         if args.command == "scan":
             sys.exit(run_scan(base))
+        elif args.command == "dashboard":
+            sys.exit(run_quality_dashboard(base, args.format))
         elif args.command == "history":
             sys.exit(run_history(base, args.task_id, args.format, args.summary))
         elif args.command == "status":

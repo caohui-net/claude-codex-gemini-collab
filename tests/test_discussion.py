@@ -11,21 +11,27 @@ import shutil
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
 from collab_discuss import (
+    aggregate_quality_metrics,
     build_consensus_artifact,
     build_discussion_prompt,
+    calculate_quality_metrics,
+    check_conflicts,
     check_consensus,
     compress_history,
     detect_project_scope,
+    filter_active_consensus,
     format_history_text,
     judge_consensus,
     memory_project_for_scope,
     parse_discussion_artifacts,
     recall_related_consensus,
+    run_quality_dashboard,
     save_discussion_context,
     save_consensus_to_agentmemory,
+    semantic_opposite,
 )
 from agent_cli import AgentReply
-from models import Challenge, Conclusion, ConsensusArtifact, DiscussionSession, Response, Round
+from models import Challenge, Conclusion, Conflict, ConsensusArtifact, DiscussionSession, Response, Round
 
 
 def test_compress_history_empty():
@@ -153,6 +159,13 @@ def test_save_discussion_context_includes_phase1_protocol_fields():
                     "content": "Historical decision",
                 }
             ],
+            potential_conflicts=[
+                {
+                    "old_consensus_id": "mem-1",
+                    "severity": "high",
+                    "reason": "New topic contradicts historical decision",
+                }
+            ],
         )
 
         content = (base / context_path).read_text()
@@ -164,6 +177,7 @@ def test_save_discussion_context_includes_phase1_protocol_fields():
     assert "Unresolved Targeted Challenges" in content
     assert "Related Historical Consensus" in content
     assert "mem-1" in content
+    assert "Potential Consensus Conflicts" in content
 
 
 def test_parse_discussion_artifacts():
@@ -267,6 +281,72 @@ def test_consensus_artifact_to_dict():
     assert data["supersedes"] == "mem-old"
 
 
+def test_phase3_conflict_to_dict():
+    """Test Phase 3 conflict schema serializes cleanly."""
+    conflict = Conflict(
+        old_consensus_id="mem-1",
+        reason="New topic contradicts historical decision",
+        severity="high",
+        old_decision="Use agentmemory consensus reuse",
+        confidence=0.9,
+        project="global",
+    )
+
+    data = conflict.to_dict()
+
+    assert data["old_consensus_id"] == "mem-1"
+    assert data["severity"] == "high"
+
+
+def test_semantic_opposite_and_check_conflicts():
+    """Test semantic-opposite conflict detection against historical consensus."""
+    old = {
+        "id": "mem-1",
+        "project": "global",
+        "content": json.dumps({
+            "type": "discussion_consensus",
+            "topic": "Consensus memory reuse",
+            "decision": "Use agentmemory for discussion consensus reuse",
+            "confidence": 0.92,
+        }),
+    }
+
+    assert semantic_opposite("Disable agentmemory consensus reuse", "Use agentmemory for discussion consensus reuse")
+    conflicts = check_conflicts("Disable agentmemory consensus reuse", [old])
+
+    assert len(conflicts) == 1
+    assert conflicts[0]["old_consensus_id"] == "mem-1"
+    assert conflicts[0]["severity"] == "high"
+
+
+def test_filter_active_consensus_marks_expired():
+    """Test TTL/expired historical consensus is filtered from active recall."""
+    related = [
+        {
+            "id": "expired",
+            "content": json.dumps({
+                "type": "discussion_consensus",
+                "decision": "Use old flow",
+                "created_at": "2020-01-01T00:00:00+00:00",
+                "ttl_days": 1,
+            }),
+        },
+        {
+            "id": "active",
+            "content": json.dumps({
+                "type": "discussion_consensus",
+                "decision": "Use current flow",
+                "status": "active",
+            }),
+        },
+    ]
+
+    split = filter_active_consensus(related)
+
+    assert [item["id"] for item in split["active"]] == ["active"]
+    assert split["expired"][0]["status"] == "expired"
+
+
 def test_detect_project_scope_heuristics_and_override():
     """Test scope recognition for project-specific, cross-project, and global."""
     assert detect_project_scope("Fix scripts/collab_discuss.py for this repo") == "project-specific"
@@ -314,6 +394,7 @@ def test_recall_related_consensus_uses_agentmemory_bridge(monkeypatch):
     assert calls["query"] == "Topic"
     assert "example-project" in calls["projects"]
     assert "global" in calls["projects"]
+    assert result["potential_conflicts"] == []
 
 
 def test_save_consensus_to_agentmemory_builds_structured_artifact(monkeypatch):
@@ -350,8 +431,51 @@ def test_save_consensus_to_agentmemory_builds_structured_artifact(monkeypatch):
     assert saved["project"] == "global"
     assert saved["artifact"]["decision"] == "Persist consensus artifacts"
     assert saved["artifact"]["project_scope"] == "global"
+    assert saved["artifact"]["namespace"] == "global"
+    assert saved["artifact"]["permission"]["read"] == ["all"]
+    assert saved["artifact"]["version"] == 1
+    assert saved["artifact"]["status"] == "active"
     assert saved["artifact"]["confidence"] > 0.8
     assert task_state["agentmemory"]["saved_consensus_id"] == "mem-new"
+
+
+def test_build_consensus_artifact_version_and_ttl_controls():
+    """Test cross-project control metadata and versioning are added to artifacts."""
+    task_state = {
+        "task_id": "TASK-1",
+        "topic": "Agentmemory consensus reuse",
+        "participants": ["codex", "gemini"],
+        "agentmemory": {
+            "related_consensus": [
+                {
+                    "id": "mem-old",
+                    "content": json.dumps({
+                        "type": "discussion_consensus",
+                        "topic": "Agentmemory consensus reuse",
+                        "decision": "Use agentmemory consensus reuse",
+                        "version": 2,
+                    }),
+                }
+            ]
+        },
+        "final_consensus": {
+            "reached": True,
+            "decision": "Update reusable agentmemory consensus protocol",
+            "round": 1,
+            "evidence": ["Both agents agreed"],
+            "action_items": [],
+        },
+    }
+
+    artifact = build_consensus_artifact(Path("/tmp/example-project"), "TASK-1", task_state["topic"], task_state["participants"], task_state)
+    data = artifact.to_dict()
+
+    assert data["namespace"] == "cross-project"
+    assert data["ttl_days"] == 730
+    assert data["expires_at"]
+    assert data["version"] == 3
+    assert data["previous_version_id"] == "mem-old"
+    assert "system" in data["permission"]["write"]
 
 
 def test_memory_project_for_scope():
@@ -359,6 +483,83 @@ def test_memory_project_for_scope():
     assert memory_project_for_scope(Path("/tmp/my-project"), "project-specific") == "my-project"
     assert memory_project_for_scope(Path("/tmp/my-project"), "cross-project") == "cross-project"
     assert memory_project_for_scope(Path("/tmp/my-project"), "global") == "global"
+
+
+def test_calculate_quality_metrics():
+    """Test Phase 3 quality metrics for a single task state."""
+    task_state = {
+        "task_id": "TASK-1",
+        "topic": "Quality metrics",
+        "agentmemory": {"related_consensus": [{"id": "mem-1"}]},
+        "rounds": [
+            {
+                "participants": [
+                    {
+                        "agent": "codex",
+                        "status": "completed",
+                        "parsed_response": {
+                            "previous_responses": ["TASK-1-r0-claude"],
+                            "action_items": [],
+                        },
+                    },
+                    {
+                        "agent": "gemini",
+                        "status": "completed",
+                        "parsed_response": {
+                            "previous_responses": [],
+                            "action_items": [],
+                        },
+                    },
+                ]
+            }
+        ],
+        "final_consensus": {
+            "action_items": [
+                {"owner": "codex", "task": "Implement dashboard", "due": "2026-06-08", "verification": "pytest"},
+                {"owner": "gemini", "task": "Review"},
+            ]
+        },
+    }
+
+    metrics = calculate_quality_metrics(task_state)
+
+    assert metrics["citation_rate"]["rate"] == 0.5
+    assert metrics["action_item_executable_rate"]["rate"] == 0.5
+    assert metrics["history_reuse_hit_rate"]["hit"] is True
+
+
+def test_aggregate_quality_metrics_and_dashboard_json(capsys, tmp_path):
+    """Test quality dashboard aggregation and JSON output."""
+    state_dir = tmp_path / ".omc" / "collaboration" / "state"
+    state_dir.mkdir(parents=True)
+    (state_dir / "TASK-1.json").write_text(json.dumps({
+        "task_id": "TASK-1",
+        "topic": "Quality metrics",
+        "status": "completed",
+        "agentmemory": {"related_consensus": [{"id": "mem-1"}]},
+        "rounds": [
+            {
+                "participants": [
+                    {"status": "completed", "parsed_response": {"previous_responses": ["r0"]}},
+                    {"status": "completed", "parsed_response": {"previous_responses": []}},
+                ]
+            }
+        ],
+        "final_consensus": {
+            "action_items": [
+                {"owner": "codex", "task": "Implement", "due": "2026-06-08", "verification": "pytest"}
+            ]
+        },
+    }))
+
+    dashboard = aggregate_quality_metrics([json.loads((state_dir / "TASK-1.json").read_text())])
+    assert dashboard["citation_rate"]["rate"] == 0.5
+    assert dashboard["history_reuse_hit_rate"]["rate"] == 1.0
+
+    assert run_quality_dashboard(tmp_path, "json") == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["total_tasks"] == 1
+    assert output["action_item_executable_rate"]["rate"] == 1.0
 
 
 def test_format_history_text():

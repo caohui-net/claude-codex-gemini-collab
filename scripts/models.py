@@ -110,6 +110,28 @@ class ConsensusArtifact:
     task_id: Optional[str] = None
     round: Optional[int] = None
     created_at: Optional[str] = None
+    namespace: Optional[str] = None
+    permission: Dict[str, Any] = field(default_factory=dict)
+    ttl_days: Optional[int] = None
+    expires_at: Optional[str] = None
+    version: int = 1
+    previous_version_id: Optional[str] = None
+    status: str = "active"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class Conflict:
+    """Detected contradiction between a new topic and old consensus."""
+
+    old_consensus_id: str
+    reason: str
+    severity: str
+    old_decision: str
+    confidence: float = 0.0
+    project: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
