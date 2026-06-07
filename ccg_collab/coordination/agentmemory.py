@@ -30,9 +30,9 @@ class AgentMemoryCoordination(CoordinationProvider):
         """Acquire exclusive lease using mem::lease-acquire."""
         try:
             result = self._trigger("mem::lease-acquire", {
-                "action_id": resource,
-                "worker_id": agent,
-                "duration_ms": int(timeout * 1000)
+                "actionId": resource,
+                "agentId": agent,
+                "ttlMs": int(timeout * 1000)
             })
             return result.get("success", False)
         except Exception:
@@ -42,8 +42,8 @@ class AgentMemoryCoordination(CoordinationProvider):
         """Release lease using mem::lease-release."""
         try:
             result = self._trigger("mem::lease-release", {
-                "action_id": resource,
-                "worker_id": agent
+                "actionId": resource,
+                "agentId": agent
             })
             return result.get("success", False)
         except Exception:
@@ -52,10 +52,11 @@ class AgentMemoryCoordination(CoordinationProvider):
     def send_signal(self, signal: str, payload: Dict[str, Any], target: Optional[str] = None):
         """Send signal using mem::signal-send."""
         self._trigger("mem::signal-send", {
+            "from": "system",
             "to": target or "broadcast",
-            "subject": signal,
-            "body": str(payload),
-            "metadata": payload
+            "content": str(payload),
+            "type": signal,
+            "body": payload
         })
 
     def wait_signal(self, signal: str, timeout: float) -> Optional[Dict[str, Any]]:
@@ -64,13 +65,14 @@ class AgentMemoryCoordination(CoordinationProvider):
         while time.time() - start < timeout:
             try:
                 result = self._trigger("mem::signal-read", {
-                    "worker_id": "self",
-                    "mark_read": True
+                    "agentId": "self",
+                    "markRead": True
                 })
-                if result and result.get("messages"):
-                    for msg in result["messages"]:
-                        if msg.get("subject") == signal:
-                            return msg.get("metadata", {})
+                if result and result.get("signals"):
+                    for msg in result["signals"]:
+                        if msg.get("type") == signal:
+                            # Return the entire message as payload
+                            return msg
             except Exception:
                 pass
             time.sleep(0.1)
@@ -90,7 +92,7 @@ class AgentMemoryCoordination(CoordinationProvider):
         """Claim next action using mem::next."""
         try:
             result = self._trigger("mem::next", {
-                "worker_id": agent,
+                "agentId": agent,
                 "project": "collab"
             })
             return result if result else None

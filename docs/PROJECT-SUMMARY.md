@@ -2,6 +2,44 @@
 
 ## Latest Changes
 
+### agentmemory Integration Fixes (2026-06-07)
+
+**Status:** ✅ 完成
+
+**问题:** agentmemory集成测试失败
+- Lease操作返回False（应为True）
+- Signal操作返回None（应返回数据）
+- 根因: API字段命名和工作流程错误
+
+**修复内容:**
+1. **字段命名修正:** snake_case → camelCase
+   - `action_id` → `actionId`
+   - `worker_id` → `agentId`
+   - `duration_ms` → `ttlMs`
+   - `mark_read` → `markRead`
+
+2. **Lease工作流程修正:**
+   - 必须先创建action才能获取lease
+   - 测试更新为：create action → acquire lease → release lease
+
+3. **Signal API修正:**
+   - 添加必需的`from`字段
+   - `body` → `content`（必需字段）
+   - `subject` → `type`
+   - `messages` → `signals`（API返回字段）
+
+**验证结果:**
+- ✅ Lease acquire: True (修复前: False)
+- ✅ Lease release: True (修复前: False)
+- ✅ Signal read: 完整信号对象 (修复前: None)
+
+**文件变更:**
+- ccg_collab/coordination/agentmemory.py (字段名修正)
+- tests/test_agentmemory_integration.py (工作流程修正)
+- docs/agentmemory-integration-progress.md (测试状态更新)
+
+---
+
 ### agentmemory Integration Complete (2026-06-07)
 
 **Status:** ✅ 完成

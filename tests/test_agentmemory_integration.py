@@ -23,18 +23,35 @@ def test_connection():
 
 
 def test_lease_operations(coord):
-    """Test lease acquire/release."""
+    """Test lease acquire/release with proper workflow."""
     print("\nTesting lease operations...")
     try:
-        # Acquire lease
-        acquired = coord.acquire_lock("test-resource", "test-agent", 60.0)
+        # Step 1: Create an action first
+        create_result = coord._trigger("mem::action-create", {
+            "title": "test-lease-action",
+            "description": "Action for testing lease operations"
+        })
+
+        if not create_result or not create_result.get("success"):
+            print(f"✗ Failed to create action: {create_result}")
+            return False
+
+        action_id = create_result.get("action", {}).get("id")
+        if not action_id:
+            print("✗ No action ID returned")
+            return False
+
+        print(f"✓ Action created: {action_id}")
+
+        # Step 2: Acquire lease
+        acquired = coord.acquire_lock(action_id, "test-agent", 60.0)
         print(f"✓ Lease acquire: {acquired}")
 
-        # Release lease
-        released = coord.release_lock("test-resource", "test-agent")
+        # Step 3: Release lease
+        released = coord.release_lock(action_id, "test-agent")
         print(f"✓ Lease release: {released}")
 
-        return True
+        return acquired and released
     except Exception as e:
         print(f"✗ Lease operations failed: {e}")
         return False
@@ -44,8 +61,8 @@ def test_signal_operations(coord):
     """Test signal send/read."""
     print("\nTesting signal operations...")
     try:
-        # Send signal
-        coord.send_signal("test-signal", {"data": "hello"}, None)
+        # Send signal to self
+        coord.send_signal("test-signal", {"data": "hello"}, "self")
         print("✓ Signal sent")
 
         # Read signal (with short timeout)

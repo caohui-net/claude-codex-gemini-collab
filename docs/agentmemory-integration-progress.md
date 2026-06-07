@@ -78,16 +78,15 @@ docs/
 
 ## Test Results
 
-### Passing
+### All Tests Passing ✅
 - ✅ Provider interface compiles
 - ✅ Filesystem lock acquisition/release
 - ✅ Config manager backend selection
 - ✅ Default filesystem fallback
-
-### Failing
-- ✗ agentmemory REST API health check
-- ✗ agentmemory lease operations
-- ✗ agentmemory signal operations
+- ✅ agentmemory connection via iii-engine WebSocket
+- ✅ agentmemory lease operations (acquire/release)
+- ✅ agentmemory signal operations (send/read)
+- ✅ agentmemory action operations (create/claim)
 
 ## Decisions Made
 
