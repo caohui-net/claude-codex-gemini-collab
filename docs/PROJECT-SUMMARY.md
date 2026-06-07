@@ -2,6 +2,31 @@
 
 ## Latest Changes
 
+### Automatic Intelligent Routing Implementation (2026-06-07)
+
+**Status:** ✅ MVP完成
+
+**讨论共识:** DISCUSS-设计自动智能路由功能-1780836394（Claude + Codex + Gemini）
+
+**实施内容:**
+- 新增 `scripts/task_classifier.py`: 规则优先分类器，6种任务类型（ui/code/audit/reasoning/discussion/mixed），置信度阈值，能力矩阵路由
+- 新增 `scripts/collab_classify.py`: 任务分类命令，输出分类结果和路由决策，记录classify_requested事件
+- 新增 `scripts/collab_audit.py`: 三方审计触发器，幂等性保证，记录audit_started事件
+- 新增 `tests/test_task_classifier.py`: 分类器测试套件（UI/code/audit/reasoning/discussion routing）
+- 设计文档: `.omc/collaboration/design/` 4个规格文档（taxonomy/compatibility/audit-trigger/ui-rules）
+
+**核心特性:**
+- 规则优先 + LLM辅助: 关键词匹配（0.30/keyword）+ 文件模式（0.40/file）
+- 能力矩阵路由: Claude→reasoning, Codex→code/audit, Gemini→ui
+- 强制三方审计: 代码完成后自动触发Claude+Codex+Gemini审计工作流
+- 向后兼容: 现有手动流程保持不变，自动路由可选
+
+**测试验证:** 8/8 tests passed
+
+**下一步:** 手动覆盖命令（/collab override, /collab explain）
+
+---
+
 ### Phase 3 Implementation Complete (2026-06-07)
 
 **Status:** ✅ 完成
