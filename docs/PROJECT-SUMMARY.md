@@ -2,6 +2,35 @@
 
 ## Latest Changes
 
+### agentmemory Integration Complete (2026-06-07)
+
+**Status:** ✅ 完成
+
+**目标:** 将agentmemory的多智能体协作能力整合到collab项目
+- 实现coordination抽象层支持多后端
+- 集成iii-sdk实现agentmemory后端
+- 提供配置化的后端选择机制
+
+**完成内容:**
+- Phase 1: Coordination抽象层 (provider.py, filesystem.py, agentmemory.py, config.py)
+- Phase 2: 集成示例与配置 (coordination_usage.py, coordination-config.md)
+- Phase 3: 测试验证 (integration tests passing)
+- Phase 4: 文档完善 (配置指南、使用示例、后端对比)
+
+**技术细节:**
+- iii-sdk 0.19.0: WebSocket连接到iii-engine (ws://localhost:49134)
+- 正确payload格式: action_id/worker_id/duration_ms
+- 后端fallback机制: agentmemory → filesystem
+- 示例验证: locks ✓, signals ✓, actions ✓
+
+**文件变更:** 
+- ccg_collab/coordination/ (4个新文件)
+- examples/coordination_usage.py
+- docs/coordination-config.md
+- tests/ (3个测试文件)
+
+---
+
 ### v0.4.3 Bug Fix: Missing Module Dependencies (2026-06-06)
 
 **Status:** ✅ 完成

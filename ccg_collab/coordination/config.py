@@ -36,8 +36,8 @@ class CollabConfig:
 
     @property
     def agentmemory_url(self) -> str:
-        """Get agentmemory server URL."""
-        return self.ccg_config.get("agentmemory", {}).get("serverUrl", "http://localhost:3111")
+        """Get agentmemory WebSocket URL."""
+        return self.ccg_config.get("agentmemory", {}).get("wsUrl", "ws://localhost:49134")
 
     @property
     def fallback_enabled(self) -> bool:
