@@ -42,8 +42,11 @@ def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = 
             state_file = Path(base_dir) / ".omc/collaboration/state.json"
             if state_file.exists():
                 state = json.loads(state_file.read_text())
-                task_status = state.get("status", "N/A")
-    except (json.JSONDecodeError, OSError):
+                if isinstance(state, dict):
+                    task_status = state.get("status", "N/A")
+                else:
+                    task_status = "invalid"
+    except (json.JSONDecodeError, OSError, AttributeError, TypeError):
         task_status = "unknown"
 
     # Display
