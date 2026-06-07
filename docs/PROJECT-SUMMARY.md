@@ -2,6 +2,41 @@
 
 ## Latest Changes
 
+### Architecture Integration Consensus (2026-06-07)
+
+**Status:** ✅ 共识达成
+
+**背景:** 整合三个核心问题的解决方案
+1. 显式工具指令优先级（已解决：hook+规则+学习三层防护）
+2. collab讨论机制缺陷（识别：平行分析→真正往来讨论）
+3. agentmemory跨项目协同能力（已完成集成，待深度融合）
+
+**讨论过程:**
+- 参与者: Claude, Codex, Gemini
+- 讨论ID: DISCUSS-多智能体协作架构整合方案-1780823469
+- 轮次: 5轮 (Codex R1-R5, Gemini R2-R4)
+- 结果: 完全共识，无阻塞问题
+
+**最终决策: 方案C混合架构**
+- **collab系统** → 单次讨论编排（结构化往来、互相质疑、轮次收敛）
+- **agentmemory系统** → 跨会话/跨项目持久化（历史检索、共识存储、冲突检测）
+
+**三阶段实施计划:**
+- Phase 1: 改造collab讨论协议（DiscussionSession/Round/Response/Challenge/Conclusion数据结构）
+- Phase 2: 接入agentmemory读写（讨论前检索历史，讨论后持久化共识）
+- Phase 3: 高级功能（冲突检测、命名空间、权限控制）
+
+**验证指标:**
+- 引用率 >60%（直接引用他方观点）
+- Action Item可执行率 >80%
+- 历史共识复用命中率 >40%
+
+**文档:**
+- 完整共识: docs/architecture-integration-consensus.md
+- 讨论产物: .omc/collaboration/artifacts/DISCUSS-*-1780823469-*.md
+
+---
+
 ### agentmemory Integration Fixes (2026-06-07)
 
 **Status:** ✅ 完成
