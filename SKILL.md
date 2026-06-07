@@ -74,6 +74,18 @@ English examples:
 
 **Purpose:** Initiate multi-round discussion where Claude orchestrates Codex and Gemini responses to reach consensus on a topic.
 
+**Claude's Role (CRITICAL):**
+Claude MUST actively participate with own technical analysis, NOT just orchestrate passively.
+
+Required behavior:
+1. Read all agent responses from discussion artifacts
+2. Independently verify evidence (run commands, check code, test claims)
+3. Provide own technical analysis (not just summarize others' views)
+4. Make clear judgment with reasoning based on evidence
+5. Participate from Round 0, not just final synthesis
+
+Unacceptable: Only initiating discussion and waiting for Codex/Gemini without contributing own analysis.
+
 **Trigger:**
 - Command: `/claude-codex-gemini-collab discuss --topic "<topic>" [--mode fast|full] [--max-rounds 3]`
 - Natural language: "让Codex和Gemini讨论X", "启动讨论：Y", "Claude orchestrate Codex/Gemini discussing X"
