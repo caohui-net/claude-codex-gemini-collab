@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-06-07
+
+### Fixed
+
+- **Automatic Routing Event Persistence** - Critical bug fixes in classify/audit/override scripts
+  - Fixed append_event integration: changed collab_dir → base parameter (events were not written)
+  - Fixed return value handling: 0=success vs event_id misinterpretation (success/failure inverted)
+  - Removed double lock acquisition in collab_audit.py
+  - Fixed mixed classification to preserve original capabilities and include gemini in routing
+  - Added validation in override: task existence, agent whitelist, reason non-empty, previous_route tracking
+  - Completed STATUS_MAP with classify_requested, route_decided, manual_override, audit_started events
+
+### Added
+
+- **Auto-Audit Trigger** - Automatic audit triggering after code completion
+  - Implemented code_completed → audit_started auto-trigger (idempotent)
+  - Prevents duplicate audits when audit already exists
+  - Inline event creation to avoid lock recursion
+- **CLI Integration Tests** - Comprehensive test coverage for routing workflows
+  - Added test_routing_cli_integration.py with 6 tests
+  - Coverage: classify persistence, audit persistence, override persistence, full workflow, status command, error handling
+  - All 12 routing tests passing (6 classifier + 6 CLI integration)
+
+### Verified
+
+- End-to-end workflow: task_created → classify → route → override → code_completed → auto_audit
+- All 8 blocking issues from code review resolved
+- Event persistence verified through integration tests
+
 ## [0.4.3] - 2026-06-06
 
 ### Fixed
