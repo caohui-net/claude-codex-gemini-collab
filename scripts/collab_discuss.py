@@ -11,12 +11,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, List, Dict, Optional
 
+from agentmemory_bridge import AgentMemoryBridge, dedupe as dedupe_memory_values
 from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_init import init_collaboration
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 from discussion_enhancements import check_and_handle_doom_loop, auto_compact_if_needed
-from models import Challenge, Response
+from models import Challenge, ConsensusArtifact, Response
 from rmux_utils import check_rmux_available, get_tmux_info
 from collab_state import (
     init_task_state, load_task_state, save_task_state,
@@ -80,6 +81,344 @@ def normalize_action_items(value: Any) -> List[Dict[str, Any]]:
     return action_items
 
 
+VALID_CONSENSUS_SCOPES = {"project-specific", "cross-project", "global"}
+
+
+def normalize_consensus_scope(value: Optional[str]) -> Optional[str]:
+    """Normalize a user or model supplied consensus scope."""
+    if value is None:
+        return None
+
+    normalized = str(value).strip().lower().replace("_", "-")
+    aliases = {
+        "project": "project-specific",
+        "current-project": "project-specific",
+        "project-specific": "project-specific",
+        "cross": "cross-project",
+        "cross-project": "cross-project",
+        "global": "global",
+    }
+    scope = aliases.get(normalized)
+    if scope not in VALID_CONSENSUS_SCOPES:
+        raise ValueError(
+            f"Invalid consensus scope: {value}. "
+            "Expected project-specific, cross-project, or global."
+        )
+    return scope
+
+
+def extract_text_for_scope(*values: Any) -> str:
+    """Join nested values into lowercase text for scope heuristics."""
+    parts = []
+    for value in values:
+        if value is None:
+            continue
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                parts.append(str(key))
+                parts.append(extract_text_for_scope(nested))
+        elif isinstance(value, list):
+            parts.append(extract_text_for_scope(*value))
+        else:
+            parts.append(str(value))
+    return " ".join(part for part in parts if part).lower()
+
+
+def detect_project_scope(
+    topic: str,
+    decision: str = "",
+    evidence: Optional[List[str]] = None,
+    action_items: Optional[List[Dict[str, Any]]] = None,
+    requested_scope: Optional[str] = None,
+) -> str:
+    """Detect whether consensus is project-specific, cross-project, or global."""
+    if requested_scope:
+        return normalize_consensus_scope(requested_scope) or "project-specific"
+
+    text = extract_text_for_scope(topic, decision, evidence or [], action_items or [])
+
+    global_markers = [
+        "global",
+        "all projects",
+        "all repositories",
+        "organization-wide",
+        "org-wide",
+        "workspace-wide",
+        "全局",
+        "所有项目",
+        "全部项目",
+    ]
+    if any(marker in text for marker in global_markers):
+        return "global"
+
+    project_specific_markers = [
+        "this repo",
+        "this repository",
+        "current project",
+        "local file",
+        ".omc/",
+        "scripts/",
+        "tests/",
+        "docs/",
+        "本项目",
+        "当前项目",
+    ]
+    if any(marker in text for marker in project_specific_markers):
+        return "project-specific"
+
+    cross_project_markers = [
+        "cross-project",
+        "multiple projects",
+        "shared",
+        "reusable",
+        "portable",
+        "common protocol",
+        "architecture",
+        "integration",
+        "agentmemory",
+        "skill",
+        "collab",
+        "iii-sdk",
+        "跨项目",
+        "多项目",
+        "共享",
+        "复用",
+        "通用",
+        "架构",
+        "协议",
+    ]
+    if any(marker in text for marker in cross_project_markers):
+        return "cross-project"
+
+    return "project-specific"
+
+
+def project_name_for_memory(base_dir: Path) -> str:
+    """Return the current project namespace for agentmemory."""
+    return base_dir.name or "collab"
+
+
+def memory_projects_for_recall(base_dir: Path, requested_scope: Optional[str] = None) -> List[str]:
+    """Return agentmemory project namespaces to query before discussion."""
+    current_project = project_name_for_memory(base_dir)
+    scope = normalize_consensus_scope(requested_scope) if requested_scope else None
+    if scope == "global":
+        return ["global"]
+    if scope == "cross-project":
+        return dedupe_memory_values([current_project, "cross-project", "global"])
+    return dedupe_memory_values([current_project, "cross-project", "global"])
+
+
+def memory_project_for_scope(base_dir: Path, project_scope: str) -> str:
+    """Map consensus scope to an agentmemory project namespace."""
+    if project_scope == "global":
+        return "global"
+    if project_scope == "cross-project":
+        return "cross-project"
+    return project_name_for_memory(base_dir)
+
+
+def summarize_memory_hit(hit: Dict[str, Any], max_len: int = 240) -> str:
+    """Return a compact display string for a recalled memory hit."""
+    content = hit.get("content") or hit.get("text") or hit.get("summary") or hit.get("title") or ""
+    if isinstance(content, dict):
+        content = json.dumps(content, ensure_ascii=False, sort_keys=True)
+    content = str(content).replace("\n", " ").strip()
+    if len(content) > max_len:
+        return content[: max_len - 3] + "..."
+    return content
+
+
+def parse_memory_content(hit: Dict[str, Any]) -> Dict[str, Any]:
+    """Parse JSON memory content if possible."""
+    content = hit.get("content") or hit.get("text") or hit.get("memory") or {}
+    if isinstance(content, dict):
+        return content
+    if not isinstance(content, str):
+        return {}
+    try:
+        parsed = json.loads(content)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def detect_supersedes(topic: str, related_consensus: List[Dict[str, Any]]) -> Optional[str]:
+    """Choose a directly matching historical consensus to supersede, if any."""
+    topic_key = topic.strip().lower()
+    if not topic_key:
+        return None
+    for hit in related_consensus:
+        parsed = parse_memory_content(hit)
+        if str(parsed.get("type", "")) != "discussion_consensus":
+            continue
+        old_topic = str(parsed.get("topic") or "").strip().lower()
+        if old_topic == topic_key:
+            memory_id = hit.get("id") or hit.get("memory_id") or parsed.get("id")
+            return str(memory_id) if memory_id else None
+    return None
+
+
+def extract_consensus_tags(topic: str, project_scope: str, participants: List[str]) -> List[str]:
+    """Generate compact concept tags for consensus storage."""
+    import re
+
+    stop_words = {
+        "the", "and", "for", "with", "from", "this", "that", "into", "are",
+        "讨论", "方案", "根据", "实现", "功能", "接入",
+    }
+    words = [
+        word.lower()
+        for word in re.findall(r"[A-Za-z0-9_\-]{3,}|[\u4e00-\u9fff]{2,}", topic)
+        if word.lower() not in stop_words
+    ]
+    return dedupe_preserve_order([
+        "discussion_consensus",
+        project_scope,
+        *participants,
+        *words[:8],
+    ])
+
+
+def estimate_consensus_confidence(final_consensus: Dict[str, Any]) -> float:
+    """Estimate confidence from consensus metadata."""
+    confidence = 0.85 if final_consensus.get("reached") else 0.45
+    if final_consensus.get("evidence"):
+        confidence += 0.05
+    if final_consensus.get("action_items"):
+        confidence += 0.05
+    if final_consensus.get("dissent"):
+        confidence -= 0.10
+    if final_consensus.get("blocking_issues"):
+        confidence -= 0.10
+    return max(0.0, min(1.0, round(confidence, 2)))
+
+
+def build_consensus_artifact(
+    base_dir: Path,
+    task_id: str,
+    topic: str,
+    participants: List[str],
+    task_state: Dict[str, Any],
+    requested_scope: Optional[str] = None,
+) -> ConsensusArtifact:
+    """Build the structured consensus artifact persisted to agentmemory."""
+    final_consensus = task_state.get("final_consensus", {})
+    decision = str(final_consensus.get("decision") or "")
+    evidence = normalize_string_list(final_consensus.get("evidence", []))
+    action_items = normalize_action_items(final_consensus.get("action_items", []))
+    project_scope = detect_project_scope(
+        topic,
+        decision,
+        evidence,
+        action_items,
+        requested_scope=requested_scope,
+    )
+    related = task_state.get("agentmemory", {}).get("related_consensus", [])
+    return ConsensusArtifact(
+        topic=topic,
+        participants=participants,
+        decision=decision,
+        dissent=final_consensus.get("dissent"),
+        evidence=evidence,
+        action_items=action_items,
+        project_scope=project_scope,
+        confidence=estimate_consensus_confidence(final_consensus),
+        supersedes=detect_supersedes(topic, related),
+        tags=extract_consensus_tags(topic, project_scope, participants),
+        task_id=task_id,
+        round=final_consensus.get("round"),
+        created_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+def recall_related_consensus(
+    base_dir: Path,
+    topic: str,
+    requested_scope: Optional[str] = None,
+    limit: int = 5,
+) -> Dict[str, Any]:
+    """Recall related historical consensus from agentmemory."""
+    if os.environ.get("CCG_AGENTMEMORY_DISABLED", "").lower() == "true":
+        return {"enabled": False, "related_consensus": [], "error": "disabled by CCG_AGENTMEMORY_DISABLED"}
+
+    projects = memory_projects_for_recall(base_dir, requested_scope)
+    try:
+        bridge = AgentMemoryBridge()
+        related = bridge.recall_consensus(topic, projects, limit=limit)
+        return {
+            "enabled": True,
+            "projects": projects,
+            "related_consensus": related,
+            "error": None,
+        }
+    except Exception as exc:
+        return {
+            "enabled": False,
+            "projects": projects,
+            "related_consensus": [],
+            "error": str(exc),
+        }
+
+
+def save_consensus_to_agentmemory(
+    base_dir: Path,
+    task_id: str,
+    task_state: Dict[str, Any],
+    requested_scope: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Persist final consensus to agentmemory if available."""
+    final_consensus = task_state.get("final_consensus", {})
+    if not final_consensus.get("reached"):
+        return {"saved": False, "reason": "consensus_not_reached"}
+
+    agentmemory_state = task_state.setdefault("agentmemory", {})
+    if agentmemory_state.get("saved_consensus_id"):
+        return {
+            "saved": True,
+            "already_saved": True,
+            "memory_id": agentmemory_state.get("saved_consensus_id"),
+        }
+
+    artifact = build_consensus_artifact(
+        base_dir,
+        task_id,
+        task_state.get("topic", ""),
+        task_state.get("participants", []),
+        task_state,
+        requested_scope=requested_scope or agentmemory_state.get("requested_scope"),
+    )
+    project = memory_project_for_scope(base_dir, artifact.project_scope)
+
+    if os.environ.get("CCG_AGENTMEMORY_DISABLED", "").lower() == "true":
+        agentmemory_state["consensus_artifact"] = artifact.to_dict()
+        agentmemory_state["save_error"] = "disabled by CCG_AGENTMEMORY_DISABLED"
+        return {"saved": False, "artifact": artifact.to_dict(), "error": agentmemory_state["save_error"]}
+
+    try:
+        bridge = AgentMemoryBridge()
+        result = bridge.save_consensus(artifact.to_dict(), project=project)
+        memory_id = None
+        if isinstance(result, dict):
+            memory = result.get("memory") if isinstance(result.get("memory"), dict) else {}
+            memory_id = result.get("id") or result.get("memory_id") or memory.get("id")
+        agentmemory_state["consensus_artifact"] = artifact.to_dict()
+        agentmemory_state["save_result"] = result
+        if memory_id:
+            agentmemory_state["saved_consensus_id"] = memory_id
+        return {
+            "saved": True,
+            "project": project,
+            "artifact": artifact.to_dict(),
+            "result": result,
+            "memory_id": memory_id,
+        }
+    except Exception as exc:
+        agentmemory_state["consensus_artifact"] = artifact.to_dict()
+        agentmemory_state["save_error"] = str(exc)
+        return {"saved": False, "project": project, "artifact": artifact.to_dict(), "error": str(exc)}
+
+
 def compress_history(events: List[Dict], task_id: str, max_recent: int = 2) -> str:
     """Compress discussion history: summary + recent rounds."""
     discussion_events = [
@@ -119,6 +458,7 @@ def save_discussion_context(
     open_questions: Optional[List[str]] = None,
     targeted_challenges: Optional[List[Dict[str, str]]] = None,
     pre_discuss: Optional[Dict[str, str]] = None,
+    related_consensus: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Save discussion context to file, return relative path."""
     context_dir = base_dir / ".omc" / "collaboration" / "context"
@@ -137,6 +477,16 @@ def save_discussion_context(
 {topic}
 
 """
+
+    if related_consensus:
+        content += "## Related Historical Consensus\n\n"
+        for idx, item in enumerate(related_consensus, start=1):
+            memory_id = item.get("id") or item.get("memory_id") or item.get("uuid") or f"related-{idx}"
+            project = item.get("project") or item.get("namespace") or "unknown"
+            title = item.get("title") or item.get("name") or "Historical consensus"
+            content += f"### {memory_id} ({project})\n\n"
+            content += f"Title: {title}\n\n"
+            content += f"{summarize_memory_hit(item)}\n\n"
 
     if pre_discuss:
         content += f"""## Pre-Discuss Initial Analysis
@@ -218,6 +568,7 @@ def build_discussion_prompt(
     previous_responses: Optional[List[Dict[str, Any]]] = None,
     open_questions: Optional[List[str]] = None,
     targeted_challenges: Optional[List[Dict[str, str]]] = None,
+    related_consensus: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Build discussion prompt with context (file reference or inline)."""
 
@@ -254,6 +605,7 @@ Respond with structured JSON wrapped in markers:
 
 IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
 Directly cite at least one relevant Previous Response ID when prior responses exist.
+Consider Related Historical Consensus when present, and call out conflicts explicitly.
 Output ONLY the markers and JSON, nothing else.
 """
         return prompt
@@ -290,9 +642,18 @@ You are {agent}. Respond with structured JSON wrapped in markers:
 
 IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
 Directly cite at least one relevant Previous Response ID when prior responses exist.
+Consider Related Historical Consensus when present, and call out conflicts explicitly.
 Output ONLY the markers and JSON, nothing else.
 
 """
+
+    if related_consensus:
+        prompt += "Related historical consensus:\n"
+        for idx, item in enumerate(related_consensus, start=1):
+            memory_id = item.get("id") or item.get("memory_id") or f"related-{idx}"
+            project = item.get("project") or "unknown"
+            prompt += f"- {memory_id} ({project}): {summarize_memory_hit(item)}\n"
+        prompt += "\n"
 
     if history:
         prompt += f"Previous discussion:\n{history}\n\n"
@@ -848,6 +1209,7 @@ def run_conclude(base_dir: Path, task_id: str, decision: str) -> int:
     task_state['completed_at'] = datetime.now(timezone.utc).isoformat()
 
     # Save state
+    save_result = save_consensus_to_agentmemory(base_dir, task_id, task_state)
     save_task_state(base_dir, task_id, task_state)
 
     # Append discussion_concluded event
@@ -862,10 +1224,19 @@ def run_conclude(base_dir: Path, task_id: str, decision: str) -> int:
 
     print(f"✅ Discussion concluded for {task_id}")
     print(f"📋 Decision: {decision}")
+    if save_result.get("saved"):
+        print("🧠 Saved consensus to agentmemory")
+    elif save_result.get("error"):
+        print(f"⚠️  agentmemory save skipped: {save_result['error']}")
     return 0
 
 
-def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
+def run_resume(
+    base_dir: Path,
+    task_id: str,
+    retry_failed: bool = False,
+    consensus_scope: Optional[str] = None,
+) -> int:
     """Resume interrupted discussion."""
     task_state = load_task_state(base_dir, task_id)
     if task_state is None:
@@ -909,9 +1280,17 @@ def run_resume(base_dir: Path, task_id: str, retry_failed: bool = False) -> int:
             print(f"   Retrying {retry_count} failed participant(s)")
 
     # Continue discussion (use hard_max_rounds as new max to allow full continuation)
-    return run_discussion(base_dir, task_id, topic, participants,
-                         max_rounds=resume_max_rounds, hard_max_rounds=resume_hard_max_rounds,
-                         timeout_sec=180, resume=True)
+    return run_discussion(
+        base_dir,
+        task_id,
+        topic,
+        participants,
+        max_rounds=resume_max_rounds,
+        hard_max_rounds=resume_hard_max_rounds,
+        timeout_sec=180,
+        resume=True,
+        consensus_scope=consensus_scope,
+    )
 
 
 def invoke_agent_parallel(
@@ -947,7 +1326,8 @@ def run_discussion(
     hard_max_rounds: int = 10,
     timeout_sec: int = 180,
     resume: bool = False,
-    mode: str = "full"
+    mode: str = "full",
+    consensus_scope: Optional[str] = None,
 ) -> int:
     """Run multi-round discussion until consensus or max rounds.
 
@@ -998,9 +1378,12 @@ def run_discussion(
         return 1
 
     # Initialize or load task state
+    requested_scope = normalize_consensus_scope(consensus_scope) if consensus_scope else None
     task_state = load_task_state(base_dir, task_id)
     if task_state is None:
         task_state = init_task_state(base_dir, task_id, topic, participants, max_rounds, hard_max_rounds)
+        if requested_scope:
+            task_state.setdefault("agentmemory", {})["requested_scope"] = requested_scope
         print(f"🛠️  [Skill: Collab] Starting discussion for {task_id}")
 
         # Append discussion_started event
@@ -1015,6 +1398,30 @@ def run_discussion(
     else:
         print(f"🔄 [Skill: Collab] Resuming discussion for {task_id}")
         print(f"   Status: {task_state['status']}, Rounds: {len(task_state['rounds'])}")
+        if requested_scope:
+            task_state.setdefault("agentmemory", {})["requested_scope"] = requested_scope
+
+    agentmemory_state = task_state.setdefault("agentmemory", {})
+    active_scope = requested_scope or agentmemory_state.get("requested_scope")
+    if active_scope:
+        agentmemory_state["requested_scope"] = active_scope
+
+    if not resume and not agentmemory_state.get("recall_attempted"):
+        recall_result = recall_related_consensus(base_dir, topic, requested_scope=active_scope)
+        agentmemory_state.update({
+            "recall_attempted": True,
+            "recall_enabled": recall_result.get("enabled", False),
+            "recall_projects": recall_result.get("projects", []),
+            "related_consensus": recall_result.get("related_consensus", []),
+            "recall_error": recall_result.get("error"),
+        })
+        save_task_state(base_dir, task_id, task_state)
+        if agentmemory_state["related_consensus"]:
+            print(f"🧠 Recalled {len(agentmemory_state['related_consensus'])} related consensus item(s) from agentmemory")
+        elif agentmemory_state.get("recall_error"):
+            print(f"⚠️  agentmemory recall skipped: {agentmemory_state['recall_error']}")
+        else:
+            print("🧠 No related agentmemory consensus found")
 
     # Read current state
     events = read_events(collab_dir / "events.jsonl")
@@ -1185,6 +1592,7 @@ def run_discussion(
                 open_questions=protocol_context["open_questions"],
                 targeted_challenges=protocol_context["targeted_challenges"],
                 pre_discuss=task_state.get("pre_discuss"),
+                related_consensus=task_state.get("agentmemory", {}).get("related_consensus", []),
             )
         keep_session = os.environ.get("CCG_KEEP_SESSION", "").lower() == "true"
 
@@ -1211,6 +1619,7 @@ def run_discussion(
                         previous_responses=protocol_context["previous_responses"],
                         open_questions=protocol_context["open_questions"],
                         targeted_challenges=protocol_context["targeted_challenges"],
+                        related_consensus=task_state.get("agentmemory", {}).get("related_consensus", []),
                     )
 
                     agent_start = time.time()
@@ -1371,6 +1780,8 @@ def run_discussion(
 
             # Save consensus contract for execution phase
             save_consensus_contract(base_dir, task_id, task_state)
+            save_result = save_consensus_to_agentmemory(base_dir, task_id, task_state, requested_scope=active_scope)
+            save_task_state(base_dir, task_id, task_state)
 
             # Append discussion_concluded event
             append_event(
@@ -1383,10 +1794,15 @@ def run_discussion(
                     'consensus': True,
                     'decision': final_decision,
                     'dissent': last_consensus_detail.get("dissent"),
+                    'agentmemory_saved': save_result.get("saved", False),
                 }
             )
 
             print(f"\n✅ Consensus reached in round {round_num}!")
+            if save_result.get("saved"):
+                print("🧠 Saved consensus to agentmemory")
+            elif save_result.get("error"):
+                print(f"⚠️  agentmemory save skipped: {save_result['error']}")
             print(f"📁 Artifacts: {', '.join(artifacts_refs)}")
             print(f"\n⏱️  Performance Summary:")
             print(f"  Total: {discussion_elapsed:.1f}s")
@@ -1475,6 +1891,11 @@ if __name__ == "__main__":
     discuss_parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
     discuss_parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
     discuss_parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
+    discuss_parser.add_argument(
+        "--scope",
+        choices=["project-specific", "cross-project", "global"],
+        help="Override consensus memory scope",
+    )
 
     # History subcommand
     history_parser = subparsers.add_parser("history", help="Show discussion history")
@@ -1486,6 +1907,11 @@ if __name__ == "__main__":
     resume_parser = subparsers.add_parser("resume", help="Resume interrupted discussion")
     resume_parser.add_argument("task_id", help="Task ID")
     resume_parser.add_argument("--retry-failed", action="store_true", help="Retry failed participants")
+    resume_parser.add_argument(
+        "--scope",
+        choices=["project-specific", "cross-project", "global"],
+        help="Override consensus memory scope",
+    )
 
     # Status subcommand
     status_parser = subparsers.add_parser("status", help="Show task status")
@@ -1571,7 +1997,7 @@ if __name__ == "__main__":
         elif args.command == "conclude":
             sys.exit(run_conclude(base, args.task_id, args.decision))
         elif args.command == "resume":
-            sys.exit(run_resume(base, args.task_id, args.retry_failed))
+            sys.exit(run_resume(base, args.task_id, args.retry_failed, consensus_scope=args.scope))
         elif args.command == "discuss":
             # Determine task_id and topic based on input format
             if args.topic_flag:
@@ -1595,7 +2021,8 @@ if __name__ == "__main__":
             participants = [p.strip() for p in args.participants.split(",")]
             sys.exit(run_discussion(base, task_id, topic, participants,
                                    args.max_rounds, hard_max_rounds=10,
-                                   timeout_sec=args.timeout_sec, mode=args.mode))
+                                   timeout_sec=args.timeout_sec, mode=args.mode,
+                                   consensus_scope=args.scope))
         else:
             parser.print_help()
             sys.exit(1)

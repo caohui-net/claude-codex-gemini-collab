@@ -3,11 +3,21 @@
 
 import sys
 from pathlib import Path
+import pytest
 
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ccg_collab.coordination.agentmemory import AgentMemoryCoordination
+
+
+@pytest.fixture
+def coord():
+    """Provide an agentmemory connection or skip when iii-engine is unavailable."""
+    coord = test_connection()
+    if coord is None:
+        pytest.skip("iii-engine or iii-sdk unavailable")
+    return coord
 
 
 def test_connection():

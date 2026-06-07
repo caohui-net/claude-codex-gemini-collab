@@ -14,6 +14,7 @@ REQUIRED_FILES = [
     "scripts/collab_discuss.py",
     "scripts/collab_execute.py",
     "scripts/agent_cli.py",
+    "scripts/agentmemory_bridge.py",
     "scripts/models.py",
     "scripts/collab_state.py",
     "scripts/collab_paths.py",

@@ -91,3 +91,25 @@ class DiscussionSession:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class ConsensusArtifact:
+    """Structured consensus artifact persisted to agentmemory."""
+
+    topic: str
+    participants: List[str]
+    decision: str
+    dissent: Optional[str] = None
+    evidence: List[str] = field(default_factory=list)
+    action_items: List[Dict[str, Any]] = field(default_factory=list)
+    project_scope: str = "project-specific"
+    confidence: float = 0.0
+    supersedes: Optional[str] = None
+    tags: List[str] = field(default_factory=list)
+    task_id: Optional[str] = None
+    round: Optional[int] = None
+    created_at: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

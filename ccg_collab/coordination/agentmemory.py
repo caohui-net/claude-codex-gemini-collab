@@ -1,6 +1,5 @@
 import time
 from typing import Optional, Dict, Any
-from iii import register_worker
 from .provider import CoordinationProvider
 
 
@@ -13,7 +12,15 @@ class AgentMemoryCoordination(CoordinationProvider):
 
     def __init__(self, ws_url: str = "ws://localhost:49134"):
         self.ws_url = ws_url
+        try:
+            from iii import register_worker
+        except ImportError as exc:
+            raise ConnectionError("iii-sdk is not installed") from exc
+
         self.client = register_worker(self.ws_url)
+        connect = getattr(self.client, "connect", None)
+        if callable(connect):
+            connect()
 
     def _trigger(self, function_id: str, payload: Dict[str, Any]) -> Any:
         """Call iii-engine function via trigger."""
@@ -98,3 +105,26 @@ class AgentMemoryCoordination(CoordinationProvider):
             return result if result else None
         except Exception:
             return None
+
+    def recall_memories(self, query: str, project: str, limit: int = 5) -> Any:
+        """Recall memories using mem::smart-search."""
+        return self._trigger("mem::smart-search", {
+            "project": project,
+            "query": query,
+            "limit": limit
+        })
+
+    def save_memory(
+        self,
+        title: str,
+        content: str,
+        concepts: Optional[list[str]] = None,
+        project: str = "collab",
+    ) -> Any:
+        """Save long-term memory using mem::remember."""
+        return self._trigger("mem::remember", {
+            "project": project,
+            "title": title,
+            "content": content,
+            "concepts": concepts or []
+        })
