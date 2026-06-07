@@ -256,10 +256,27 @@ This allows running commands from any nested directory within a workspace.
 
 ## Requirements
 
+### Core Dependencies
+
 - Python 3.8+
 - Codex CLI (`npm install -g @openai/codex`)
 - Gemini CLI (`npm install -g @google/gemini-cli`)
 - oh-my-claudecode plugin
+
+### Optional Dependencies
+
+**Agentmemory Integration** (Phase 2-3 features):
+- `iii-sdk` Python package: `pip install iii-sdk`
+- `iii-engine` local service running on `ws://localhost:49134`
+
+Without agentmemory, collab operates in stateless mode:
+- Discussions work normally
+- No cross-session memory recall
+- No consensus persistence
+- No conflict detection against historical consensus
+
+**Environment Variables**:
+- `CCG_AGENTMEMORY_WS_URL`: Override default WebSocket URL (default: `ws://localhost:49134`)
 
 ## Structure
 

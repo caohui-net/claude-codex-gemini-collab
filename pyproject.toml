@@ -26,6 +26,9 @@ dev = [
     "pytest>=7.0.0",
     "black>=23.0.0",
 ]
+agentmemory = [
+    "iii-sdk>=0.19.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
