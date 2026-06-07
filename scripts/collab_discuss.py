@@ -2531,6 +2531,7 @@ if __name__ == "__main__":
             show_runtime_status(str(base), task_id=task_id, topic=topic,
                               participants=participants, mode=args.mode,
                               max_rounds=args.max_rounds)
+            sys.stdout.flush()  # Force output before run_discussion starts
 
             sys.exit(run_discussion(base, task_id, topic, participants,
                                    args.max_rounds, hard_max_rounds=10,

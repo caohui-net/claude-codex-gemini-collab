@@ -2,6 +2,24 @@
 
 ## Latest Changes
 
+### Runtime Status Display Fix (2026-06-07)
+
+**Status:** ✅ 已修复
+
+**问题:** discuss命令运行时状态栏不可见（stdout缓冲问题）
+
+**修复:** `scripts/collab_discuss.py:2534` 添加 `sys.stdout.flush()` 强制刷新输出
+
+**验证:** 
+- Full mode: 状态栏正确显示在"Starting discussion"之前
+- Fast mode: 状态栏正确显示在"Fast Mode"消息之前
+
+**相关文件:**
+- `scripts/collab_discuss.py` (line 2534)
+- `scripts/collab_status_display.py` (输出逻辑无需修改)
+
+---
+
 ### Automatic Intelligent Routing Implementation (2026-06-07)
 
 **Status:** ✅ MVP完成
