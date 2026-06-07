@@ -223,11 +223,14 @@ Features:
 - Generates task ID from topic if not provided
 - Saves discussion artifacts to `.omc/collaboration/artifacts/`
 - Generates consensus contract in `.omc/collaboration/tasks/{task_id}/consensus.json`
+- Recalls related historical consensus, detects potential conflicts, and stores structured consensus metadata
+- Supports `--scope project-specific|cross-project|global` to control consensus memory namespace
 
 Subcommands:
 - `resume <TASK-ID>`: Resume interrupted discussion
 - `status <TASK-ID>`: Show discussion status
 - `conclude <TASK-ID> "decision"`: Manually conclude with decision
+- `dashboard [--format json]`: Show citation rate, action item executability, and history reuse metrics
 - `history <TASK-ID>`: Show discussion history
 - `scan`: Scan for incomplete discussions
 

@@ -107,6 +107,9 @@ python3 scripts/collab.py discuss resume TASK-ID
 
 # View discussion history
 python3 scripts/collab.py discuss history TASK-ID
+
+# Show consensus quality metrics dashboard
+python3 scripts/collab_discuss.py dashboard
 ```
 
 ### Compatibility
@@ -116,11 +119,28 @@ Legacy format still supported for backward compatibility:
 python3 scripts/collab_discuss.py discuss TASK-ID "topic" --participants codex,gemini
 ```
 
+Optional consensus memory scope:
+```bash
+python3 scripts/collab_discuss.py discuss TASK-ID "topic" --scope cross-project
+```
+
 ### Consensus Semantics
 
 - **all_responded**: True when all required participants completed (not failed/skipped)
 - **consensus_reached**: True when all participants agree (consensus=true in responses)
 - **blocking_issues**: List of issues preventing consensus
+
+### Quality Metrics Dashboard
+
+```bash
+python3 scripts/collab_discuss.py dashboard
+python3 scripts/collab_discuss.py dashboard --format json
+```
+
+Dashboard metrics:
+- **Citation rate**: responses that directly cite previous response IDs / total responses
+- **Action item executable rate**: action items with owner, task, due date, and verification / total action items
+- **History reuse hit rate**: discussions with recalled historical consensus / total discussions
 
 ## Execution Features
 
