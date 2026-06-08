@@ -2,6 +2,43 @@
 
 ## Latest Changes
 
+### Codex CLI Git Repo Check Fix (2026-06-08)
+
+**Status:** ✅ 已修复并提交
+
+**问题:** Codex 9/9次执行失败（empty stdout, exit code 1）
+
+**根因诊断过程:**
+1. 初始假设：嵌套JSON解析问题（实际未生效）
+2. 添加调试日志发现：stdout长度为0
+3. 直接测试Codex CLI发现真正错误：`Not inside a trusted directory and --skip-git-repo-check was not specified`
+
+**真正根因:** agent_cli.py所有3个执行路径缺少`--skip-git-repo-check`标志
+- Codex CLI在非trusted目录执行时强制要求此标志
+- 缺失时exit code 1，返回空stdout
+- 导致所有后续JSON解析失败
+
+**修复内容:**
+- Line 166 (daemon路径): `"cmd": ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"]`
+- Line 274 (tmux路径): `cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"]`
+- Line 354-357 (direct CLI路径): 添加`--skip-git-repo-check`到命令列表
+
+**次要问题:** 旧daemon进程（PID 1001610）使用旧代码
+- 停止旧daemon进程
+- 清理运行时文件（`$XDG_RUNTIME_DIR/ccg-daemon.json`）
+
+**验证结果:**
+- Exit code: 0 ✅
+- JSON解析成功 ✅
+- 技能已重装同步修复
+
+**Commit:** `fix: 添加Codex CLI --skip-git-repo-check标志修复执行失败问题`
+
+**相关文件:**
+- `scripts/agent_cli.py` (3处添加--skip-git-repo-check标志)
+
+---
+
 ### Taolun Skill Status Bar and Codex JSON Parsing Fix (2026-06-08)
 
 **Status:** ✅ 已修复并提交

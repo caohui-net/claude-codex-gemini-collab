@@ -163,7 +163,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
     task_id = None
     if not should_use_tmux:
         task_id = submit_task({
-            "cmd": ["codex", "exec", "--cd", str(base_dir), "-"],
+            "cmd": ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"],
             "cwd": str(base_dir),
             "timeout": timeout_sec,
             "stdin": prompt
@@ -250,7 +250,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
 
     # Tmux execution path
     if should_use_tmux:
-        cmd = ["codex", "exec", "--cd", str(base_dir), "-"]
+        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"]
         stdout, exit_code = run_in_tmux(cmd, str(base_dir), prompt, timeout_sec, keep_session)
         elapsed = time.time() - start
 
@@ -312,6 +312,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
     cmd = [
         "codex", "exec",
         "--cd", str(base_dir),
+        "--skip-git-repo-check",
         "-"
     ]
 
