@@ -2,6 +2,40 @@
 
 ## Latest Changes
 
+### Taolun Skill Status Bar and Codex JSON Parsing Fix (2026-06-08)
+
+**Status:** ✅ 已修复并提交
+
+**问题1:** taolun技能状态栏不可见
+- 根因：技能未包含collab_status_display.py依赖
+- 根因2：Claude自动后台执行导致stdout不可见
+
+**修复1:**
+- 添加`collab_status_display.py`到install_skill.py
+- SKILL.md添加"Do NOT use run_in_background"指令
+- 重装技能同步修复
+
+**问题2:** Codex json_parse_failed (9/9次失败)
+- 根因：Codex CLI返回嵌套JSON `{"session_id": "...", "response": "[RESPONSE_START]..."}`
+- agent_cli.py直接查找标记，未先提取response字段
+
+**修复2:**
+- agent_cli.py 3处修复（daemon/tmux/direct CLI路径）
+- 逻辑：先json.loads提取response字段，再查找[RESPONSE_START]/[RESPONSE_END]标记
+
+**待验证:**
+- 需新会话测试（让Claude重新读取SKILL.md）
+- Codex解析是否成功
+
+**Commit:** `fix: 修复taolun技能状态栏显示和Codex JSON解析问题`
+
+**相关文件:**
+- `scripts/install_skill.py` (+1 dependency)
+- `scripts/agent_cli.py` (3处JSON解析修复)
+- `SKILL.md` (+1 execution directive)
+
+---
+
 ### Runtime Status Display Fix (2026-06-07)
 
 **Status:** ✅ 已修复
