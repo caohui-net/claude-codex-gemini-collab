@@ -187,13 +187,20 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
                 elapsed = time.time() - start
                 full_stdout = status.get("stdout", "")
 
+                # Try to parse as nested JSON first (Codex CLI wraps response)
+                response = full_stdout.strip()
+                try:
+                    outer = json.loads(full_stdout)
+                    if isinstance(outer, dict) and "response" in outer:
+                        response = outer["response"]
+                except json.JSONDecodeError:
+                    pass
+
                 # Extract content between markers
-                if "[RESPONSE_START]" in full_stdout and "[RESPONSE_END]" in full_stdout:
-                    start_idx = full_stdout.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                    end_idx = full_stdout.index("[RESPONSE_END]")
-                    response = full_stdout[start_idx:end_idx].strip()
-                else:
-                    response = full_stdout.strip()
+                if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+                    start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+                    end_idx = response.index("[RESPONSE_END]")
+                    response = response[start_idx:end_idx].strip()
 
                 response = strip_markdown_json(response)
 
@@ -259,12 +266,21 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
 
         # Parse output same as regular path
         full_stdout = stdout
-        if "[RESPONSE_START]" in full_stdout and "[RESPONSE_END]" in full_stdout:
-            start_idx = full_stdout.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = full_stdout.index("[RESPONSE_END]")
-            response = full_stdout[start_idx:end_idx].strip()
-        else:
-            response = full_stdout.strip()
+
+        # Try to parse as nested JSON first (Codex CLI wraps response)
+        response = full_stdout.strip()
+        try:
+            outer = json.loads(full_stdout)
+            if isinstance(outer, dict) and "response" in outer:
+                response = outer["response"]
+        except json.JSONDecodeError:
+            pass
+
+        # Extract content between markers
+        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+            end_idx = response.index("[RESPONSE_END]")
+            response = response[start_idx:end_idx].strip()
 
         response = strip_markdown_json(response)
         if not response or response.lower() in ("ready", "ready."):
@@ -312,14 +328,20 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         # Keep full stdout for protocol enforcement and artifact saving
         full_stdout = result.stdout
 
+        # Try to parse as nested JSON first (Codex CLI wraps response)
+        response = full_stdout.strip()
+        try:
+            outer = json.loads(full_stdout)
+            if isinstance(outer, dict) and "response" in outer:
+                response = outer["response"]
+        except json.JSONDecodeError:
+            pass
+
         # Try to extract content between [RESPONSE_START] and [RESPONSE_END]
-        if "[RESPONSE_START]" in full_stdout and "[RESPONSE_END]" in full_stdout:
-            start_idx = full_stdout.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = full_stdout.index("[RESPONSE_END]")
-            response = full_stdout[start_idx:end_idx].strip()
-        else:
-            # Fallback: use full stdout (for backward compatibility)
-            response = full_stdout.strip()
+        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+            end_idx = response.index("[RESPONSE_END]")
+            response = response[start_idx:end_idx].strip()
 
         # Strip markdown blocks and parse JSON
         response = strip_markdown_json(response)

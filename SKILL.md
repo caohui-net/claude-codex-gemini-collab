@@ -229,6 +229,7 @@ python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_discuss.py di
 - Claude should ONLY execute the script and wait for results
 - Do NOT manually spawn agents or use Agent tool
 - Script orchestrates rounds, collects responses, detects consensus
+- **IMPORTANT**: Do NOT use `run_in_background` parameter - script outputs real-time status bar that must be visible to user
 
 Features:
 - Auto-initializes collaboration if not found (v0.4.0+)
