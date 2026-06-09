@@ -197,10 +197,14 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
                     pass
 
                 # Extract content between markers
-                if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+                if "[RESPONSE_START]" in response:
                     start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                    end_idx = response.index("[RESPONSE_END]")
-                    response = response[start_idx:end_idx].strip()
+                    if "[RESPONSE_END]" in response:
+                        end_idx = response.index("[RESPONSE_END]")
+                        response = response[start_idx:end_idx].strip()
+                    else:
+                        # Missing END marker - take everything after START
+                        response = response[start_idx:].strip()
 
                 response = strip_markdown_json(response)
 
@@ -218,6 +222,13 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
                 try:
                     parsed = json.loads(response)
                 except json.JSONDecodeError:
+                    # DEBUG: Log parsing failure
+                    debug_log = Path("/tmp/codex_parse_debug.log")
+                    with open(debug_log, "a") as f:
+                        f.write(f"\n{'='*60}\n")
+                        f.write(f"[DAEMON] Parse failed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                        f.write(f"Full stdout (first 1000): {full_stdout[:1000]}\n")
+                        f.write(f"After extraction (first 500): {response[:500]}\n")
                     parsed = {"error": "json_parse_failed", "raw": response}
 
                 return AgentReply(
@@ -277,10 +288,14 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
             pass
 
         # Extract content between markers
-        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+        if "[RESPONSE_START]" in response:
             start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = response.index("[RESPONSE_END]")
-            response = response[start_idx:end_idx].strip()
+            if "[RESPONSE_END]" in response:
+                end_idx = response.index("[RESPONSE_END]")
+                response = response[start_idx:end_idx].strip()
+            else:
+                # Missing END marker - take everything after START
+                response = response[start_idx:].strip()
 
         response = strip_markdown_json(response)
         if not response or response.lower() in ("ready", "ready."):
@@ -297,6 +312,13 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         try:
             parsed = json.loads(response)
         except json.JSONDecodeError:
+            # DEBUG: Log parsing failure
+            debug_log = Path("/tmp/codex_parse_debug.log")
+            with open(debug_log, "a") as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Parse failed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Full stdout (first 1000): {full_stdout[:1000]}\n")
+                f.write(f"After extraction (first 500): {response[:500]}\n")
             parsed = {"error": "json_parse_failed", "raw": response}
 
         return AgentReply(
@@ -339,10 +361,14 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
             pass
 
         # Try to extract content between [RESPONSE_START] and [RESPONSE_END]
-        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+        if "[RESPONSE_START]" in response:
             start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = response.index("[RESPONSE_END]")
-            response = response[start_idx:end_idx].strip()
+            if "[RESPONSE_END]" in response:
+                end_idx = response.index("[RESPONSE_END]")
+                response = response[start_idx:end_idx].strip()
+            else:
+                # Missing END marker - take everything after START
+                response = response[start_idx:].strip()
 
         # Strip markdown blocks and parse JSON
         response = strip_markdown_json(response)
@@ -362,6 +388,13 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         try:
             parsed = json.loads(response)
         except json.JSONDecodeError:
+            # DEBUG: Log parsing failure
+            debug_log = Path("/tmp/codex_parse_debug.log")
+            with open(debug_log, "a") as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Parse failed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Full stdout (first 1000): {full_stdout[:1000]}\n")
+                f.write(f"After extraction (first 500): {response[:500]}\n")
             parsed = {"error": "json_parse_failed", "raw": response}
 
         return AgentReply(
