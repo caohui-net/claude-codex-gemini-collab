@@ -2,6 +2,36 @@
 
 ## Latest Changes
 
+### RMux Status Display Fix (2026-06-09)
+
+**Status:** ✅ 已修复并提交
+
+**问题:** collab技能调用时rmux环境显示为null或0
+- 用户反馈：状态栏显示"TMUX: 0"而非rmux可用状态
+- 用户要求：检测到rmux可用时，优先使用多session支持特性
+
+**根因:** 状态显示逻辑未接收tmux检测结果
+- `collab_status_display.py`仅检查当前session，不显示rmux能力
+- `collab_discuss.py`在主函数调用status display前未执行tmux检测
+
+**修复内容:**
+1. `collab_status_display.py`
+   - 添加`use_tmux`和`tmux_version`参数
+   - 显示格式改为: `RMux: ✓ rmux 0.3.1` (启用) 或 `RMux: ✗ disabled` (禁用)
+   
+2. `collab_discuss.py`
+   - 在`show_runtime_status()`调用前执行tmux检测
+   - 传递检测结果给status display
+
+**验证结果:**
+- rmux检测: Available=True, Version=rmux 0.3.1, Reason=functional
+- 状态显示: `RMux: ✓ rmux 0.3.1` (清晰显示可用状态)
+- 自动启用: CCG_USE_TMUX未设置时auto-enable (已有逻辑，现状态栏正确显示)
+
+**Commit:** `fff380f` fix: 修复rmux环境状态显示问题
+
+---
+
 ### Skill Alias and Routing Priority Fix (2026-06-09)
 
 **Status:** ✅ 已修复并同步

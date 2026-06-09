@@ -442,3 +442,20 @@
 | 11:30 | Session end: 1 writes across 1 files (CLAUDE.md) | 5 reads | ~6372 tok |
 | 11:31 | Edited docs/PROJECT-SUMMARY.md | expanded (+49 lines) | ~388 |
 | 11:32 | Created .omc/session-context.json | — | ~240 |
+| 11:34 | Session end: 3 writes across 3 files (CLAUDE.md, PROJECT-SUMMARY.md, session-context.json) | 7 reads | ~13887 tok |
+
+## Session: 2026-06-09 11:35
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:01 | 检测rmux环境+多session支持 | rmux_utils.py, collab_discuss.py | rmux可用(v0.3.1), 自动启用逻辑已存在 | ~2000 |
+| 12:05 | 发现问题: 状态显示为null | collab_status_display.py | 状态栏未接收tmux检测结果 | ~1500 |
+| 12:10 | 修复状态显示逻辑 | collab_status_display.py, collab_discuss.py | 添加use_tmux/version参数, 显示"RMux: ✓ rmux 0.3.1" | ~2500 |
+| 12:15 | 测试+验证修复 | - | 状态显示正确, rmux检测functional | ~1000 |
+| 12:20 | Commit+push+文档更新 | PROJECT-SUMMARY.md, session-context.json | fff380f提交, 文档更新完成 | ~1000 |
+| 11:52 | Edited scripts/collab_status_display.py | info() → session() | ~419 |
+| 11:52 | Edited scripts/collab_status_display.py | 2→2 lines | ~40 |
+| 11:53 | Edited scripts/collab_discuss.py | 4→6 lines | ~118 |
+| 11:54 | Edited scripts/collab_discuss.py | expanded (+10 lines) | ~275 |
+| 12:01 | Edited docs/PROJECT-SUMMARY.md | expanded (+30 lines) | ~224 |
+| 12:01 | Created .omc/session-context.json | — | ~208 |
