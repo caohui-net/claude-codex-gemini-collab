@@ -2527,10 +2527,22 @@ if __name__ == "__main__":
 
             participants = [p.strip() for p in args.participants.split(",")]
 
+            # Detect tmux availability for status display
+            use_tmux_env = os.environ.get("CCG_USE_TMUX", "").lower()
+            if use_tmux_env == "false":
+                use_tmux = False
+                tmux_info = None
+            else:
+                from rmux_utils import get_tmux_info
+                tmux_info = get_tmux_info()
+                use_tmux = tmux_info['available']
+
             # Display runtime status before starting discussion
             show_runtime_status(str(base), task_id=task_id, topic=topic,
                               participants=participants, mode=args.mode,
-                              max_rounds=args.max_rounds)
+                              max_rounds=args.max_rounds,
+                              use_tmux=use_tmux,
+                              tmux_version=tmux_info.get('version') if tmux_info else None)
             sys.stdout.flush()  # Force output before run_discussion starts
 
             sys.exit(run_discussion(base, task_id, topic, participants,

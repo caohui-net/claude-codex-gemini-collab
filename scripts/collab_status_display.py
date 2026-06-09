@@ -8,7 +8,8 @@ from pathlib import Path
 
 
 def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = None,
-                        participants: list = None, mode: str = None, max_rounds: int = None):
+                        participants: list = None, mode: str = None, max_rounds: int = None,
+                        use_tmux: bool = None, tmux_version: str = None):
     """Display runtime status with color formatting (best-effort)."""
     # Colors
     CYAN = "\033[96m"
@@ -19,18 +20,27 @@ def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = 
 
     print(f"\n{BOLD}{CYAN}━━━ Runtime Status ━━━{RESET}")
 
-    # TMUX info (best-effort)
-    tmux_session = "unavailable"
-    try:
-        tmux_env = os.environ.get("TMUX_SESSION")
-        if tmux_env:
-            tmux_session = tmux_env
-        elif subprocess.run(["which", "tmux"], capture_output=True, timeout=1).returncode == 0:
-            result = subprocess.run(["tmux", "display-message", "-p", "#S"],
-                                  capture_output=True, text=True, timeout=1)
-            tmux_session = result.stdout.strip() or "none"
-    except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
-        tmux_session = "unavailable"
+    # TMUX info - show rmux availability/usage status
+    if use_tmux is not None:
+        if use_tmux and tmux_version:
+            tmux_status = f"✓ {tmux_version}"
+        elif use_tmux:
+            tmux_status = "✓ enabled"
+        else:
+            tmux_status = "✗ disabled"
+    else:
+        # Fallback: try to detect current session (legacy behavior)
+        tmux_status = "unknown"
+        try:
+            tmux_env = os.environ.get("TMUX_SESSION")
+            if tmux_env:
+                tmux_status = tmux_env
+            elif subprocess.run(["which", "tmux"], capture_output=True, timeout=1).returncode == 0:
+                result = subprocess.run(["tmux", "display-message", "-p", "#S"],
+                                      capture_output=True, text=True, timeout=1)
+                tmux_status = result.stdout.strip() or "none"
+        except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
+            tmux_status = "unavailable"
 
     # Claude session
     claude_session = os.environ.get("CLAUDE_CODE_SESSION_ID", "N/A")[:8]
@@ -50,7 +60,7 @@ def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = 
         task_status = "unknown"
 
     # Display
-    print(f"{GREEN}TMUX{RESET}: {tmux_session}  {GREEN}Claude{RESET}: {claude_session}..  {GREEN}Status{RESET}: {task_status}")
+    print(f"{GREEN}RMux{RESET}: {tmux_status}  {GREEN}Claude{RESET}: {claude_session}..  {GREEN}Status{RESET}: {task_status}")
 
     # Participants and mode
     if participants:
