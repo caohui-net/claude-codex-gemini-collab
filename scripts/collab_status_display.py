@@ -49,7 +49,7 @@ def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = 
     task_status = "N/A"
     try:
         if base_dir:
-            state_file = Path(base_dir) / ".omc/collaboration/state.json"
+            state_file = Path(base_dir) / ".collab/state.json"
             if state_file.exists():
                 state = json.loads(state_file.read_text())
                 if isinstance(state, dict):

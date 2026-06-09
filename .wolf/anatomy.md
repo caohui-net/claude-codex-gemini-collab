@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T10:39:04.308Z
-> Files: 538 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T10:53:45.987Z
+> Files: 540 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -596,6 +596,14 @@
 
 - `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3158 tok)
 
+## ccg_collab/coordination/
+
+- `filesystem.py` — FilesystemCoordination: acquire_lock, release_lock, send_signal, wait_signal + 2 more (~1063 tok)
+
+## ccg_collab/core/
+
+- `paths.py` — Path resolution for collaboration workspace root. (~955 tok)
+
 ## ccg_collab/scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~6588 tok)
@@ -609,6 +617,6 @@
 ## scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28829 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28800 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)

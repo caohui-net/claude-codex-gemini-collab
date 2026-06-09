@@ -513,3 +513,12 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 18:48 | Edited ccg_collab/core/paths.py | modified find_upward_collaboration() | ~108 |
+| 18:48 | Edited ccg_collab/core/paths.py | modified resolve_existing_base_dir() | ~408 |
+| 18:49 | Edited ccg_collab/core/paths.py | modified resolve_init_base_dir() | ~99 |
+| 18:49 | Edited scripts/collab_discuss.py | ".omc" → ".collab" | ~15 |
+| 18:49 | Edited scripts/collab_discuss.py | ".omc/collaboration/tasks" → ".collab/tasks" | ~21 |
+| 18:49 | Edited scripts/collab_discuss.py | ".omc" → ".collab" | ~16 |
+| 18:49 | Edited scripts/collab_discuss.py | ".omc" → ".collab" | ~14 |
+| 18:49 | Edited scripts/collab_discuss.py | ".omc" → ".collab" | ~11 |
+| 18:53 | Edited ccg_collab/coordination/filesystem.py | ".omc/collaboration" → ".collab" | ~15 |

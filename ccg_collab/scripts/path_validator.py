@@ -6,7 +6,7 @@ from typing import Tuple
 
 EXECUTION_POLICY = {
     "allowed_paths": ["src/", "scripts/", "tests/", "docs/"],
-    "forbidden_paths": [".git/", ".omc/collaboration/state.json", ".omc/collaboration/events.jsonl"],
+    "forbidden_paths": [".git/", ".collab/state.json", ".collab/events.jsonl"],
     "allow_symlinks": False,
     "allow_absolute_paths": False,
 }

@@ -735,7 +735,7 @@ def save_discussion_context(
     potential_conflicts: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     """Save discussion context to file, return relative path."""
-    context_dir = base_dir / ".omc" / "collaboration" / "context"
+    context_dir = base_dir / ".collab" / "context"
     context_dir.mkdir(parents=True, exist_ok=True)
 
     filename = f"{task_id}-r{round_num}-context.md"
@@ -1009,7 +1009,7 @@ def save_consensus_contract(base_dir: Path, task_id: str, task_state: dict):
         "blocking_issues": task_state['final_consensus'].get('blocking_issues', [])
     }
 
-    output_path = base_dir / ".omc/collaboration/tasks" / task_id / "consensus.json"
+    output_path = base_dir / ".collab/tasks" / task_id / "consensus.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w") as f:
@@ -1088,7 +1088,7 @@ def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
 
 def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, content: str) -> str:
     """Save discussion artifact to file."""
-    artifacts_dir = base_dir / ".omc" / "collaboration" / "artifacts"
+    artifacts_dir = base_dir / ".collab" / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -1250,7 +1250,7 @@ def collect_protocol_context(task_state: Dict[str, Any], task_id: str) -> Dict[s
 
 def parse_discussion_artifacts(base_dir: Path, task_id: str) -> List[Dict]:
     """Parse discussion artifacts for a task."""
-    artifacts_dir = base_dir / ".omc" / "collaboration" / "artifacts"
+    artifacts_dir = base_dir / ".collab" / "artifacts"
     if not artifacts_dir.exists():
         return []
 
@@ -1408,7 +1408,7 @@ def attach_quality_metrics(task_state: Dict[str, Any]) -> Dict[str, Any]:
 
 def load_all_discussion_states(base_dir: Path) -> List[Dict[str, Any]]:
     """Load all valid discussion task states."""
-    state_dir = base_dir / ".omc" / "collaboration" / "state"
+    state_dir = base_dir / ".collab" / "state"
     if not state_dir.exists():
         return []
 
@@ -1538,7 +1538,7 @@ def run_history(base_dir: Path, task_id: str, format_type: str = "text", summary
 
 def run_scan(base_dir: Path) -> int:
     """Scan for incomplete discussion tasks."""
-    state_dir = base_dir / ".omc" / "collaboration" / "state"
+    state_dir = base_dir / ".collab" / "state"
 
     if not state_dir.exists():
         print("📂 No state directory found")
@@ -1827,7 +1827,7 @@ def run_discussion(
           'fast' - single-round stateless, no init required (ccg-style)
     """
     discussion_start = time.time()
-    collab_dir = base_dir / ".omc" / "collaboration"
+    collab_dir = base_dir / ".collab"
 
     # Fast mode: single-round stateless, no init required
     if mode == "fast":

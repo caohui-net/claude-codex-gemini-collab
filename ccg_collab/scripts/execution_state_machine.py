@@ -30,7 +30,7 @@ class ExecutionStateMachine:
     def __init__(self, base_dir: Path, task_id: str):
         self.base_dir = base_dir
         self.task_id = task_id
-        self.state_path = base_dir / ".omc/collaboration/tasks" / task_id / "execution_state.json"
+        self.state_path = base_dir / ".collab/tasks" / task_id / "execution_state.json"
         self.state = self.load_state()
 
     def load_state(self) -> dict:

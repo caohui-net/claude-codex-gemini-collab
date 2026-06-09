@@ -23,7 +23,7 @@ from collab_discuss import run_discussion
 
 def load_consensus(base_dir: Path, task_id: str) -> dict:
     """Load consensus decision from task directory."""
-    consensus_path = base_dir / ".omc/collaboration/tasks" / task_id / "consensus.json"
+    consensus_path = base_dir / ".collab/tasks" / task_id / "consensus.json"
 
     if not consensus_path.exists():
         print(f"❌ Consensus file not found: {consensus_path}")
@@ -173,7 +173,7 @@ def collect_evidence(base_dir: Path, task_id: str, changed_files: list) -> dict:
     }
 
     # Save evidence to task directory
-    evidence_path = base_dir / ".omc/collaboration/tasks" / task_id / "evidence.json"
+    evidence_path = base_dir / ".collab/tasks" / task_id / "evidence.json"
     evidence_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(evidence_path, "w") as f:
@@ -213,7 +213,7 @@ def generate_review_report(
         exit_code=0 if verification_success else 1,
         changed_files=changed_files,
         failure_summary=failure_summary,
-        log_reference=f".omc/collaboration/tasks/{task_id}/evidence.json",
+        log_reference=f".collab/tasks/{task_id}/evidence.json",
         review_status=review_status,
         feedback_items=verification_issues
     )
@@ -337,12 +337,12 @@ def check_termination(base_dir: Path, task_id: str, iteration: int, max_iteratio
         return True, f"Maximum iterations ({max_iterations}) reached"
 
     # Check if consensus exists
-    consensus_path = base_dir / ".omc/collaboration/tasks" / task_id / "consensus.json"
+    consensus_path = base_dir / ".collab/tasks" / task_id / "consensus.json"
     if not consensus_path.exists():
         return True, f"No consensus found for {task_id}"
 
     # Check required artifacts exist
-    task_dir = base_dir / ".omc/collaboration/tasks" / task_id
+    task_dir = base_dir / ".collab/tasks" / task_id
     required = ["consensus.json", "review_report.json", "evidence.json"]
     missing = [f for f in required if not (task_dir / f).exists()]
     if missing:
@@ -468,7 +468,7 @@ def main():
     )
 
     # Save review report
-    report_path = args.base_dir / ".omc/collaboration/tasks" / args.task_id / "review_report.json"
+    report_path = args.base_dir / ".collab/tasks" / args.task_id / "review_report.json"
     with open(report_path, "w") as f:
         json.dump(report.to_dict(), f, indent=2)
 
@@ -478,7 +478,7 @@ def main():
     # Phase 3.2: Handle review status
     if report.review_status in (ReviewStatus.REJECTED, ReviewStatus.NEEDS_CHANGES):
         # Create feedback file for failed reviews
-        feedback_path = args.base_dir / ".omc/collaboration/tasks" / args.task_id / "feedback.md"
+        feedback_path = args.base_dir / ".collab/tasks" / args.task_id / "feedback.md"
         feedback_content = f"""# Execution Review Feedback
 
 **Task ID:** {args.task_id}
@@ -497,8 +497,8 @@ def main():
 
 ## Evidence
 
-- Evidence: `.omc/collaboration/tasks/{args.task_id}/evidence.json`
-- Review Report: `.omc/collaboration/tasks/{args.task_id}/review_report.json`
+- Evidence: `.collab/tasks/{args.task_id}/evidence.json`
+- Review Report: `.collab/tasks/{args.task_id}/review_report.json`
 """
         with open(feedback_path, "w") as f:
             f.write(feedback_content)
@@ -552,7 +552,7 @@ def main():
                 return 1
 
             # Check if consensus reached
-            iter_consensus_path = args.base_dir / ".omc/collaboration/tasks" / iter_task_id / "consensus.json"
+            iter_consensus_path = args.base_dir / ".collab/tasks" / iter_task_id / "consensus.json"
             if not iter_consensus_path.exists():
                 print(f"\n❌ No consensus reached for iteration")
                 print(f"   Human intervention required")

@@ -177,7 +177,7 @@ def init_task_state(base_dir: Path, task_id: str, topic: str, participants: List
         "final_consensus": {"reached": False, "decision": None, "blocking_issues": [], "round_number": None},
         "failures": [],
         "retry_attempts": [],
-        "artifacts": {"directory": ".omc/collaboration/artifacts/", "files": []},
+        "artifacts": {"directory": ".collab/artifacts/", "files": []},
         "participants": participants
     }
     save_task_state(base_dir, task_id, state)

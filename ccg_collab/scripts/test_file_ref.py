@@ -37,7 +37,7 @@ def test_file_ref_mode():
         round_num=1,
         history="Previous: consensus not reached",
         artifacts=["artifact1.md"],
-        context_file=".omc/collaboration/context/TEST-1-r1-context.md"
+        context_file=".collab/context/TEST-1-r1-context.md"
     )
 
     assert "Test topic" not in prompt

@@ -9,7 +9,7 @@ from .provider import CoordinationProvider
 class FilesystemCoordination(CoordinationProvider):
     """Filesystem-based coordination (backward compatible with existing behavior)."""
 
-    def __init__(self, base_dir: str = ".omc/collaboration"):
+    def __init__(self, base_dir: str = ".collab"):
         self.base_dir = Path(base_dir)
         self.locks_dir = self.base_dir / "locks"
         self.signals_dir = self.base_dir / "signals"

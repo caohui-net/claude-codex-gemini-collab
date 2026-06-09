@@ -6,11 +6,11 @@ from pathlib import Path
 
 
 def find_upward_collaboration(start_dir=None):
-    """Search upward for .omc/collaboration/ directory."""
+    """Search upward for .collab/ directory."""
     current = Path(start_dir or ".").resolve()
 
     while True:
-        collab_dir = current / ".omc" / "collaboration"
+        collab_dir = current / ".collab"
         if collab_dir.exists() and collab_dir.is_dir():
             return current
 
@@ -41,7 +41,7 @@ def resolve_existing_base_dir(base_dir=None, start_dir=None):
     Resolution order:
     1. --base-dir (if specified)
     2. OMC_PROJECT_ROOT env var (if set and valid)
-    3. Upward search for .omc/collaboration/
+    3. Upward search for .collab/
     4. Fail with diagnostic
 
     Returns: Path object
@@ -49,10 +49,10 @@ def resolve_existing_base_dir(base_dir=None, start_dir=None):
     """
     if base_dir:
         resolved = Path(base_dir).resolve()
-        collab_dir = resolved / ".omc" / "collaboration"
+        collab_dir = resolved / ".collab"
         if not collab_dir.exists() or not collab_dir.is_dir():
             raise ValueError(
-                f"No .omc/collaboration directory found at {resolved}. "
+                f"No .collab directory found at {resolved}. "
                 "Run init or use a valid --base-dir."
             )
         return resolved
@@ -61,11 +61,11 @@ def resolve_existing_base_dir(base_dir=None, start_dir=None):
     env_base = os.environ.get("OMC_PROJECT_ROOT")
     if env_base:
         resolved = Path(env_base).resolve()
-        collab_dir = resolved / ".omc" / "collaboration"
+        collab_dir = resolved / ".collab"
         if not collab_dir.exists() or not collab_dir.is_dir():
             raise ValueError(
                 f"OMC_PROJECT_ROOT points to invalid workspace: {resolved}. "
-                "No .omc/collaboration directory found."
+                "No .collab directory found."
             )
         return resolved
 
@@ -75,7 +75,7 @@ def resolve_existing_base_dir(base_dir=None, start_dir=None):
 
     cwd = Path(start_dir or ".").resolve()
     raise ValueError(
-        f"No .omc/collaboration directory found from {cwd} upward. "
+        f"No .collab directory found from {cwd} upward. "
         "Run init or pass --base-dir."
     )
 
@@ -86,7 +86,7 @@ def resolve_init_base_dir(base_dir=None, start_dir=None):
 
     Resolution order:
     1. --base-dir (if specified)
-    2. Existing upward .omc/collaboration/ (reuse, avoid nested state)
+    2. Existing upward .collab/ (reuse, avoid nested state)
     3. Git root (if inside git repo)
     4. Current working directory
 
