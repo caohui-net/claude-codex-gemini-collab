@@ -15,7 +15,7 @@ Provides deterministic operations for Claude-Codex-Gemini tri-model collaboratio
 Use this skill when the user asks to:
 - start or manage Claude-Codex-Gemini collaboration
 - create, claim, complete, validate, or inspect collaboration tasks
-- hand off a task to Codex or Gemini using shared `.omc/collaboration/` state
+- hand off a task to Codex or Gemini using shared `.collab/` state
 
 Do not route these requests to `omc ask codex` or `omc ask gemini` unless the user asks for a one-off external opinion/advisor response.
 
@@ -104,7 +104,7 @@ Unacceptable: Only initiating discussion and waiting for Codex/Gemini without co
 
 **Behavior:**
 - Does NOT auto-create task
-- Writes discussion artifacts to `.omc/collaboration/artifacts/`
+- Writes discussion artifacts to `.collab/artifacts/`
 - Returns consensus result or blocking issues
 
 **Example:**
@@ -120,7 +120,7 @@ Unacceptable: Only initiating discussion and waiting for Codex/Gemini without co
 | State | Stateless | Persistent event-sourced |
 | Init | Not required | Required |
 | Consensus | Claude synthesis | Consensus detection |
-| Artifacts | `.omc/collaboration/artifacts/fast/` | `.omc/collaboration/artifacts/` |
+| Artifacts | `.collab/artifacts/fast/` | `.collab/artifacts/` |
 | Use case | Quick consultation (ccg-style) | Formal discussion with history |
 
 **vs omc ask:**
@@ -154,7 +154,7 @@ GEMINI_MODEL=gemini-3-pro-preview
 ## Protocol Rules
 
 **MUST read before any operation:**
-- `.omc/collaboration/protocol.md` (if exists)
+- `.collab/protocol.md` (if exists)
 - Current `state.json` and recent `events.jsonl`
 
 **MUST use scripts for state changes:**
@@ -171,7 +171,7 @@ GEMINI_MODEL=gemini-3-pro-preview
 ## Directory Structure
 
 **Collaboration state (fixed location):**
-- `.omc/collaboration/` - Protocol-defined collaboration state
+- `.collab/` - Protocol-defined collaboration state
   - `state.json`, `events.jsonl` - Event-sourced state
   - `tasks/`, `artifacts/`, `locks/` - Workflow data
   - `protocol.md` - Protocol documentation
@@ -188,12 +188,12 @@ GEMINI_MODEL=gemini-3-pro-preview
 
 **Non-init commands** (status, validate, task, etc.):
 1. `--base-dir` explicit specification
-2. Upward search for `.omc/collaboration/`
+2. Upward search for `.collab/`
 3. Fail with diagnostic if not found
 
 **Init command**:
 1. `--base-dir` explicit specification
-2. Existing upward `.omc/collaboration/` (reuse, avoid nested state)
+2. Existing upward `.collab/` (reuse, avoid nested state)
 3. Git root (if inside git repo)
 4. Current working directory
 
@@ -210,7 +210,7 @@ python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_init.py
 ```
 
 Creates:
-- `.omc/collaboration/` directory
+- `.collab/` directory
 - `protocol.md` (from template)
 - `state.json` (initialized)
 - `events.jsonl` (empty)
@@ -234,8 +234,8 @@ python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_discuss.py di
 Features:
 - Auto-initializes collaboration if not found (v0.4.0+)
 - Generates task ID from topic if not provided
-- Saves discussion artifacts to `.omc/collaboration/artifacts/`
-- Generates consensus contract in `.omc/collaboration/tasks/{task_id}/consensus.json`
+- Saves discussion artifacts to `.collab/artifacts/`
+- Generates consensus contract in `.collab/tasks/{task_id}/consensus.json`
 - Recalls related historical consensus, detects potential conflicts, and stores structured consensus metadata
 - Supports `--scope project-specific|cross-project|global` to control consensus memory namespace
 
@@ -258,7 +258,7 @@ python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_validate.py
 Checks:
 - `events.jsonl` valid JSONL, no duplicate IDs
 - `state.json` valid JSON, last_event_id matches log
-- No residual lock entries in `.omc/collaboration/locks/`
+- No residual lock entries in `.collab/locks/`
 - Non-zero exit code on validation failure
 
 This command does not repair or mutate collaboration files.
