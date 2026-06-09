@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T03:32:40.123Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T04:01:33.410Z
 > Files: 534 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -80,7 +80,7 @@
 - `daemon-audit.log` (~129685 tok)
 - `project-memory.json` (~3363 tok)
 - `project-state.json` (~154 tok)
-- `session-context.json` (~240 tok)
+- `session-context.json` (~208 tok)
 
 ## .omc/artifacts/ask/
 
@@ -594,11 +594,11 @@
 
 ## docs/
 
-- `PROJECT-SUMMARY.md` — Project Summary (~7000 tok)
+- `PROJECT-SUMMARY.md` — Project Summary (~7187 tok)
 
 ## scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~6404 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28693 tok)
-- `collab_status_display.py` — Runtime status display for collab discuss command. (~704 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28848 tok)
+- `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)

@@ -386,6 +386,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-09T03:26:36.219Z"
+    },
+    {
+      "id": "bug-025",
+      "timestamp": "2026-06-09T03:52:42.969Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/collab_status_display.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 24→34 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T03:52:42.969Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-06-09T03:52:51.702Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/collab_status_display.py",
+      "root_cause": "Had \"{GREEN}TMUX{RESET}: {tmux_session}  {GREEN}Claude",
+      "fix": "Changed to \"{GREEN}RMux{RESET}: {tmux_status}  {GREEN}Claude{",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T03:52:51.702Z"
     }
   ]
 }
