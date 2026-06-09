@@ -272,6 +272,120 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-07T13:49:52.611Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-06-07T23:29:38.651554Z",
+      "error_message": "rmux bash shell error: lowfat shell-init breaks rmux nested bash environment",
+      "file": "~/.bashrc",
+      "root_cause": "lowfat shell-init ran unconditionally in all bash sessions, including rmux nested shells",
+      "fix": "Added TMUX guard: if [[ -z \"$TMUX\" ]]; then eval \"$(lowfat shell-init bash)\"; fi",
+      "tags": [
+        "shell",
+        "config",
+        "lowfat",
+        "rmux",
+        "environment"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T23:29:38.651579Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-06-07T18:47:04.045Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/collab_status_display.py",
+      "root_cause": "16 lines replaced/restructured",
+      "fix": "Rewrote 39→56 lines (16 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-07T18:47:04.045Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-06-08T08:32:00.638Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/install_skill.py",
+      "root_cause": "Had \"scripts/collab_execute.py\"",
+      "fix": "Changed to \"scripts/collab_status_display.py\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-08T08:32:00.638Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-06-08T14:28:59.413Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 13→20 lines (5 removed) | Also: if \"[RESPONSE_START]\" in full_stdout and \"[RESPONS; start_idx = full_stdout.index(\"[RESPONSE_START]\") ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-08T14:30:51.429Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-06-08T14:55:23.966Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 20→41 lines (2 removed) | Also: except json.JSONDecodeError:; pass",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-08T14:56:10.995Z"
+    },
+    {
+      "id": "bug-023",
+      "timestamp": "2026-06-08T15:05:04.860Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "22 lines replaced/restructured",
+      "fix": "Rewrote 41→20 lines (22 removed) | Also: # DEBUG: Log raw output; debug_log = Path(\"/tmp/codex_debug.log\")",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-08T15:05:32.888Z"
+    },
+    {
+      "id": "bug-024",
+      "timestamp": "2026-06-09T03:26:36.219Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/CLAUDE.md",
+      "root_cause": "Had \"ccg\"",
+      "fix": "Changed to \"多轮讨论\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T03:26:36.219Z"
     }
   ]
 }

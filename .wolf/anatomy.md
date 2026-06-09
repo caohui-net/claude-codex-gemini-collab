@@ -1,7 +1,21 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-07T18:10:27.593Z
-> Files: 524 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T03:32:40.123Z
+> Files: 534 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../tmp/
+
+- `test_codex_debug.py` — Test Codex call to trigger debug logging. (~254 tok)
+- `test_codex_direct.py` — Test Codex bypassing daemon. (~230 tok)
+- `test_codex_stderr.py` — Test Codex stderr capture. (~205 tok)
+
+## ../../.claude/
+
+- `CLAUDE.md` — oh-my-claudecode - Intelligent Multi-Agent Orchestration (~2452 tok)
+
+## ../../.claude/skills/claude-codex-gemini-collab/
+
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2933 tok)
 
 ## ./
 
@@ -16,7 +30,7 @@
 - `pyproject.toml` — Python project configuration (~198 tok)
 - `README.md` — Project documentation (~2788 tok)
 - `response.json` (~469 tok)
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3072 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3104 tok)
 - `skills-lock.json` (~561 tok)
 - `task_plan.md` — TASK-20260607-1157 Plan (~390 tok)
 
@@ -66,7 +80,7 @@
 - `daemon-audit.log` (~129685 tok)
 - `project-memory.json` (~3363 tok)
 - `project-state.json` (~154 tok)
-- `session-context.json` (~477 tok)
+- `session-context.json` (~240 tok)
 
 ## .omc/artifacts/ask/
 
@@ -577,3 +591,14 @@
 ## .omc/collaboration/artifacts/.omc/state/
 
 - `last-tool-error.json` (~118 tok)
+
+## docs/
+
+- `PROJECT-SUMMARY.md` — Project Summary (~7000 tok)
+
+## scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~6404 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28693 tok)
+- `collab_status_display.py` — Runtime status display for collab discuss command. (~704 tok)
+- `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)

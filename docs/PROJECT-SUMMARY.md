@@ -2,6 +2,55 @@
 
 ## Latest Changes
 
+### Skill Alias and Routing Priority Fix (2026-06-09)
+
+**Status:** ✅ 已修复并同步
+
+**问题1:** taolun 技能别名不存在
+- 用户反馈：`Error: Unknown skill: taolun`
+- 根因：两个SKILL.md文件不同步
+  - 根目录 `SKILL.md` v0.4.4 包含 `aliases: [tricollab, taolun]`
+  - `.omc/skills/claude-codex-gemini-collab/SKILL.md` v0.4.2 无taolun别名
+
+**问题2:** claude-codex-gemini-collab 被 ccg 关键词路由覆盖
+- 用户明确要求使用 claude-codex-gemini-collab，系统却调用了 ccg
+- 根因：`[MAGIC KEYWORD: CCG]` 关键词路由优先级高于显式技能指定
+- 历史：2026-06-03 已在 CLAUDE.md 添加显式技能调用优先级，但关键词路由仍会覆盖
+
+**修复内容:**
+
+1. **同步SKILL.md文件**
+   ```bash
+   cp SKILL.md .omc/skills/claude-codex-gemini-collab/SKILL.md
+   ```
+   - 恢复 taolun 别名：`aliases: [tricollab, taolun]`
+   - 版本同步至 v0.4.4
+
+2. **调整关键词路由优先级** (修改 `~/.claude/CLAUDE.md`)
+   - 添加："多轮讨论"/taolun → claude-codex-gemini-collab
+   - 优先级：taolun 关键词检测在 ccg 之前
+   - 避免 ccg 关键词覆盖用户显式指定
+
+**验证结果:**
+- 全局技能目录 `~/.claude/skills/claude-codex-gemini-collab/SKILL.md` ✅ 已同步v0.4.4
+- 项目本地技能目录 `.omc/skills/claude-codex-gemini-collab/SKILL.md` ✅ 已同步v0.4.4
+- 其他项目自动使用全局配置 ✅ 无需额外同步
+
+**下次会话验证:**
+- 输入"多轮讨论XXX" → 触发 claude-codex-gemini-collab ✓
+- 输入"用taolun分析" → 触发 claude-codex-gemini-collab ✓
+- 输入"ccg快速review" → 触发 ccg（无冲突时）✓
+
+**相关文件:**
+- `.omc/skills/claude-codex-gemini-collab/SKILL.md` (同步v0.4.4)
+- `~/.claude/CLAUDE.md` (关键词触发优先级调整)
+
+**历史追溯:**
+- 提交 `6077224` (2026-06-07): 添加taolun别名到根目录SKILL.md
+- 提交 `e933e38` (2026-06-03): 显式技能调用优先级规则
+
+---
+
 ### Codex CLI Git Repo Check Fix (2026-06-08)
 
 **Status:** ✅ 已修复并提交
