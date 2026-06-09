@@ -2074,7 +2074,7 @@ def run_discussion(
                 agents_to_run.append(agent)
 
         # Prepare context (shared by all agents)
-        use_file_ref = os.environ.get("CCG_USE_FILE_REF", "true").lower() == "true"
+        use_file_ref = os.environ.get("CCG_USE_FILE_REF", "false").lower() == "true"
         context_file = None
         if use_file_ref:
             context_file = save_discussion_context(
@@ -2483,11 +2483,10 @@ if __name__ == "__main__":
 
             collab_dir = intended_base / ".omc" / "collaboration"
 
-            # Auto-init if missing at intended location
+            # Auto-init if missing at intended location (silent if already exists)
             if not collab_dir.exists():
-                print(f"ℹ️  No collaboration state at {intended_base}. Auto-initializing...")
                 init_collaboration(str(intended_base), source="auto")
-                print(f"✓ Collaboration initialized at: {collab_dir}")
+                print(f"✓ Initialized collaboration at: {collab_dir}")
 
             base = intended_base
         else:

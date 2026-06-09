@@ -17,6 +17,7 @@ from agent_cli import run_codex, run_gemini, AgentReply
 from collab_event import append_event, read_events, read_state
 from collab_init import init_collaboration
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
+from collab_status_display import show_runtime_status
 from discussion_enhancements import check_and_handle_doom_loop, auto_compact_if_needed
 from models import Challenge, Conflict, ConsensusArtifact, Response
 from rmux_utils import check_rmux_available, get_tmux_info
@@ -2482,11 +2483,10 @@ if __name__ == "__main__":
 
             collab_dir = intended_base / ".omc" / "collaboration"
 
-            # Auto-init if missing at intended location
+            # Auto-init if missing at intended location (silent if already exists)
             if not collab_dir.exists():
-                print(f"ℹ️  No collaboration state at {intended_base}. Auto-initializing...")
                 init_collaboration(str(intended_base), source="auto")
-                print(f"✓ Collaboration initialized at: {collab_dir}")
+                print(f"✓ Initialized collaboration at: {collab_dir}")
 
             base = intended_base
         else:
@@ -2525,6 +2525,24 @@ if __name__ == "__main__":
                 sys.exit(1)
 
             participants = [p.strip() for p in args.participants.split(",")]
+
+            # Detect tmux availability for status display
+            use_tmux_env = os.environ.get("CCG_USE_TMUX", "").lower()
+            if use_tmux_env == "false":
+                use_tmux = False
+                tmux_info = None
+            else:
+                tmux_info = get_tmux_info()
+                use_tmux = tmux_info['available']
+
+            # Display runtime status before starting discussion
+            show_runtime_status(str(base), task_id=task_id, topic=topic,
+                              participants=participants, mode=args.mode,
+                              max_rounds=args.max_rounds,
+                              use_tmux=use_tmux,
+                              tmux_version=tmux_info.get('version') if tmux_info else None)
+            sys.stdout.flush()  # Force output before run_discussion starts
+
             sys.exit(run_discussion(base, task_id, topic, participants,
                                    args.max_rounds, hard_max_rounds=10,
                                    timeout_sec=args.timeout_sec, mode=args.mode,

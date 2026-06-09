@@ -163,7 +163,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
     task_id = None
     if not should_use_tmux:
         task_id = submit_task({
-            "cmd": ["codex", "exec", "--cd", str(base_dir), "-"],
+            "cmd": ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"],
             "cwd": str(base_dir),
             "timeout": timeout_sec,
             "stdin": prompt
@@ -187,13 +187,32 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
                 elapsed = time.time() - start
                 full_stdout = status.get("stdout", "")
 
-                # Extract content between markers
-                if "[RESPONSE_START]" in full_stdout and "[RESPONSE_END]" in full_stdout:
-                    start_idx = full_stdout.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                    end_idx = full_stdout.index("[RESPONSE_END]")
-                    response = full_stdout[start_idx:end_idx].strip()
-                else:
-                    response = full_stdout.strip()
+                # Extract Codex response from CLI output format
+                response = full_stdout.strip()
+
+                # Strategy 1: Try parsing as nested JSON first (Codex CLI wraps response)
+                try:
+                    outer = json.loads(full_stdout)
+                    if isinstance(outer, dict) and "response" in outer:
+                        response = outer["response"]
+                except json.JSONDecodeError:
+                    pass
+
+                # Strategy 2: Extract between markers (most reliable)
+                if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+                    start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+                    end_idx = response.index("[RESPONSE_END]")
+                    response = response[start_idx:end_idx].strip()
+                # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
+                elif "\ntokens used" in response and "\ncodex\n" in response:
+                    tokens_idx = response.index("\ntokens used")
+                    last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
+                    if last_codex_idx >= 0:
+                        start_idx = last_codex_idx + len("\ncodex\n")
+                        response = response[start_idx:tokens_idx].strip()
+                elif "\ncodex\n" in response:
+                    start_idx = response.rfind("\ncodex\n") + len("\ncodex\n")
+                    response = response[start_idx:].strip()
 
                 response = strip_markdown_json(response)
 
@@ -243,7 +262,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
 
     # Tmux execution path
     if should_use_tmux:
-        cmd = ["codex", "exec", "--cd", str(base_dir), "-"]
+        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"]
         stdout, exit_code = run_in_tmux(cmd, str(base_dir), prompt, timeout_sec, keep_session)
         elapsed = time.time() - start
 
@@ -257,14 +276,33 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
                 exit_code=124,
             )
 
-        # Parse output same as regular path
+        # Extract Codex response from CLI output format
         full_stdout = stdout
-        if "[RESPONSE_START]" in full_stdout and "[RESPONSE_END]" in full_stdout:
-            start_idx = full_stdout.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = full_stdout.index("[RESPONSE_END]")
-            response = full_stdout[start_idx:end_idx].strip()
-        else:
-            response = full_stdout.strip()
+        response = full_stdout.strip()
+
+        # Strategy 1: Try parsing as nested JSON first
+        try:
+            outer = json.loads(full_stdout)
+            if isinstance(outer, dict) and "response" in outer:
+                response = outer["response"]
+        except json.JSONDecodeError:
+            pass
+
+        # Strategy 2: Extract between markers (most reliable)
+        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+            end_idx = response.index("[RESPONSE_END]")
+            response = response[start_idx:end_idx].strip()
+        # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
+        elif "\ntokens used" in response and "\ncodex\n" in response:
+            tokens_idx = response.index("\ntokens used")
+            last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
+            if last_codex_idx >= 0:
+                start_idx = last_codex_idx + len("\ncodex\n")
+                response = response[start_idx:tokens_idx].strip()
+        elif "\ncodex\n" in response:
+            start_idx = response.rfind("\ncodex\n") + len("\ncodex\n")
+            response = response[start_idx:].strip()
 
         response = strip_markdown_json(response)
         if not response or response.lower() in ("ready", "ready."):
@@ -296,6 +334,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
     cmd = [
         "codex", "exec",
         "--cd", str(base_dir),
+        "--skip-git-repo-check",
         "-"
     ]
 
@@ -309,17 +348,33 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         )
         elapsed = time.time() - start
 
-        # Keep full stdout for protocol enforcement and artifact saving
+        # Extract Codex response from CLI output format
         full_stdout = result.stdout
+        response = full_stdout.strip()
 
-        # Try to extract content between [RESPONSE_START] and [RESPONSE_END]
-        if "[RESPONSE_START]" in full_stdout and "[RESPONSE_END]" in full_stdout:
-            start_idx = full_stdout.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = full_stdout.index("[RESPONSE_END]")
-            response = full_stdout[start_idx:end_idx].strip()
-        else:
-            # Fallback: use full stdout (for backward compatibility)
-            response = full_stdout.strip()
+        # Strategy 1: Try parsing as nested JSON first
+        try:
+            outer = json.loads(full_stdout)
+            if isinstance(outer, dict) and "response" in outer:
+                response = outer["response"]
+        except json.JSONDecodeError:
+            pass
+
+        # Strategy 2: Extract between markers (most reliable)
+        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
+            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+            end_idx = response.index("[RESPONSE_END]")
+            response = response[start_idx:end_idx].strip()
+        # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
+        elif "\ntokens used" in response and "\ncodex\n" in response:
+            tokens_idx = response.index("\ntokens used")
+            last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
+            if last_codex_idx >= 0:
+                start_idx = last_codex_idx + len("\ncodex\n")
+                response = response[start_idx:tokens_idx].strip()
+        elif "\ncodex\n" in response:
+            start_idx = response.rfind("\ncodex\n") + len("\ncodex\n")
+            response = response[start_idx:].strip()
 
         # Strip markdown blocks and parse JSON
         response = strip_markdown_json(response)

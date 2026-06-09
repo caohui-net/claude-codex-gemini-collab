@@ -418,6 +418,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-09T03:52:51.702Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-06-09T08:02:16.363Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 24→37 lines (2 removed) | Also: # Try to parse as nested JSON first (Codex CLI wra; # Extract content between markers",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-09T08:02:55.239Z"
+    },
+    {
+      "id": "bug-028",
+      "timestamp": "2026-06-09T08:25:06.179Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/collab_discuss.py",
+      "root_cause": "Had \"true\"",
+      "fix": "Changed to \"false\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-09T08:25:06.179Z"
+    },
+    {
+      "id": "bug-029",
+      "timestamp": "2026-06-09T10:37:00.437Z",
+      "error_message": "Significant refactor of ",
+      "file": "ccg_collab/scripts/agent_cli.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 9→28 lines (6 removed) | Also: # Parse output same as regular path; if \"[RESPONSE_START]\" in full_stdout and \"[RESPONS | Also: # Keep full stdout for protocol enforcement and ar; # Try to extract content between [RESPONSE_START] ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-09T10:39:04.320Z"
     }
   ]
 }

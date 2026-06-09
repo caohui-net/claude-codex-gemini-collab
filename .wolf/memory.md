@@ -459,3 +459,57 @@
 | 11:54 | Edited scripts/collab_discuss.py | expanded (+10 lines) | ~275 |
 | 12:01 | Edited docs/PROJECT-SUMMARY.md | expanded (+30 lines) | ~224 |
 | 12:01 | Created .omc/session-context.json | — | ~208 |
+| 12:05 | Session end: 6 writes across 4 files (collab_status_display.py, collab_discuss.py, PROJECT-SUMMARY.md, session-context.json) | 10 reads | ~37978 tok |
+| 12:09 | Session end: 6 writes across 4 files (collab_status_display.py, collab_discuss.py, PROJECT-SUMMARY.md, session-context.json) | 10 reads | ~37978 tok |
+| 12:11 | Session end: 6 writes across 4 files (collab_status_display.py, collab_discuss.py, PROJECT-SUMMARY.md, session-context.json) | 10 reads | ~37978 tok |
+
+## Session: 2026-06-09 15:13
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:34 | Created docs/RUFLO-INTEGRATION-ANALYSIS.md | — | ~2536 |
+| 15:36 | Session end: 1 writes across 1 files (RUFLO-INTEGRATION-ANALYSIS.md) | 6 reads | ~5821 tok |
+| 15:49 | Edited scripts/agent_cli.py | 5→9 lines | ~157 |
+| 15:50 | Edited scripts/agent_cli.py | 5→9 lines | ~137 |
+| 15:50 | Edited scripts/agent_cli.py | 5→9 lines | ~147 |
+| 15:50 | Edited .omc/skills/claude-codex-gemini-collab/SKILL.md | 12→14 lines | ~162 |
+| 15:54 | Session end: 5 writes across 3 files (RUFLO-INTEGRATION-ANALYSIS.md, agent_cli.py, SKILL.md) | 13 reads | ~41743 tok |
+| 15:54 | Session end: 5 writes across 3 files (RUFLO-INTEGRATION-ANALYSIS.md, agent_cli.py, SKILL.md) | 13 reads | ~41743 tok |
+| 16:00 | Session end: 5 writes across 3 files (RUFLO-INTEGRATION-ANALYSIS.md, agent_cli.py, SKILL.md) | 13 reads | ~41743 tok |
+| 16:02 | Edited scripts/agent_cli.py | first() → JSON() | ~486 |
+| 16:02 | Edited scripts/agent_cli.py | first() → JSON() | ~463 |
+| 16:02 | Edited scripts/agent_cli.py | first() → JSON() | ~537 |
+
+## Session: 2026-06-09 16:04
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 16:23 | Edited scripts/agent_cli.py | 13→16 lines | ~264 |
+| 16:25 | Edited scripts/collab_discuss.py | 3→3 lines | ~46 |
+| 16:27 | Edited scripts/agent_cli.py | modified write() | ~321 |
+
+## Session: 2026-06-09 18:11
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-09 18:14
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 18:34 | Edited scripts/collab_discuss.py | modified exists() | ~76 |
+| 18:34 | Edited ccg_collab/scripts/collab_discuss.py | modified exists() | ~76 |
+| 18:35 | Edited scripts/agent_cli.py | 33→28 lines | ~456 |
+| 18:35 | Edited scripts/agent_cli.py | reduced (-8 lines) | ~413 |
+| 18:36 | Edited scripts/agent_cli.py | reduced (-8 lines) | ~399 |
+| 18:37 | Edited ccg_collab/scripts/agent_cli.py | expanded (+19 lines) | ~456 |
+| 18:37 | Edited ccg_collab/scripts/agent_cli.py | inline fix | ~26 |
+| 18:38 | Edited ccg_collab/scripts/agent_cli.py | inline fix | ~24 |
+| 18:38 | Edited ccg_collab/scripts/agent_cli.py | expanded (+19 lines) | ~400 |
+| 18:39 | Edited ccg_collab/scripts/agent_cli.py | 5→6 lines | ~34 |
+| 18:39 | Edited ccg_collab/scripts/agent_cli.py | expanded (+16 lines) | ~415 |
+
+## Session: 2026-06-09 18:41
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

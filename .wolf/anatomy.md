@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T04:01:33.410Z
-> Files: 534 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T10:39:04.308Z
+> Files: 538 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -592,13 +592,23 @@
 
 - `last-tool-error.json` (~118 tok)
 
+## .omc/skills/claude-codex-gemini-collab/
+
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3158 tok)
+
+## ccg_collab/scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~6588 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28813 tok)
+
 ## docs/
 
 - `PROJECT-SUMMARY.md` — Project Summary (~7187 tok)
+- `RUFLO-INTEGRATION-ANALYSIS.md` — Ruflo项目整合分析报告 (~2378 tok)
 
 ## scripts/
 
-- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~6404 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28848 tok)
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28829 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)
