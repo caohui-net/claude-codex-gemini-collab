@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T10:53:45.987Z
-> Files: 540 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T11:41:25.950Z
+> Files: 542 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -74,6 +74,10 @@
 ## .claude/rules/
 
 - `openwolf.md` (~313 tok)
+
+## .collab/
+
+- `state.json` (~58 tok)
 
 ## .omc/
 
@@ -618,5 +622,6 @@
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
 - `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28800 tok)
+- `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)
