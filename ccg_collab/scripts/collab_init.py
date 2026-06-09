@@ -12,7 +12,7 @@ from collab_paths import resolve_init_base_dir, add_base_dir_arg
 def init_collaboration(base_dir=".", source="cwd"):
     """Initialize collaboration directory structure."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     # Create directory structure
     dirs = [
