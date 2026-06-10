@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T11:41:25.950Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T13:21:08.711Z
 > Files: 542 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -77,14 +77,16 @@
 
 ## .collab/
 
-- `state.json` (~58 tok)
+- `state.json` (~58 tok) - 协作框架状态：workflow_id, current_task, active_agent
+- `events.jsonl` (~150 tok) - 事件日志：task_created, task_claimed, task_completed
+- `artifacts/` - 讨论产出物存储目录
 
 ## .omc/
 
 - `daemon-audit.log` (~129685 tok)
 - `project-memory.json` (~3363 tok)
 - `project-state.json` (~154 tok)
-- `session-context.json` (~208 tok)
+- `session-context.json` (~233 tok)
 
 ## .omc/artifacts/ask/
 

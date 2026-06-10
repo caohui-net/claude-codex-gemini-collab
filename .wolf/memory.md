@@ -529,3 +529,15 @@
 | 19:41 | Created .collab/state.json | — | ~58 |
 | 19:42 | Session end: 11 writes across 5 files (paths.py, collab_discuss.py, filesystem.py, collab_init.py, state.json) | 13 reads | ~36994 tok |
 | 19:43 | Session end: 11 writes across 5 files (paths.py, collab_discuss.py, filesystem.py, collab_init.py, state.json) | 13 reads | ~36994 tok |
+| 19:44 | Session end: 11 writes across 5 files (paths.py, collab_discuss.py, filesystem.py, collab_init.py, state.json) | 13 reads | ~36994 tok |
+| 19:48 | Session end: 11 writes across 5 files (paths.py, collab_discuss.py, filesystem.py, collab_init.py, state.json) | 14 reads | ~40098 tok |
+| 19:48 | Session end: 11 writes across 5 files (paths.py, collab_discuss.py, filesystem.py, collab_init.py, state.json) | 14 reads | ~40098 tok |
+| 21:21 | Created .omc/session-context.json | — | ~233 |
+| 21:22 | Session end: 12 writes across 6 files (paths.py, collab_discuss.py, filesystem.py, collab_init.py, state.json) | 15 reads | ~40539 tok |
+
+## Session: 2026-06-09 21:33
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:39 | 测试 taolun 技能 | .collab/state.json, events.jsonl | 创建测试任务，验证状态管理 | ~500 |
+| 10:56 | 会话总结：taolun全功能测试+开源项目整理 | .omc/session-context.json, .wolf/memory.md | 完成3项测试+4个参考项目文档 | ~2000 |
