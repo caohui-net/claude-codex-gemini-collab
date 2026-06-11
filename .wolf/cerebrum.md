@@ -12,6 +12,7 @@
 
 - **Project:** ccg-collab
 - **Description:** Tri-model collaboration protocol for autonomous multi-agent project construction.
+- **Venv Setup:** 技能脚本在 `~/.claude/skills/claude-codex-gemini-collab/` 但需要项目 venv。需创建符号链接：`ln -s /home/caohui/projects/claude-codex-gemini-collab/.venv ~/.claude/skills/claude-codex-gemini-collab/.venv`
 
 ## Do-Not-Repeat
 

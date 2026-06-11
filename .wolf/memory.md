@@ -541,3 +541,14 @@
 |------|--------|---------|---------|--------|
 | 21:39 | 测试 taolun 技能 | .collab/state.json, events.jsonl | 创建测试任务，验证状态管理 | ~500 |
 | 10:56 | 会话总结：taolun全功能测试+开源项目整理 | .omc/session-context.json, .wolf/memory.md | 完成3项测试+4个参考项目文档 | ~2000 |
+
+## Session: 2026-06-10 12:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-11 11:45
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:07 | 修复 collab_discuss.py venv 查找问题，创建符号链接 | .wolf/cerebrum.md | 讨论功能已恢复 | ~70 |
