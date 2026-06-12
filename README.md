@@ -397,3 +397,17 @@ See CHANGELOG.md for detailed release notes and roadmap.
 ## Version
 
 0.3.1 - Skill activation fixes with diagnostic tools
+
+
+## Discussion功能 (Discussion Feature)
+
+框架现支持多代理讨论 (Multi-agent Discussion) 功能，允许 Claude, Codex 和 Gemini 就复杂任务进行多轮讨论并寻求共识。
+
+### 当前能力边界
+- **多轮讨论**: 自动调度参与者按轮次发言。
+- **共识判断**: 每轮结束后解析返回的数据模型，判断是否达成全员 `consensus`。
+- **状态持久化**: 完整的讨论轮次、阻碍点 (blocking issues) 以及响应状态持久化存储于 `.collab/state/`。
+- **恢复能力**: 支持从中断或超时的讨论中恢复继续执行 (`--resume`, `--retry-failed`)。
+
+### 使用限制
+目前该功能主要暴露于外部 CLI (`scripts/collab.py discuss`)，需要手动触发。未来（Phase 4A）将在技能内部集成直接讨论的入口。

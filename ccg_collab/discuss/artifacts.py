@@ -7,7 +7,7 @@ from typing import List, Dict
 
 def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, content: str) -> str:
     """Save discussion artifact to file, return relative path."""
-    artifacts_dir = base_dir / ".omc" / "collaboration" / "artifacts"
+    artifacts_dir = base_dir / ".collab" / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")

@@ -20,7 +20,7 @@ def test_resolve_existing_with_cli_arg():
     """Test resolve_existing_base_dir with --base-dir argument."""
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
-        (base / ".omc" / "collaboration").mkdir(parents=True)
+        (base / ".collab").mkdir(parents=True)
 
         result = resolve_existing_base_dir(base_dir=str(base))
         assert result == base
@@ -31,7 +31,7 @@ def test_resolve_existing_with_env_var():
     """Test resolve_existing_base_dir with OMC_PROJECT_ROOT env var."""
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
-        (base / ".omc" / "collaboration").mkdir(parents=True)
+        (base / ".collab").mkdir(parents=True)
 
         os.environ["OMC_PROJECT_ROOT"] = str(base)
         try:
@@ -45,7 +45,7 @@ def test_resolve_existing_with_env_var():
 def test_resolve_existing_invalid_env():
     """Test resolve_existing_base_dir with invalid OMC_PROJECT_ROOT."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        base = Path(tmpdir)  # No .omc/collaboration
+        base = Path(tmpdir)  # No .collab
 
         os.environ["OMC_PROJECT_ROOT"] = str(base)
         try:
@@ -75,8 +75,8 @@ def test_cli_priority_over_env():
         base_cli = Path(tmpdir) / "cli"
         base_env = Path(tmpdir) / "env"
 
-        (base_cli / ".omc" / "collaboration").mkdir(parents=True)
-        (base_env / ".omc" / "collaboration").mkdir(parents=True)
+        (base_cli / ".collab").mkdir(parents=True)
+        (base_env / ".collab").mkdir(parents=True)
 
         os.environ["OMC_PROJECT_ROOT"] = str(base_env)
         try:

@@ -24,7 +24,7 @@ def test_save_consensus_when_reached(tmp_path):
 
     save_consensus_contract(tmp_path, task_id, task_state)
 
-    consensus_path = tmp_path / ".omc/collaboration/tasks" / task_id / "consensus.json"
+    consensus_path = tmp_path / ".collab/tasks" / task_id / "consensus.json"
     assert consensus_path.exists(), "consensus.json should be created"
 
     with open(consensus_path) as f:
@@ -50,7 +50,7 @@ def test_no_save_when_not_reached(tmp_path):
 
     save_consensus_contract(tmp_path, task_id, task_state)
 
-    consensus_path = tmp_path / ".omc/collaboration/tasks" / task_id / "consensus.json"
+    consensus_path = tmp_path / ".collab/tasks" / task_id / "consensus.json"
     assert not consensus_path.exists(), "consensus.json should not be created when consensus not reached"
 
 

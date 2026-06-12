@@ -35,11 +35,11 @@ def test_soft_limit_reached_without_consensus(mock_gemini, mock_codex, capsys):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
-        (base / ".omc" / "collaboration").mkdir(parents=True)
+        (base / ".collab").mkdir(parents=True)
 
         # Initialize required files
-        (base / ".omc" / "collaboration" / "events.jsonl").write_text("")
-        (base / ".omc" / "collaboration" / "state.json").write_text(
+        (base / ".collab" / "events.jsonl").write_text("")
+        (base / ".collab" / "state.json").write_text(
             json.dumps({"status": "idle", "last_event_id": 0})
         )
 
@@ -66,10 +66,10 @@ def test_hard_limit_reached(mock_gemini, mock_codex, capsys):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
-        (base / ".omc" / "collaboration").mkdir(parents=True)
+        (base / ".collab").mkdir(parents=True)
 
-        (base / ".omc" / "collaboration" / "events.jsonl").write_text("")
-        (base / ".omc" / "collaboration" / "state.json").write_text(
+        (base / ".collab" / "events.jsonl").write_text("")
+        (base / ".collab" / "state.json").write_text(
             json.dumps({"status": "idle", "last_event_id": 0})
         )
 

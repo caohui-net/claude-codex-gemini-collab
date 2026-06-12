@@ -46,7 +46,7 @@ def detect_doom_loop(task_id: str, base_dir: str = ".") -> LoopStatus:
     Returns:
         LoopStatus indicating if stuck and suggested recovery
     """
-    state_file = Path(base_dir) / ".omc" / "collaboration" / "state" / f"{task_id}.json"
+    state_file = Path(base_dir) / ".collab" / "state" / f"{task_id}.json"
 
     if not state_file.exists():
         return LoopStatus(is_stuck=False, pattern="no_state_file")

@@ -20,7 +20,7 @@ from loop_detector import detect_doom_loop, LoopStatus
 def create_test_state(state_data: dict, task_id: str = "TEST-TASK-001") -> Path:
     """Create a temporary state file for testing"""
     tmpdir = Path(tempfile.mkdtemp())
-    state_dir = tmpdir / ".omc" / "collaboration" / "state"
+    state_dir = tmpdir / ".collab" / "state"
     state_dir.mkdir(parents=True)
 
     state_file = state_dir / f"{task_id}.json"

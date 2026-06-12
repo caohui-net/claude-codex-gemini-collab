@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-09T13:21:08.711Z
-> Files: 542 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-12T15:57:37.502Z
+> Files: 543 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -16,6 +16,11 @@
 ## ../../.claude/skills/claude-codex-gemini-collab/
 
 - `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~2933 tok)
+
+## ../../.claude/skills/claude-codex-gemini-collab/scripts/
+
+- `collab_event.py` — Atomic event operations for collaboration protocol. (~5321 tok)
+- `collab_validate.py` — Validate and repair collaboration state. (~2056 tok)
 
 ## ./
 
@@ -77,9 +82,6 @@
 
 ## .collab/
 
-- `state.json` (~58 tok) - 协作框架状态：workflow_id, current_task, active_agent
-- `events.jsonl` (~150 tok) - 事件日志：task_created, task_claimed, task_completed
-- `artifacts/` - 讨论产出物存储目录
 
 ## .omc/
 

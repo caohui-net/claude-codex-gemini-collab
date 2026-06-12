@@ -156,7 +156,7 @@ from typing import Dict, Optional, List
 
 def get_task_state_file(base_dir: Path, task_id: str) -> Path:
     """Get state file path for task."""
-    state_dir = base_dir / ".omc" / "collaboration" / "state"
+    state_dir = base_dir / ".collab" / "state"
     state_dir.mkdir(parents=True, exist_ok=True)
     return state_dir / f"{task_id}.json"
 

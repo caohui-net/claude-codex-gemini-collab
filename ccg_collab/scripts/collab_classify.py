@@ -14,7 +14,7 @@ from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 def classify_and_route(base_dir, task_id):
     """Classify task and determine routing."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     # Read task description from events
     events = read_events(collab_dir / "events.jsonl")

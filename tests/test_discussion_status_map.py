@@ -25,7 +25,7 @@ def test_discussion_events_ownership_neutral():
     """Verify discussion events don't corrupt active ownership."""
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
-        collab_dir = base / ".omc" / "collaboration"
+        collab_dir = base / ".collab"
         collab_dir.mkdir(parents=True)
 
         events_file = collab_dir / "events.jsonl"

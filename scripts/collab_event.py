@@ -232,7 +232,7 @@ def release_lock(collab_dir, agent=None, task_id=None):
 def append_event(base_dir, event_type, agent, task_id, summary, artifacts=None, details=None):
     """Append event atomically with journal lock."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     if not collab_dir.exists():
         print("❌ Collaboration not initialized")

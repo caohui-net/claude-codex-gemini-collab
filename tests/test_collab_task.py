@@ -46,7 +46,7 @@ class CollaborationTaskTests(unittest.TestCase):
 
     @property
     def collab_dir(self):
-        return self.base / ".omc" / "collaboration"
+        return self.base / ".collab"
 
     def write_events(self, events):
         (self.collab_dir / "events.jsonl").write_text(
@@ -664,7 +664,7 @@ class CollaborationTaskTests(unittest.TestCase):
             self.assertEqual(create_result.returncode, 0, create_result.stderr)
 
             # Get task ID
-            collab_dir = Path(tmp_dir) / ".omc" / "collaboration"
+            collab_dir = Path(tmp_dir) / ".collab"
             events = [
                 json.loads(line)
                 for line in (collab_dir / "events.jsonl").read_text().splitlines()
@@ -727,7 +727,7 @@ class CollaborationTaskTests(unittest.TestCase):
             )
             self.assertEqual(create_result.returncode, 0, create_result.stderr)
 
-            smoke_collab_dir = Path(smoke_dir) / ".omc" / "collaboration"
+            smoke_collab_dir = Path(smoke_dir) / ".collab"
             events = [
                 json.loads(line)
                 for line in (smoke_collab_dir / "events.jsonl").read_text().splitlines()

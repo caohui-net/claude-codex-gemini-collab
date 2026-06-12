@@ -24,7 +24,7 @@ def test_collect_evidence(tmp_path):
     assert "timestamp" in evidence
 
     # Verify evidence file created
-    evidence_path = tmp_path / ".omc/collaboration/tasks" / task_id / "evidence.json"
+    evidence_path = tmp_path / ".collab/tasks" / task_id / "evidence.json"
     assert evidence_path.exists()
 
     with open(evidence_path) as f:

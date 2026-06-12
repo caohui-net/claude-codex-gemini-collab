@@ -16,7 +16,7 @@ def show_status(base_dir=".", task_id=None):
     print("🛠️ [Skill: Collab] handling request...")
 
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     if not collab_dir.exists():
         print("❌ Collaboration not initialized. Run: /claude-codex-gemini-collab init")

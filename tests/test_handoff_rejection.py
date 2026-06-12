@@ -34,7 +34,7 @@ class HandoffRejectionTests(unittest.TestCase):
             append_event(tmp_dir, "handoff_rejected", "codex", "TASK-1", "rejected")
 
             # Owner should be claude (requester), not codex (rejecter)
-            events_file = tmp_dir / ".omc" / "collaboration" / "events.jsonl"
+            events_file = tmp_dir / ".collab" / "events.jsonl"
             events = read_events(events_file)
             owner = get_active_owner(events, "TASK-1")
 
@@ -53,7 +53,7 @@ class HandoffRejectionTests(unittest.TestCase):
                         details={"target_agent": "codex"})
             append_event(tmp_dir, "handoff_cancelled", "claude", "TASK-1", "cancelled")
 
-            events_file = tmp_dir / ".omc" / "collaboration" / "events.jsonl"
+            events_file = tmp_dir / ".collab" / "events.jsonl"
             events = read_events(events_file)
             owner = get_active_owner(events, "TASK-1")
 

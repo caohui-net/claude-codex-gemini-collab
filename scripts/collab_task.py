@@ -34,7 +34,7 @@ def can_claim(events, task_id, agent):
 def create_task(base_dir, description):
     """Create new collaboration task."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     # Acquire lock to ensure atomic task ID generation
     if not acquire_lock(collab_dir, "claude", "none", "create task"):
@@ -143,7 +143,7 @@ priority: normal
 def claim_task(base_dir, task_id, agent="claude"):
     """Claim task atomically."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     # Validate agent before any operations
     try:
@@ -220,7 +220,7 @@ def complete_task(base_dir, task_id, agent="claude"):
 def list_tasks(base_dir):
     """List all tasks with their status."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
     events_file = collab_dir / "events.jsonl"
 
     try:
@@ -257,7 +257,7 @@ def list_tasks(base_dir):
 def current_task(base_dir):
     """Show current task."""
     base = Path(base_dir).resolve()
-    state_file = base / ".omc" / "collaboration" / "state.json"
+    state_file = base / ".collab" / "state.json"
     try:
         state = read_state(state_file)
     except ValueError as e:

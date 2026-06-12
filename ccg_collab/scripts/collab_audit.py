@@ -13,7 +13,7 @@ from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 def trigger_audit(base_dir, task_id):
     """Trigger mandatory three-party audit."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     # Check if audit already running (idempotency)
     try:

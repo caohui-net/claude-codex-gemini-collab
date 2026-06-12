@@ -62,7 +62,7 @@ def test_validate_changed_files_allowed(tmp_path):
 
 def test_validate_changed_files_forbidden(tmp_path):
     """Test changed file validation with forbidden path."""
-    valid, violations = validate_changed_files([".omc/collaboration/state.json"], tmp_path)
+    valid, violations = validate_changed_files([".collab/state.json"], tmp_path)
 
     assert valid is False
     assert len(violations) == 1

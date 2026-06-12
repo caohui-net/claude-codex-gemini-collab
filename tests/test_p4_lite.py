@@ -19,7 +19,7 @@ from collab_task import create_task
 
 def test_discussion_events_dont_steal_ownership(tmp_path):
     """Test that discussion events are ownership-neutral."""
-    collab_dir = tmp_path / ".omc" / "collaboration"
+    collab_dir = tmp_path / ".collab"
     collab_dir.mkdir(parents=True)
     (collab_dir / "tasks").mkdir()
     (collab_dir / "locks").mkdir()
@@ -50,7 +50,7 @@ def test_discussion_events_dont_steal_ownership(tmp_path):
 
 def test_malformed_events_quarantined(tmp_path):
     """Test that repair() quarantines malformed events instead of silent drop."""
-    collab_dir = tmp_path / ".omc" / "collaboration"
+    collab_dir = tmp_path / ".collab"
     collab_dir.mkdir(parents=True)
     (collab_dir / "tasks").mkdir()
     (collab_dir / "locks").mkdir()
@@ -80,7 +80,7 @@ def test_malformed_events_quarantined(tmp_path):
 
 def test_task_id_conflict_rejected(tmp_path):
     """Test that task_id conflicts are detected and rejected."""
-    collab_dir = tmp_path / ".omc" / "collaboration"
+    collab_dir = tmp_path / ".collab"
     collab_dir.mkdir(parents=True)
     (collab_dir / "tasks").mkdir()
     (collab_dir / "locks").mkdir()
@@ -111,7 +111,7 @@ def test_task_id_conflict_rejected(tmp_path):
 
 def test_missing_required_fields_rejected(tmp_path):
     """Test that events with missing required fields are rejected."""
-    collab_dir = tmp_path / ".omc" / "collaboration"
+    collab_dir = tmp_path / ".collab"
     collab_dir.mkdir(parents=True)
     (collab_dir / "tasks").mkdir()
     (collab_dir / "locks").mkdir()

@@ -2481,7 +2481,7 @@ if __name__ == "__main__":
                 except:
                     intended_base = Path.cwd()
 
-            collab_dir = intended_base / ".omc" / "collaboration"
+            collab_dir = intended_base / ".collab"
 
             # Auto-init if missing at intended location (silent if already exists)
             if not collab_dir.exists():

@@ -17,7 +17,7 @@ from context_compactor import compact_discussion_state, _compress_round
 def create_test_state(rounds_data: list, task_id: str = "TEST-COMPACT-001") -> Path:
     """Create temporary state file for testing"""
     tmpdir = Path(tempfile.mkdtemp())
-    state_dir = tmpdir / ".omc" / "collaboration" / "state"
+    state_dir = tmpdir / ".collab" / "state"
     state_dir.mkdir(parents=True)
 
     state = {
@@ -123,7 +123,7 @@ def test_compaction_preserves_recent():
     assert result["rounds_kept_full"] == 2   # Rounds 2, 3
 
     # Verify state file
-    state_file = tmpdir / ".omc" / "collaboration" / "state" / "TEST-COMPACT-001.json"
+    state_file = tmpdir / ".collab" / "state" / "TEST-COMPACT-001.json"
     with open(state_file) as f:
         compacted_state = json.load(f)
 

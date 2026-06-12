@@ -38,7 +38,7 @@ def compact_discussion_state(task_id: str, base_dir: str = ".") -> Dict[str, Any
         - savings_kb: float
         - rounds_compacted: int
     """
-    state_file = Path(base_dir) / ".omc" / "collaboration" / "state" / f"{task_id}.json"
+    state_file = Path(base_dir) / ".collab" / "state" / f"{task_id}.json"
 
     if not state_file.exists():
         return {"success": False, "error": "State file not found"}

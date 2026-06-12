@@ -19,7 +19,7 @@ def test_execution_with_tasks(tmp_path):
 
     # Create consensus.json with tasks
     task_id = "test-exec-1"
-    consensus_dir = tmp_path / ".omc/collaboration/tasks" / task_id
+    consensus_dir = tmp_path / ".collab/tasks" / task_id
     consensus_dir.mkdir(parents=True)
 
     consensus = {
@@ -64,7 +64,7 @@ def test_execution_no_tasks(tmp_path):
     subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, capture_output=True)
 
     task_id = "test-exec-2"
-    consensus_dir = tmp_path / ".omc/collaboration/tasks" / task_id
+    consensus_dir = tmp_path / ".collab/tasks" / task_id
     consensus_dir.mkdir(parents=True)
 
     consensus = {"task_id": task_id, "decision": "No tasks", "tasks": []}

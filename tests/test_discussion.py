@@ -184,7 +184,7 @@ def test_parse_discussion_artifacts():
     """Test parsing discussion artifacts from filesystem."""
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
-        artifacts_dir = base / ".omc" / "collaboration" / "artifacts"
+        artifacts_dir = base / ".collab" / "artifacts"
         artifacts_dir.mkdir(parents=True)
 
         # Create test artifacts
@@ -530,7 +530,7 @@ def test_calculate_quality_metrics():
 
 def test_aggregate_quality_metrics_and_dashboard_json(capsys, tmp_path):
     """Test quality dashboard aggregation and JSON output."""
-    state_dir = tmp_path / ".omc" / "collaboration" / "state"
+    state_dir = tmp_path / ".collab" / "state"
     state_dir.mkdir(parents=True)
     (state_dir / "TASK-1.json").write_text(json.dumps({
         "task_id": "TASK-1",

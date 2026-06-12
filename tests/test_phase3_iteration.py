@@ -55,7 +55,7 @@ def test_check_termination_missing_consensus(tmp_path):
 def test_check_termination_continue(tmp_path):
     """Test iteration continues when under limit and consensus exists."""
     task_id = "TASK-456"
-    task_dir = tmp_path / ".omc/collaboration/tasks" / task_id
+    task_dir = tmp_path / ".collab/tasks" / task_id
     task_dir.mkdir(parents=True, exist_ok=True)
 
     # Create required artifacts

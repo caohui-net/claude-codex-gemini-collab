@@ -25,7 +25,7 @@ def test_classify_persistence():
     rc = classify_and_route(base, 'TASK-1')
     assert rc == 0, "classify_and_route should return 0 on success"
 
-    events = read_events(base / '.omc' / 'collaboration' / 'events.jsonl')
+    events = read_events(base / '.collab' / 'events.jsonl')
     event_types = [e.get('type') for e in events]
 
     assert 'classify_requested' in event_types, "classify_requested event missing"
@@ -42,7 +42,7 @@ def test_audit_persistence():
     rc = trigger_audit(base, 'TASK-2')
     assert rc == 0, "trigger_audit should return 0 on success"
 
-    events = read_events(base / '.omc' / 'collaboration' / 'events.jsonl')
+    events = read_events(base / '.collab' / 'events.jsonl')
     event_types = [e.get('type') for e in events]
 
     assert 'audit_started' in event_types, "audit_started event missing"
@@ -62,7 +62,7 @@ def test_override_persistence():
     rc = override_routing(base, 'TASK-3', 'gemini', 'UI specialist needed')
     assert rc == 0, "override_routing should return 0 on success"
 
-    events = read_events(base / '.omc' / 'collaboration' / 'events.jsonl')
+    events = read_events(base / '.collab' / 'events.jsonl')
     event_types = [e.get('type') for e in events]
 
     assert 'manual_override' in event_types, "manual_override event missing"
@@ -94,7 +94,7 @@ def test_full_routing_workflow():
     assert rc == 0
 
     # Verify all events persisted in order
-    events = read_events(base / '.omc' / 'collaboration' / 'events.jsonl')
+    events = read_events(base / '.collab' / 'events.jsonl')
     event_types = [e.get('type') for e in events]
 
     expected_order = ['task_created', 'classify_requested', 'route_decided',

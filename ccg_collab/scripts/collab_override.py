@@ -13,7 +13,7 @@ from collab_paths import resolve_existing_base_dir, add_base_dir_arg
 def override_routing(base_dir, task_id, agent, reason):
     """Override automatic routing decision."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     # Validate inputs
     if not reason or not reason.strip():
@@ -77,7 +77,7 @@ def override_routing(base_dir, task_id, agent, reason):
 def explain_routing(base_dir, task_id):
     """Show routing decision explanation."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     events = read_events(collab_dir / "events.jsonl")
 
