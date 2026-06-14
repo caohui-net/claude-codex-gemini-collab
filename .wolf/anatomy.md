@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-12T15:57:37.502Z
-> Files: 543 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-14T17:02:16.007Z
+> Files: 544 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -19,6 +19,7 @@
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
 - `collab_event.py` — Atomic event operations for collaboration protocol. (~5321 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2056 tok)
 
@@ -32,10 +33,10 @@
 - `findings.md` — TASK-20260607-1157 Findings (~608 tok)
 - `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1835 tok)
 - `progress.md` — TASK-20260607-1157 Progress (~718 tok)
-- `pyproject.toml` — Python project configuration (~198 tok)
+- `pyproject.toml` — Claude-Codex-Gemini Collaboration Framework (~185 tok)
 - `README.md` — Project documentation (~2788 tok)
 - `response.json` (~469 tok)
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3104 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3071 tok)
 - `skills-lock.json` (~561 tok)
 - `task_plan.md` — TASK-20260607-1157 Plan (~390 tok)
 
