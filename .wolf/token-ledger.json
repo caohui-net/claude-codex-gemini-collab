@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-06-06T16:25:30.583Z",
   "lifetime": {
-    "total_tokens_estimated": 3500178,
-    "total_reads": 1965,
-    "total_writes": 1124,
+    "total_tokens_estimated": 3522746,
+    "total_reads": 1979,
+    "total_writes": 1136,
     "total_sessions": 36,
-    "anatomy_hits": 652,
-    "anatomy_misses": 1217,
-    "repeated_reads_blocked": 627,
-    "estimated_savings_vs_bare_cli": 2533713
+    "anatomy_hits": 658,
+    "anatomy_misses": 1225,
+    "repeated_reads_blocked": 635,
+    "estimated_savings_vs_bare_cli": 2582299
   },
   "sessions": [
     {
@@ -21868,6 +21868,167 @@
         "output_tokens_estimated": 569,
         "reads_count": 14,
         "writes_count": 10,
+        "repeated_reads_blocked": 8,
+        "anatomy_lookups": 6
+      }
+    },
+    {
+      "id": "session-2026-06-14-0921",
+      "started": "2026-06-14T01:21:49.754Z",
+      "ended": "2026-06-14T17:11:23.051Z",
+      "reads": [
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.collab/events.jsonl",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.collab/artifacts/DISCUSS-验证修复-1781279883-discuss-r1-codex-20260612-155836.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/.collab/artifacts/DISCUSS-验证修复-1781279883-discuss-r1-gemini-20260612-155819.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/.claude/skills/claude-codex-gemini-collab/scripts/collab_init.py",
+          "tokens_estimated": 694,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/.claude/skills/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 7380,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 7382,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/pyproject.toml",
+          "tokens_estimated": 198,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/.claude/skills/claude-codex-gemini-collab/SKILL.md",
+          "tokens_estimated": 3104,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-claude-codex-gemini-collab/8b2d70d8-7651-40ad-bce7-9c98f3d5e9b3/tasks/b02ogqtoq.output",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/graduation-leave-system/.collab/artifacts/DISCUSS-毕业离校系统整体评估审计-架构设计-代码质量-1781455153-discuss-r2-gemini-20260614-164138.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-graduation-leave-system/6136d20d-231f-4505-a73d-fecd3ea7c8ff/tasks/bp7x0t9rd.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-graduation-leave-system/5571a1ed-d828-4cd8-b2b8-0f1870092d57/tasks/bme9w7vqc.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/claude-1000/-home-caohui-projects-claude-codex-gemini-collab/8b2d70d8-7651-40ad-bce7-9c98f3d5e9b3/tasks/b13c8c4on.output",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/SKILL.md",
+          "tokens_estimated": 3104,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/caohui/.claude/skills/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 69,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/.claude/skills/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 42,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 69,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 42,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/.claude/skills/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 66,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/.claude/skills/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 39,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 66,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/scripts/agent_cli.py",
+          "tokens_estimated": 39,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/SKILL.md",
+          "tokens_estimated": 106,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/pyproject.toml",
+          "tokens_estimated": 31,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/SKILL.md",
+          "tokens_estimated": 106,
+          "action": "edit"
+        },
+        {
+          "file": "/home/caohui/projects/claude-codex-gemini-collab/pyproject.toml",
+          "tokens_estimated": 31,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 21862,
+        "output_tokens_estimated": 706,
+        "reads_count": 14,
+        "writes_count": 12,
         "repeated_reads_blocked": 8,
         "anatomy_lookups": 6
       }
