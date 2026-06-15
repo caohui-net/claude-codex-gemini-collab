@@ -888,11 +888,24 @@ Respond with structured JSON wrapped in markers:
 }}
 [RESPONSE_END]
 
-IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
-Directly cite at least one relevant Previous Response ID when prior responses exist.
-Consider Related Historical Consensus when present, and call out conflicts explicitly.
-Treat Potential Consensus Conflicts as required review items when present.
-Output ONLY the markers and JSON, nothing else.
+CRITICAL REQUIREMENTS:
+1. Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers
+2. Output ONLY valid JSON between the markers - NO code examples, NO explanations, NO extra text
+3. Do NOT include implementation code, configuration examples, or architectural diagrams
+4. This is a DECISION task, not an IMPLEMENTATION task - provide analysis, not code
+5. Directly cite Previous Response IDs when available
+6. Consider Related Historical Consensus and flag conflicts explicitly
+7. Any response without proper markers will be rejected
+
+WRONG (will fail parsing):
+# Here's the implementation:
+class CircuitBreaker:
+    ...
+
+RIGHT (valid format):
+[RESPONSE_START]
+{"consensus": false, "decision": "...", "reasoning": "..."}
+[RESPONSE_END]
 """
         return prompt
 
@@ -926,11 +939,24 @@ You are {agent}. Respond with structured JSON wrapped in markers:
 }}
 [RESPONSE_END]
 
-IMPORTANT: Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers.
-Directly cite at least one relevant Previous Response ID when prior responses exist.
-Consider Related Historical Consensus when present, and call out conflicts explicitly.
-Treat Potential Consensus Conflicts as required review items when present.
-Output ONLY the markers and JSON, nothing else.
+CRITICAL REQUIREMENTS:
+1. Your response MUST be wrapped between [RESPONSE_START] and [RESPONSE_END] markers
+2. Output ONLY valid JSON between the markers - NO code examples, NO explanations, NO extra text
+3. Do NOT include implementation code, configuration examples, or architectural diagrams
+4. This is a DECISION task, not an IMPLEMENTATION task - provide analysis, not code
+5. Directly cite Previous Response IDs when available
+6. Consider Related Historical Consensus and flag conflicts explicitly
+7. Any response without proper markers will be rejected
+
+WRONG (will fail parsing):
+# Here's the implementation:
+class CircuitBreaker:
+    ...
+
+RIGHT (valid format):
+[RESPONSE_START]
+{"consensus": false, "decision": "...", "reasoning": "..."}
+[RESPONSE_END]
 
 """
 
@@ -1040,6 +1066,18 @@ def check_consensus(replies: List[AgentReply]) -> Dict[str, Any]:
     for reply in replies:
         parsed = reply.parsed
         if isinstance(parsed, dict):
+            # Check for parsing errors
+            if "error" in parsed:
+                error_type = parsed.get("error")
+                if error_type == "json_parse_failed":
+                    print(f"⚠️  {reply.agent} returned non-JSON response ({len(reply.raw_text)} chars)")
+                    print(f"   💡 Content saved to artifact but excluded from consensus")
+                    all_agree = False
+                    dissenting_agents.append(reply.agent)
+                    blocking_issues.append(f"{reply.agent}: Invalid JSON response")
+                    dissent_parts.append(f"[{reply.agent}] Response format invalid (expected JSON)")
+                    continue
+            
             consensus = parsed.get("consensus", False)
             issues = parsed.get("blocking_issues", [])
 
