@@ -26,7 +26,7 @@ def parse_timestamp(value):
 def validate(base_dir="."):
     """Validate collaboration state consistency."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".collab"
+    collab_dir = base / ".omc" / "collaboration"
 
     if not collab_dir.exists():
         print("❌ Collaboration not initialized")
@@ -54,7 +54,7 @@ def validate(base_dir="."):
                 issues.append(f"Line {i} must be a JSON object")
                 continue
 
-            event_id = event.get('id')
+            event_id = event.get('id')  # Fixed: 'id' not 'event_id'
             if not isinstance(event_id, int) or isinstance(event_id, bool):
                 issues.append(f"Line {i} invalid event id: {event_id!r}")
                 continue
@@ -126,7 +126,7 @@ def validate(base_dir="."):
 def repair(base_dir="."):
     """Attempt to repair collaboration state."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".collab"
+    collab_dir = base / ".omc" / "collaboration"
 
     if not collab_dir.exists():
         print("❌ Collaboration not initialized")
