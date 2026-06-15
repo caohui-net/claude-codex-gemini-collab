@@ -1853,9 +1853,14 @@ def run_discussion(
                     print(f"⚠️  Unknown participant: {participant}")
                     continue
 
-                if reply.artifact_path:
-                    artifacts_refs.append(str(reply.artifact_path))
-                    print(f"   ✓ Artifact: {reply.artifact_path}")
+                # Save artifact in fast mode
+                if reply.raw_text:
+                    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+                    filename = f"{task_id}-fast-{participant}-{timestamp}.md"
+                    artifact_path = fast_artifacts_dir / filename
+                    artifact_path.write_text(reply.raw_text)
+                    artifacts_refs.append(str(artifact_path.relative_to(base_dir)))
+                    print(f"   ✓ Artifact: {artifact_path.relative_to(base_dir)}")
             except Exception as e:
                 print(f"   ❌ {participant} failed: {e}")
 
