@@ -1834,6 +1834,11 @@ def run_discussion(
         print("⚡ [Fast Mode] Single-round stateless discussion (ccg-style)")
         print(f"💬 Topic: {topic}")
         print(f"👥 Participants: {', '.join(participants)}")
+        
+        # Warn if topic is long (may cause Codex timeout)
+        if len(topic) > 200 and "codex" in participants:
+            print(f"⚠️  Long topic ({len(topic)} chars) may cause Codex timeout (Cloudflare 120s limit)")
+            print(f"   💡 Consider: --participants gemini  or simplify topic")
         print()
 
         # Ensure fast artifacts directory
@@ -1861,8 +1866,15 @@ def run_discussion(
                     artifact_path.write_text(reply.raw_text)
                     artifacts_refs.append(str(artifact_path.relative_to(base_dir)))
                     print(f"   ✓ Artifact: {artifact_path.relative_to(base_dir)}")
+                elif reply.exit_code != 0:
+                    print(f"   ⚠️  {participant} returned no content (exit code: {reply.exit_code})")
             except Exception as e:
-                print(f"   ❌ {participant} failed: {e}")
+                error_msg = str(e).lower()
+                if "524" in error_msg or "timeout" in error_msg or "timed out" in error_msg:
+                    print(f"   ❌ {participant} timeout: Backend response >120s (Cloudflare limit)")
+                    print(f"      💡 Try: 1) Simplify topic  2) Use --participants gemini  3) Retry later")
+                else:
+                    print(f"   ❌ {participant} failed: {e}")
 
         # Output summary
         discussion_elapsed = time.time() - discussion_start
