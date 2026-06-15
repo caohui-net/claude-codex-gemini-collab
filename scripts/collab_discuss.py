@@ -904,7 +904,7 @@ class CircuitBreaker:
 
 RIGHT (valid format):
 [RESPONSE_START]
-{"consensus": false, "decision": "...", "reasoning": "..."}
+{{"consensus": false, "decision": "...", "reasoning": "..."}}
 [RESPONSE_END]
 """
         return prompt
@@ -955,7 +955,7 @@ class CircuitBreaker:
 
 RIGHT (valid format):
 [RESPONSE_START]
-{"consensus": false, "decision": "...", "reasoning": "..."}
+{{"consensus": false, "decision": "...", "reasoning": "..."}}
 [RESPONSE_END]
 
 """
