@@ -514,6 +514,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-09T11:08:40.382Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-06-15T18:28:54.008Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/skills/claude-codex-gemini-collab/scripts/collab_discuss.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 18→23 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T18:28:54.008Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-06-15T18:41:50.952Z",
+      "error_message": "Incorrect value in code",
+      "file": "pyproject.toml",
+      "root_cause": "Had \"0.4.6\"",
+      "fix": "Changed to \"0.4.7\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "toml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-15T18:41:50.952Z"
     }
   ]
 }

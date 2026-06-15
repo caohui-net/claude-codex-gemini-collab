@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-14T17:48:19.880Z
-> Files: 544 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T18:42:08.910Z
+> Files: 545 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -15,11 +15,12 @@
 
 ## ../../.claude/skills/claude-codex-gemini-collab/
 
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3129 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3071 tok)
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28903 tok)
 - `collab_event.py` — Atomic event operations for collaboration protocol. (~5321 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2056 tok)
 
