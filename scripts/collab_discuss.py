@@ -2599,10 +2599,17 @@ if __name__ == "__main__":
                               tmux_version=tmux_info.get('version') if tmux_info else None)
             sys.stdout.flush()  # Force output before run_discussion starts
 
-            sys.exit(run_discussion(base, task_id, topic, participants,
-                                   args.max_rounds, hard_max_rounds=10,
-                                   timeout_sec=args.timeout_sec, mode=args.mode,
-                                   consensus_scope=args.scope))
+            rc = run_discussion(base, task_id, topic, participants,
+                                args.max_rounds, hard_max_rounds=10,
+                                timeout_sec=args.timeout_sec, mode=args.mode,
+                                consensus_scope=args.scope)
+            # Sync new events to agentmemory (best-effort, non-blocking)
+            try:
+                from collab_memory_bridge import sync_events
+                sync_events(base)
+            except Exception:
+                pass
+            sys.exit(rc)
         else:
             parser.print_help()
             sys.exit(1)
