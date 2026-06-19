@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T01:20:04.620Z
-> Files: 564 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T05:48:03.419Z
+> Files: 566 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -39,7 +39,7 @@
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
 - `findings.md` — TASK-20260607-1157 Findings (~608 tok)
-- `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1835 tok)
+- `PRODUCTION-READY.md` — claude-codex-gemini-collab - PRODUCTION READY (~1899 tok)
 - `progress.md` — TASK-20260607-1157 Progress (~718 tok)
 - `pyproject.toml` — Claude-Codex-Gemini Collaboration Framework (~185 tok)
 - `README.md` — Project documentation (~2788 tok)
@@ -97,7 +97,7 @@
 - `daemon-audit.log` (~129685 tok)
 - `project-memory.json` (~3363 tok)
 - `project-state.json` (~154 tok)
-- `session-context.json` (~413 tok)
+- `session-context.json` (~332 tok)
 
 ## .omc/artifacts/ask/
 
@@ -651,8 +651,10 @@
 ## scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28800 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29617 tok)
 - `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
+- `collab_memory_bridge.mjs` — collab_memory_bridge.mjs (~529 tok)
+- `collab_memory_bridge.py` — Python wrapper for collab_memory_bridge.mjs — sync events.jsonl → agentmemory. (~226 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2055 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)
