@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T06:16:57.128Z
-> Files: 566 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T07:13:50.674Z
+> Files: 577 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -34,6 +34,7 @@
 ## ./
 
 - `.gitignore` — Git ignore rules (~224 tok)
+- `.mcp.json` (~7 tok)
 - `agentmemory-integration-plan.md` — agentmemory整合方案 (~2629 tok)
 - `CHANGELOG.md` — Change log (~3244 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
@@ -82,15 +83,38 @@
 
 ## .claude/
 
-- `settings.json` (~441 tok)
+- `settings.json` (~774 tok)
 - `settings.local.json` (~1543 tok)
+
+## .claude/agents/
+
+- `loop-analyzer.md` (~111 tok)
+- `protocol-reviewer.md` (~108 tok)
+- `state-debugger.md` (~139 tok)
+- `test-writer.md` (~100 tok)
 
 ## .claude/rules/
 
 - `openwolf.md` (~313 tok)
 
+## .claude/skills/collab-check/
+
+- `SKILL.md` (~75 tok)
+
+## .claude/skills/doctor/
+
+- `SKILL.md` (~78 tok)
+
+## .claude/skills/run-tests/
+
+- `SKILL.md` (~189 tok)
+
 ## .collab/
 
+
+## .github/workflows/
+
+- `test.yml` — CI: test (~82 tok)
 
 ## .omc/
 
@@ -608,6 +632,11 @@
 ## .omc/collaboration/artifacts/.omc/state/
 
 - `last-tool-error.json` (~118 tok)
+
+## .omc/plans/
+
+- `automation-implementation-plan.md` — Claude Code 自动化改进实施方案 (~405 tok)
+- `automation-recommendations.md` — Claude Code 自动化改进方案 — 讨论文档 (~509 tok)
 
 ## .omc/skills/claude-codex-gemini-collab/
 

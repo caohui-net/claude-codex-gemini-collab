@@ -690,6 +690,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-19T05:54:41.692Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-06-19T07:09:21.459Z",
+      "error_message": "Significant refactor of ",
+      "file": ".mcp.json",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 11→8 lines (5 removed) | Also: \"mcpServers\": {; \"sqlite\": {",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-19T07:13:35.662Z"
     }
   ]
 }

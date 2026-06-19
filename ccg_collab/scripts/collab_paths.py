@@ -27,7 +27,7 @@ def find_git_root(start_dir=None):
             cwd=start_dir or ".",
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
         return Path(result.stdout.strip())
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -62,8 +62,7 @@ def resolve_existing_base_dir(base_dir=None, start_dir=None):
 
     cwd = Path(start_dir or ".").resolve()
     raise ValueError(
-        f"No .collab directory found from {cwd} upward. "
-        "Run init or pass --base-dir."
+        f"No .collab directory found from {cwd} upward. " "Run init or pass --base-dir."
     )
 
 
@@ -99,7 +98,5 @@ def resolve_init_base_dir(base_dir=None, start_dir=None):
 def add_base_dir_arg(parser):
     """Add --base-dir argument to argparse parser."""
     parser.add_argument(
-        "--base-dir",
-        type=str,
-        help="Explicit collaboration workspace root directory"
+        "--base-dir", type=str, help="Explicit collaboration workspace root directory"
     )
