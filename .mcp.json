@@ -1,12 +1,8 @@
 {
   "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
-    },
     "sqlite": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "./data/state_store.db"]
+      "args": ["-y", "@modelcontextprotocol/server-sqlite", "--db-path", "/home/caohui/projects/claude-codex-gemini-collab/data/state_store.db"]
     }
   }
 }
