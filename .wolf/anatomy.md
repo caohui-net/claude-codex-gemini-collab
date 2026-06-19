@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T05:48:03.419Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T06:16:57.128Z
 > Files: 566 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -22,7 +22,7 @@
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
-- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7511 tok)
 - `ccg_daemon.py` — CCG Collaboration Daemon - MVP implementation. (~3934 tok)
 - `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30373 tok)
 - `collab_event.py` — Atomic event operations for collaboration protocol. (~5321 tok)
@@ -651,7 +651,7 @@
 ## scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29617 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29718 tok)
 - `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
 - `collab_memory_bridge.mjs` — collab_memory_bridge.mjs (~529 tok)
 - `collab_memory_bridge.py` — Python wrapper for collab_memory_bridge.mjs — sync events.jsonl → agentmemory. (~226 tok)
