@@ -2440,6 +2440,7 @@ if __name__ == "__main__":
 
     # Discuss subcommand (default behavior)
     discuss_parser = subparsers.add_parser("discuss", help="Start a discussion")
+    discuss_parser.add_argument("--base-dir", default=None, help="Base directory (alternative to global --base-dir)")
     discuss_parser.add_argument("task_id", nargs='?', help="Task ID (optional if --topic provided)")
     discuss_parser.add_argument("topic", nargs='?', help="Discussion topic (positional, or use --topic)")
     discuss_parser.add_argument("--topic", dest="topic_flag", help="Discussion topic (alternative to positional)")
@@ -2486,6 +2487,9 @@ if __name__ == "__main__":
     dashboard_parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
 
     args = parser.parse_args()
+    # Allow --base-dir after subcommand (e.g. "discuss --base-dir .") — subparser value wins
+    if args.command == "discuss" and hasattr(args, 'base_dir') and args.base_dir:
+        pass  # already merged by argparse into args.base_dir
 
     # Handle legacy usage (no subcommand)
     if args.command is None:
