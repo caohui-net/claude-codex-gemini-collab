@@ -1,6 +1,0 @@
-{"event_id": 1, "timestamp": "2026-06-09T13:38:29.114671+00:00", "type": "task_created", "agent": "claude", "data": {"task_id": "test-taolun-001", "title": "测试 taolun 多智能体协作", "description": "验证 Claude/Codex/Gemini 三方讨论功能", "status": "pending"}}
-{"event_id": 2, "timestamp": "2026-06-09T13:41:04.736561+00:00", "type": "task_claimed", "agent": "codex", "data": {"task_id": "test-taolun-001", "claimed_by": "codex", "previous_agent": "claude"}}
-{"event_id": 3, "timestamp": "2026-06-09T13:44:13.696870+00:00", "type": "analysis_added", "agent": "codex", "data": {"task_id": "test-taolun-001", "analysis": "协作框架结构正常，事件日志功能正常，状态同步准确"}}
-{"event_id": 4, "timestamp": "2026-06-09T13:44:13.696894+00:00", "type": "task_handoff", "agent": "codex", "data": {"task_id": "test-taolun-001", "handoff_to": "gemini", "message": "请审查测试结果"}}
-{"event_id": 5, "timestamp": "2026-06-09T14:19:23.166439+00:00", "type": "review_added", "agent": "gemini", "data": {"task_id": "test-taolun-001", "review": "三方协作流程验证通过：任务创建→传递→分析→审查，状态同步正常"}}
-{"event_id": 6, "timestamp": "2026-06-09T14:19:23.166460+00:00", "type": "task_completed", "agent": "gemini", "data": {"task_id": "test-taolun-001", "result": "测试成功", "participants": ["claude", "codex", "gemini"]}}

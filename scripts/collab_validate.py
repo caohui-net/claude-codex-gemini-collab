@@ -26,7 +26,7 @@ def parse_timestamp(value):
 def validate(base_dir="."):
     """Validate collaboration state consistency."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     if not collab_dir.exists():
         print("❌ Collaboration not initialized")
@@ -126,7 +126,7 @@ def validate(base_dir="."):
 def repair(base_dir="."):
     """Attempt to repair collaboration state."""
     base = Path(base_dir).resolve()
-    collab_dir = base / ".omc" / "collaboration"
+    collab_dir = base / ".collab"
 
     if not collab_dir.exists():
         print("❌ Collaboration not initialized")

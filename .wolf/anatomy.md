@@ -1,10 +1,13 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-15T18:42:08.910Z
-> Files: 545 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T01:20:04.620Z
+> Files: 564 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
+- `ccg-project-audit-2026-06-15.md` — claude-codex-gemini-collab 项目整体审核报告 (~149 tok)
+- `claude-r0-环境拆分.md` — Claude Round 0: 系统开发与生产环境拆分方案分析 (~332 tok)
+- `claude-r2-环境拆分.md` — Claude Round 2: 验证与最终判断 (~689 tok)
 - `test_codex_debug.py` — Test Codex call to trigger debug logging. (~254 tok)
 - `test_codex_direct.py` — Test Codex bypassing daemon. (~230 tok)
 - `test_codex_stderr.py` — Test Codex stderr capture. (~205 tok)
@@ -20,9 +23,13 @@
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28903 tok)
+- `ccg_daemon.py` — CCG Collaboration Daemon - MVP implementation. (~3934 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30373 tok)
 - `collab_event.py` — Atomic event operations for collaboration protocol. (~5321 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2056 tok)
+- `context_compactor.py` — compact_discussion_state (~1401 tok)
+- `generate_summary.py` — Generate structured discussion summary from artifacts. (~2386 tok)
+- `loop_detector.py` — from: detect_doom_loop (~1695 tok)
 
 ## ./
 
@@ -90,7 +97,7 @@
 - `daemon-audit.log` (~129685 tok)
 - `project-memory.json` (~3363 tok)
 - `project-state.json` (~154 tok)
-- `session-context.json` (~233 tok)
+- `session-context.json` (~413 tok)
 
 ## .omc/artifacts/ask/
 
@@ -606,6 +613,23 @@
 
 - `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3158 tok)
 
+## .understand-anything/intermediate/
+
+- `batch-1.json` (~6644 tok)
+- `batch-2.json` — Declares and (~6204 tok)
+- `batch-3.json` — Declares from (~2110 tok)
+- `batch-4.json` (~634 tok)
+- `batch-5.json` (~538 tok)
+- `batch-7.json` — Declares mapping (~1856 tok)
+- `batch-9.json` — Declares calls (~6952 tok)
+
+## .understand-anything/tmp/
+
+- `extract-imports.py` (~880 tok)
+- `fallback-scan.py` — get_files, categorize, count_lines (~1310 tok)
+- `ua-file-analyzer-input-10.json` (~876 tok)
+- `ua-import-map-input.json` (~5585 tok)
+
 ## ccg_collab/coordination/
 
 - `filesystem.py` — FilesystemCoordination: acquire_lock, release_lock, send_signal, wait_signal + 2 more (~1063 tok)
@@ -630,4 +654,5 @@
 - `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28800 tok)
 - `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
+- `collab_validate.py` — Validate and repair collaboration state. (~2055 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)
