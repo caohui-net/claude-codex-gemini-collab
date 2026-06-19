@@ -1,7 +1,14 @@
 # claude-codex-gemini-collab - PRODUCTION READY
 
 **完成时间：** 2026-06-07T10:35:00Z  
-**状态：** ✅ Production Ready (Phase 1-3 Architecture Integration Complete)
+**最后更新：** 2026-06-19  
+**状态：** ✅ Production Ready (174 tests passing)
+
+### 2026-06-19 维护修复
+
+- **fix**: `collab_validate.py` 路径从 `.omc/collaboration` 修正为 `.collab`（6个测试之前失败）
+- **sync**: `scripts/collab_event.py` 和 `scripts/collab_state.py` 与 `ccg_collab/scripts/` 同步（明确以 `ccg_collab/scripts/` 为权威源）
+- **测试结果**: 174 passed, 0 failed
 
 ---
 
