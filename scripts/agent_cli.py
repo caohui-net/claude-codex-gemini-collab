@@ -228,8 +228,18 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
 
                 parsed = {}
                 try:
-                    parsed = json.loads(response)
+                    cleaned = strip_markdown_json(response)
+                    parsed = json.loads(cleaned)
                 except json.JSONDecodeError:
+                    # Try extracting first {...} block from prose response
+                    import re
+                    m = re.search(r'\{.*\}', response, re.DOTALL)
+                    if m:
+                        try:
+                            parsed = json.loads(m.group())
+                        except json.JSONDecodeError:
+                            pass
+                if not parsed:
                     # DEBUG: Log parsing failure
                     debug_log = Path("/tmp/codex_parse_debug.log")
                     with open(debug_log, "a") as f:

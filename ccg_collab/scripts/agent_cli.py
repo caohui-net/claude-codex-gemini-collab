@@ -228,8 +228,25 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
 
                 parsed = {}
                 try:
-                    parsed = json.loads(response)
+                    cleaned = strip_markdown_json(response)
+                    parsed = json.loads(cleaned)
                 except json.JSONDecodeError:
+                    # Try extracting first {...} block from prose response
+                    import re
+                    m = re.search(r'\{.*\}', response, re.DOTALL)
+                    if m:
+                        try:
+                            parsed = json.loads(m.group())
+                        except json.JSONDecodeError:
+                            pass
+                if not parsed:
+                    # DEBUG: Log parsing failure
+                    debug_log = Path("/tmp/codex_parse_debug.log")
+                    with open(debug_log, "a") as f:
+                        f.write(f"\n{'='*60}\n")
+                        f.write(f"[DAEMON] Parse failed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                        f.write(f"Full stdout (first 1000): {full_stdout[:1000]}\n")
+                        f.write(f"After extraction (first 500): {response[:500]}\n")
                     parsed = {"error": "json_parse_failed", "raw": response}
 
                 return AgentReply(
@@ -276,11 +293,13 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
                 exit_code=124,
             )
 
-        # Extract Codex response from CLI output format
+        # Parse output same as regular path
         full_stdout = stdout
+
+        # Extract Codex response from CLI output format
         response = full_stdout.strip()
 
-        # Strategy 1: Try parsing as nested JSON first
+        # Strategy 1: Try parsing as nested JSON first (Codex CLI wraps response)
         try:
             outer = json.loads(full_stdout)
             if isinstance(outer, dict) and "response" in outer:
@@ -319,6 +338,22 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         try:
             parsed = json.loads(response)
         except json.JSONDecodeError:
+            # DEBUG: Log parsing failure
+            debug_log = Path("/tmp/codex_parse_debug.log")
+            with open(debug_log, "a") as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Parse failed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Full stdout length: {len(full_stdout)}\n")
+                f.write(f"Has 'tokens used': {('ntokens used' in full_stdout)}\n")
+                f.write(f"Has 'codex': {('ncodex' in full_stdout)}\n")
+                if "\ntokens used" in full_stdout:
+                    tokens_idx = full_stdout.index("\ntokens used")
+                    f.write(f"'tokens used' at index: {tokens_idx}\n")
+                    if "\ncodex\n" in full_stdout[:tokens_idx]:
+                        last_codex = full_stdout[:tokens_idx].rfind("\ncodex\n")
+                        f.write(f"Last 'codex' at index: {last_codex}\n")
+                f.write(f"Full stdout (last 500): ...{full_stdout[-500:]}\n")
+                f.write(f"After extraction (first 500): {response[:500]}\n")
             parsed = {"error": "json_parse_failed", "raw": response}
 
         return AgentReply(
@@ -348,11 +383,13 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         )
         elapsed = time.time() - start
 
-        # Extract Codex response from CLI output format
+        # Keep full stdout for protocol enforcement and artifact saving
         full_stdout = result.stdout
+
+        # Extract Codex response from CLI output format
         response = full_stdout.strip()
 
-        # Strategy 1: Try parsing as nested JSON first
+        # Strategy 1: Try parsing as nested JSON first (Codex CLI wraps response)
         try:
             outer = json.loads(full_stdout)
             if isinstance(outer, dict) and "response" in outer:
@@ -394,6 +431,22 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         try:
             parsed = json.loads(response)
         except json.JSONDecodeError:
+            # DEBUG: Log parsing failure
+            debug_log = Path("/tmp/codex_parse_debug.log")
+            with open(debug_log, "a") as f:
+                f.write(f"\n{'='*60}\n")
+                f.write(f"Parse failed at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Full stdout length: {len(full_stdout)}\n")
+                f.write(f"Has 'tokens used': {('ntokens used' in full_stdout)}\n")
+                f.write(f"Has 'codex': {('ncodex' in full_stdout)}\n")
+                if "\ntokens used" in full_stdout:
+                    tokens_idx = full_stdout.index("\ntokens used")
+                    f.write(f"'tokens used' at index: {tokens_idx}\n")
+                    if "\ncodex\n" in full_stdout[:tokens_idx]:
+                        last_codex = full_stdout[:tokens_idx].rfind("\ncodex\n")
+                        f.write(f"Last 'codex' at index: {last_codex}\n")
+                f.write(f"Full stdout (last 500): ...{full_stdout[-500:]}\n")
+                f.write(f"After extraction (first 500): {response[:500]}\n")
             parsed = {"error": "json_parse_failed", "raw": response}
 
         return AgentReply(
