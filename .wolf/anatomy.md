@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T07:13:50.674Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T17:31:27.771Z
 > Files: 577 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -18,7 +18,7 @@
 
 ## ../../.claude/skills/claude-codex-gemini-collab/
 
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3071 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3017 tok)
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
