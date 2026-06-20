@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-19T17:31:27.771Z
-> Files: 577 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-20T08:38:44.302Z
+> Files: 578 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -22,14 +22,15 @@
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
-- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7511 tok)
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~9085 tok)
 - `ccg_daemon.py` — CCG Collaboration Daemon - MVP implementation. (~3934 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30373 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29725 tok)
 - `collab_event.py` — Atomic event operations for collaboration protocol. (~5321 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2056 tok)
 - `context_compactor.py` — compact_discussion_state (~1401 tok)
 - `generate_summary.py` — Generate structured discussion summary from artifacts. (~2386 tok)
 - `loop_detector.py` — from: detect_doom_loop (~1695 tok)
+- `test_rmux_integration.py` — Test rmux integration in agent_cli. (~1278 tok)
 
 ## ./
 

@@ -595,13 +595,13 @@ def recall_related_consensus(
     limit: int = 5,
 ) -> Dict[str, Any]:
     """Recall related historical consensus from agentmemory."""
-    if os.environ.get("CCG_AGENTMEMORY_DISABLED", "").lower() == "true":
+    if os.environ.get("TAOLUN_AGENTMEMORY_DISABLED", "").lower() == "true":
         return {
             "enabled": False,
             "related_consensus": [],
             "expired_consensus": [],
             "potential_conflicts": [],
-            "error": "disabled by CCG_AGENTMEMORY_DISABLED",
+            "error": "disabled by TAOLUN_AGENTMEMORY_DISABLED",
         }
 
     projects = memory_projects_for_recall(base_dir, requested_scope)
@@ -663,9 +663,9 @@ def save_consensus_to_agentmemory(
         agentmemory_state["save_error"] = "system actor lacks write permission for consensus scope"
         return {"saved": False, "project": project, "artifact": artifact.to_dict(), "error": agentmemory_state["save_error"]}
 
-    if os.environ.get("CCG_AGENTMEMORY_DISABLED", "").lower() == "true":
+    if os.environ.get("TAOLUN_AGENTMEMORY_DISABLED", "").lower() == "true":
         agentmemory_state["consensus_artifact"] = artifact.to_dict()
-        agentmemory_state["save_error"] = "disabled by CCG_AGENTMEMORY_DISABLED"
+        agentmemory_state["save_error"] = "disabled by TAOLUN_AGENTMEMORY_DISABLED"
         return {"saved": False, "artifact": artifact.to_dict(), "error": agentmemory_state["save_error"]}
 
     try:
@@ -2252,19 +2252,19 @@ def run_discussion(
 
         # Check if all participants successfully replied
         expected_participant_count = len([p for p in participants if p != "claude"])
-        if len(replies) < expected_participant_count:
-            print(f"⚠️  Not all required participants completed successfully. Consensus blocked.")
+        failed_agents = [p for p in participants if p != "claude" and p not in [r.agent for r in replies]]
+        if failed_agents:
+            print(f"⚠️  Partial response: {len(replies)}/{expected_participant_count} agents responded. Failed: {failed_agents}")
+        if len(replies) == 0:
+            print(f"⚠️  No participants responded. Consensus blocked.")
             consensus = False
-            blocking = ["Not all required participants completed successfully (some failed or were skipped)."]
+            blocking = ["No participants responded."]
             last_consensus_detail = {
                 "consensus": False,
                 "blocking_issues": blocking,
-                "dissent": "Not all required participants completed successfully.",
+                "dissent": "No participants responded.",
                 "agreeing_agents": [],
-                "dissenting_agents": [
-                    p for p in participants
-                    if p != "claude" and p not in [reply.agent for reply in replies]
-                ],
+                "dissenting_agents": [p for p in participants if p != "claude"],
                 "evidence": [],
                 "action_items": [],
             }

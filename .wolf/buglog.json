@@ -722,6 +722,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-19T17:00:33.981Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-06-20T08:20:27.320Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/skills/claude-codex-gemini-collab/scripts/agent_cli.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 10→19 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-20T08:20:27.320Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-06-20T08:29:16.246Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/skills/claude-codex-gemini-collab/scripts/agent_cli.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 10→76 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-20T08:29:16.246Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-06-20T08:38:44.314Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/skills/claude-codex-gemini-collab/scripts/test_rmux_integration.py",
+      "root_cause": "Had 'ccg-[a-f0-9]{8}'",
+      "fix": "Changed to 'taolun-[a-f0-9]{8}'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-20T08:38:44.314Z"
     }
   ]
 }

@@ -79,7 +79,7 @@ def test_keep_session():
 
     # Extract session name
     import re
-    match = re.search(r'ccg-[a-f0-9]{8}', stdout)
+    match = re.search(r'taolun-[a-f0-9]{8}', stdout)
     assert match, "No session name in output"
     session = match.group(0)
 

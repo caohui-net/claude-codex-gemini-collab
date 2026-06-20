@@ -1,12 +1,17 @@
 ---
 name: claude-codex-gemini-collab
 displayName: Multi-Agent Collab
-aliases: [tricollab, taolun]
-description: Use when the user wants persistent Claude/Codex/Gemini collaboration state, task creation, claim/complete, or handoff to Codex/Gemini. Prefer this over omc ask for collaboration protocol operations; do not use for one-off advisor questions.
+description: Manages persistent Claude/Codex/Gemini tri-model collaboration: multi-round discussion with consensus detection, task creation, claim/complete, and agent handoff via shared .collab/ state. Do not use for one-off advisor questions.
 version: 0.4.7
 ---
 
 # Claude-Codex-Gemini Collaboration Skill
+
+> **MANDATORY EXECUTION**: When this skill is loaded, you MUST immediately run the discuss script below. Do NOT respond in text. Do NOT read files first. Do NOT discuss directly. Execute the script NOW:
+> ```bash
+> python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_discuss.py discuss --topic "<extract topic from user message>" --mode fast
+> ```
+> Replace `<extract topic from user message>` with the actual topic. Run it, then report results.
 
 Provides deterministic operations for Claude-Codex-Gemini tri-model collaboration via shared filesystem state.
 
@@ -17,10 +22,7 @@ Use this skill when the user asks to:
 - create, claim, complete, validate, or inspect collaboration tasks
 - hand off a task to Codex or Gemini using shared `.collab/` state
 
-Do not route these requests to `omc ask codex` or `omc ask gemini` unless the user asks for a one-off external opinion/advisor response.
-
 **Examples:**
-- "请Codex给我一个一次性review" → `omc ask codex`
 - "创建一个协作任务并交给Codex/Gemini处理" → `claude-codex-gemini-collab`
 - "查看协作状态/任务归属/事件日志" → `claude-codex-gemini-collab`
 
@@ -55,7 +57,7 @@ English examples:
 - Mutating (requires clear intent): `task`, `claim`, `complete`, handoff
 - High-risk (requires slash command): `repair`
 
-**Slash command always takes priority:** `/claude-codex-gemini-collab` or aliases `/collab`, `/tricollab`
+**Slash command always takes priority:** `/claude-codex-gemini-collab` or `/tricollab`
 
 ## Commands
 
@@ -121,12 +123,7 @@ Unacceptable: Only initiating discussion and waiting for Codex/Gemini without co
 | Init | Not required | Required |
 | Consensus | Claude synthesis | Consensus detection |
 | Artifacts | `.collab/artifacts/fast/` | `.collab/artifacts/` |
-| Use case | Quick consultation (ccg-style) | Formal discussion with history |
-
-**vs omc ask:**
-- `omc ask`: Single external consultation, one-shot advice
-- `discuss --mode=fast`: Replaces ccg, single-round parallel consultation
-- `discuss --mode=full`: Multi-round collaborative discussion with consensus detection
+| Use case | Quick consultation | Formal discussion with history |
 
 **Parallel Execution (v0.4.3+):**
 
@@ -177,10 +174,7 @@ GEMINI_MODEL=gemini-3-pro-preview
   - `protocol.md` - Protocol documentation
 
 **Dialogue artifacts (dynamic location):**
-- `.omc/artifacts/ask/` - Codex/Gemini response artifacts
-  - Location varies: project root when in project, `~/.omc/artifacts/ask/default/` otherwise
-  - Not part of collaboration protocol state
-  - Used by `/oh-my-claudecode:ask` skill
+- `.collab/artifacts/` - all discussion artifacts stored here
 
 **Important:** These are separate concerns. Collaboration state is fixed and protocol-defined. Dialogue artifacts are advisory skill outputs with dynamic storage.
 
@@ -329,7 +323,7 @@ python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_event.py hand
 - Updates state to `waiting`
 - Sets active owner to target agent
 
-Does NOT auto-invoke codex/gemini (user must do manually via /oh-my-claudecode:ask).
+Does NOT auto-invoke codex/gemini (user must trigger handoff manually).
 
 ### complete
 

@@ -11,7 +11,7 @@ from pathlib import Path
 
 # Import Daemon client
 sys.path.insert(0, str(Path(__file__).parent))
-from ccg_client import submit_task, get_task_status
+from taolun_client import submit_task, get_task_status
 from rmux_utils import check_rmux_available
 
 
@@ -54,9 +54,9 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
     """
     import shlex
 
-    session_name = f"ccg-{uuid.uuid4().hex[:8]}"
-    marker_file = f"/tmp/ccg-exit-{session_name}"
-    eof_marker = f"CCG_EOF_{uuid.uuid4().hex}"
+    session_name = f"taolun-{uuid.uuid4().hex[:8]}"
+    marker_file = f"/tmp/taolun-exit-{session_name}"
+    eof_marker = f"TAOLUN_EOF_{uuid.uuid4().hex}"
 
     try:
         # Build wrapper script that captures exit code and keeps session alive
@@ -145,15 +145,88 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
         return f"Error: {e}", 1
 
 
-def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
-    """Run Codex CLI for discussion analysis.
+def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
+    """Call Codex via API directly (bypasses CLI, no Cloudflare timeout).
 
-    Args:
-        prompt: Input prompt for codex
-        base_dir: Working directory
-        timeout_sec: Timeout in seconds
-        use_tmux: If True and rmux available, run in isolated tmux session
+    Reads config from ~/.codex/auth.json and ~/.codex/config.toml.
+    Controlled by env: TAOLUN_CODEX_BACKEND=api (enable) | cli (force CLI).
     """
+    import os
+    import urllib.request
+    import urllib.error
+    import tomllib
+
+    start = time.time()
+
+    # Load API key
+    auth_path = Path.home() / ".codex" / "auth.json"
+    try:
+        auth = json.loads(auth_path.read_text())
+        api_key = auth.get("OPENAI_API_KEY", "")
+    except Exception as e:
+        return AgentReply("codex", "", {"error": f"auth read failed: {e}"}, "", time.time() - start, 1)
+
+    # Load base_url and model from config.toml
+    config_path = Path.home() / ".codex" / "config.toml"
+    try:
+        config = tomllib.loads(config_path.read_text())
+        provider = config.get("model_provider", "fox")
+        model = config.get("model", "gpt-5.5")
+        base_url = config.get("model_providers", {}).get(provider, {}).get("base_url", "")
+    except Exception as e:
+        return AgentReply("codex", "", {"error": f"config read failed: {e}"}, "", time.time() - start, 1)
+
+    if not base_url or not api_key:
+        return AgentReply("codex", "", {"error": "missing base_url or api_key"}, "", time.time() - start, 1)
+
+    url = base_url.rstrip("/") + "/chat/completions"
+    body = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+    }).encode()
+
+    req = urllib.request.Request(url, data=body, headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    })
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            data = json.loads(resp.read().decode())
+            content = data["choices"][0]["message"]["content"]
+            elapsed = time.time() - start
+            parsed = {}
+            try:
+                parsed = json.loads(strip_markdown_json(content))
+            except json.JSONDecodeError:
+                parsed = {"raw": content}
+            return AgentReply("codex", content, parsed, "", elapsed, 0)
+    except urllib.error.HTTPError as e:
+        elapsed = time.time() - start
+        return AgentReply("codex", "", {"error": f"http {e.code}: {e.read(200).decode()}"}, "", elapsed, e.code)
+    except Exception as e:
+        elapsed = time.time() - start
+        return AgentReply("codex", "", {"error": str(e)}, "", elapsed, 1)
+
+
+def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
+    """Run Codex for discussion analysis.
+
+    Backend selection via TAOLUN_CODEX_BACKEND env var:
+      api  — direct API call (fast, no CLI overhead)
+      cli  — force CLI (default legacy behavior)
+      unset — api if available, fallback to cli
+    """
+    import os
+    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
+    if backend == "api":
+        return run_codex_api(prompt, timeout_sec=min(timeout_sec, 120))
+    if backend == "auto":
+        reply = run_codex_api(prompt, timeout_sec=30)
+        if reply.exit_code == 0:
+            return reply
+        # fallback to CLI below
+
     start = time.time()
 
     # Check if tmux should be used
@@ -479,15 +552,81 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
         )
 
 
-def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
-    """Run Gemini CLI in plan mode with JSON output.
+def run_gemini_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
+    """Call Gemini via API directly (bypasses CLI/Cloudflare timeout).
 
-    Args:
-        prompt: Input prompt for gemini
-        base_dir: Working directory
-        timeout_sec: Timeout in seconds
-        use_tmux: If True and rmux available, run in isolated tmux session
+    Reads config from ~/.gemini/.env.
+    Controlled by env: TAOLUN_GEMINI_BACKEND=api (enable) | cli (force CLI).
     """
+    import os
+    import urllib.request
+    import urllib.error
+
+    start = time.time()
+
+    # Load ~/.gemini/.env
+    env_path = Path.home() / ".gemini" / ".env"
+    cfg: dict = {}
+    try:
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if "=" in line and not line.startswith("#"):
+                k, _, v = line.partition("=")
+                cfg[k.strip()] = v.strip()
+    except Exception as e:
+        return AgentReply("gemini", "", {"error": f"env read failed: {e}"}, "", time.time() - start, 1)
+
+    base_url = cfg.get("GOOGLE_GEMINI_BASE_URL", "").rstrip("/")
+    api_key = cfg.get("GEMINI_API_KEY", "")
+    model = cfg.get("GEMINI_MODEL", "gemini-3-pro-preview")
+
+    if not base_url or not api_key:
+        return AgentReply("gemini", "", {"error": "missing GOOGLE_GEMINI_BASE_URL or GEMINI_API_KEY"}, "", time.time() - start, 1)
+
+    url = f"{base_url}/v1beta/models/{model}:generateContent"
+    body = json.dumps({"contents": [{"parts": [{"text": prompt}], "role": "user"}]}).encode()
+    req = urllib.request.Request(url, data=body, headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    })
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            data = json.loads(resp.read().decode())
+            content = data["candidates"][0]["content"]["parts"][0]["text"]
+            elapsed = time.time() - start
+            parsed = {}
+            try:
+                parsed = json.loads(strip_markdown_json(content))
+            except json.JSONDecodeError:
+                parsed = {"raw": content}
+            return AgentReply("gemini", content, parsed, "", elapsed, 0)
+    except urllib.error.HTTPError as e:
+        elapsed = time.time() - start
+        return AgentReply("gemini", "", {"error": f"http {e.code}: {e.read(200).decode()}"}, "", elapsed, e.code)
+    except Exception as e:
+        elapsed = time.time() - start
+        return AgentReply("gemini", "", {"error": str(e)}, "", elapsed, 1)
+
+
+def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
+    """Run Gemini for discussion analysis.
+
+    Backend selection via TAOLUN_GEMINI_BACKEND env var:
+      api  — direct API call
+      cli  — force CLI (default legacy behavior)
+      unset — api, fallback to cli on failure
+    """
+    import os
+    backend = os.environ.get("TAOLUN_GEMINI_BACKEND", "auto").lower()
+    if backend == "api":
+        return run_gemini_api(prompt, timeout_sec=min(timeout_sec, 120))
+    if backend in ("api", "auto"):
+        reply = run_gemini_api(prompt, timeout_sec=30)
+        if reply.exit_code == 0:
+            return reply
+        # fallback to CLI below
+
     start = time.time()
 
     # Check if tmux should be used
