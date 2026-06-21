@@ -14,6 +14,7 @@ from typing import Any, List, Dict, Optional
 
 from agentmemory_bridge import AgentMemoryBridge, dedupe as dedupe_memory_values
 from agent_cli import run_codex, run_gemini, AgentReply
+from agent_response_validator import validate_response
 from collab_event import append_event, read_events, read_state
 from collab_init import init_collaboration
 from collab_paths import resolve_existing_base_dir, add_base_dir_arg
@@ -1833,11 +1834,11 @@ def invoke_agent_parallel(
 ) -> AgentReply:
     """Invoke single agent (for parallel execution)."""
     if agent == "codex":
-        return run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
+        reply = run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
     elif agent == "gemini":
-        return run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
+        reply = run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
     else:
-        return AgentReply(
+        reply = AgentReply(
             agent=agent,
             raw_text="",
             parsed={"error": f"unknown_agent_{agent}"},
@@ -1845,6 +1846,12 @@ def invoke_agent_parallel(
             elapsed_sec=0,
             exit_code=1
         )
+
+    # 应用安全验证
+    if reply.parsed and not reply.parsed.get("error"):
+        reply.parsed = validate_response(reply.parsed, agent)
+
+    return reply
 
 
 def run_discussion(
