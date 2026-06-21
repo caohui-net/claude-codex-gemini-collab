@@ -1,6 +1,6 @@
 ---
-name: claude-codex-gemini-collab
-displayName: Multi-Agent Collab
+name: taolun
+displayName: Multi-Agent Collab (Taolun)
 description: Manages persistent Claude/Codex/Gemini tri-model collaboration: multi-round discussion with consensus detection, task creation, claim/complete, and agent handoff via shared .collab/ state. Do not use for one-off advisor questions.
 version: 0.4.7
 ---

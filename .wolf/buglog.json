@@ -770,6 +770,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-20T08:38:44.314Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-06-20T08:46:31.983Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/install_skill.py",
+      "root_cause": "Had \"scripts/ccg_client.py\"",
+      "fix": "Changed to \"scripts/taolun_client.py\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-20T08:46:31.983Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-06-21T03:24:30.984Z",
+      "error_message": "Significant refactor of ",
+      "file": ".omc/collaboration/protocol.md",
+      "root_cause": "23 lines replaced/restructured",
+      "fix": "Rewrote 36→6 lines (23 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-21T03:24:30.984Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-06-21T05:59:40.690Z",
+      "error_message": "Significant refactor of ",
+      "file": ".omc/session-context.json",
+      "root_cause": "31 lines replaced/restructured",
+      "fix": "Rewrote 40→27 lines (31 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-21T05:59:40.690Z"
     }
   ]
 }

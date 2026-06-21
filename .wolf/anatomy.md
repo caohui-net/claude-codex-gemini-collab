@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-20T08:38:44.302Z
-> Files: 578 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-21T05:59:40.676Z
+> Files: 582 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -18,7 +18,7 @@
 
 ## ../../.claude/skills/claude-codex-gemini-collab/
 
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3017 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3014 tok)
 
 ## ../../.claude/skills/claude-codex-gemini-collab/scripts/
 
@@ -37,7 +37,7 @@
 - `.gitignore` — Git ignore rules (~224 tok)
 - `.mcp.json` (~7 tok)
 - `agentmemory-integration-plan.md` — agentmemory整合方案 (~2629 tok)
-- `CHANGELOG.md` — Change log (~3244 tok)
+- `CHANGELOG.md` — Changelog (~3421 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
 - `findings.md` — TASK-20260607-1157 Findings (~608 tok)
@@ -46,7 +46,7 @@
 - `pyproject.toml` — Claude-Codex-Gemini Collaboration Framework (~185 tok)
 - `README.md` — Project documentation (~2788 tok)
 - `response.json` (~469 tok)
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3071 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3014 tok)
 - `skills-lock.json` (~561 tok)
 - `task_plan.md` — TASK-20260607-1157 Plan (~390 tok)
 
@@ -96,6 +96,7 @@
 
 ## .claude/rules/
 
+- `collaboration-paths.md` — Collaboration File Paths (~418 tok)
 - `openwolf.md` (~313 tok)
 
 ## .claude/skills/collab-check/
@@ -122,7 +123,7 @@
 - `daemon-audit.log` (~129685 tok)
 - `project-memory.json` (~3363 tok)
 - `project-state.json` (~154 tok)
-- `session-context.json` (~332 tok)
+- `session-context.json` (~267 tok)
 
 ## .omc/artifacts/ask/
 
@@ -221,7 +222,7 @@
 ## .omc/collaboration/
 
 - `PROJECT-STATUS.md` — claude-codex-gemini-collab 项目状态 (~483 tok)
-- `protocol.md` — Claude-Codex-Gemini Collaboration Protocol (~2840 tok)
+- `protocol.md` — Claude-Codex-Gemini Collaboration Protocol (~2984 tok)
 - `recovery-guide.md` — Discussion Recovery Guide (~1785 tok)
 - `recovery-semantics.md` — Discussion Task Recovery Semantics (~1689 tok)
 - `state-schema.md` — Discussion Task State Schema (~1108 tok)
@@ -680,11 +681,17 @@
 
 ## scripts/
 
-- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~7380 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29718 tok)
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~9339 tok)
+- `agent_response_validator.py` — validate_response (~376 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29787 tok)
 - `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
 - `collab_memory_bridge.mjs` — collab_memory_bridge.mjs (~529 tok)
 - `collab_memory_bridge.py` — Python wrapper for collab_memory_bridge.mjs — sync events.jsonl → agentmemory. (~226 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2055 tok)
-- `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~543 tok)
+- `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~553 tok)
+- `test_response_validator.py` — 测试响应验证器 (~252 tok)
+
+## tests/integration/
+
+- `test_validation_integration.py` — Integration tests for agent response validation in collab_discuss workflow. (~547 tok)

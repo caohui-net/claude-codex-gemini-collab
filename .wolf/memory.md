@@ -878,3 +878,19 @@
 | 11:26 | Created .claude/rules/collaboration-paths.md | — | ~446 |
 | 11:27 | Session end: 4 writes across 3 files (protocol.md, test_validation_integration.py, collaboration-paths.md) | 2 reads | ~4888 tok |
 | 11:28 | Edited CHANGELOG.md | expanded (+16 lines) | ~199 |
+| 11:29 | Session end: 5 writes across 4 files (protocol.md, test_validation_integration.py, collaboration-paths.md, CHANGELOG.md) | 3 reads | ~8346 tok |
+| 13:34 | Edited .omc/session-context.json | modified fix() | ~549 |
+| 13:34 | Session end: 6 writes across 5 files (protocol.md, test_validation_integration.py, collaboration-paths.md, CHANGELOG.md, session-context.json) | 4 reads | ~9227 tok |
+
+## Session: 2026-06-21 13:35
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:54 | Edited SKILL.md | 6→6 lines | ~86 |
+| 13:56 | Edited ../../.claude/skills/claude-codex-gemini-collab/SKILL.md | 6→6 lines | ~86 |
+| 13:57 | Session end: 2 writes across 1 files (SKILL.md) | 4 reads | ~6818 tok |
+| 13:42 | 诊断hook误触发：发现"使用taolun"误触发OMC ccg | cerebrum.md | 根因：技能名含"collab"关键词 | ~500 |
+| 13:50 | 修复技能名：taolun (移除collab关键词) | SKILL.md (2处) | 项目+安装目录 | ~200 |
+| 13:56 | 更新cerebrum.md记录解决方案 | cerebrum.md | 已解决，待验证 | ~150 |
+| 13:58 | Session end: Hook误触发修复完成，待重启测试 | 3 files | ~93K tokens |
+| 13:59 | Edited .omc/session-context.json | reduced (-13 lines) | ~267 |

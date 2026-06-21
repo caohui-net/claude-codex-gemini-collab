@@ -20,6 +20,15 @@
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
 
+[2026-06-21] **OMC hook关键词误触发全局技能（已解决）**
+- **错误:** 讨论三方协作项目时，OMC hook检测到旧项目名缩写，自动路由到全局技能而非本地`taolun`
+- **根因:** 技能注册名`claude-codex-gemini-collab`包含"collab"→Hook匹配→误路由到OMC ccg
+- **解决:** 
+  1. 技能改名为`taolun`（移除collab关键词）
+  2. 已更新：`./SKILL.md`和`~/.claude/skills/.../SKILL.md`
+  3. 现在"使用taolun"不会误触发OMC ccg
+- **验证:** 重启Claude Code后测试"使用taolun"应正确加载本地技能
+
 [2026-06-21] **CRITICAL: 不要修改 .omc/ 目录（已多次违反）**
 - **错误:** 多次修改 `.omc/collaboration/protocol.md` 等文件
 - **根因:** 误以为 .omc/ 是可写工作区，但此项目中 .omc/ 已弃用
