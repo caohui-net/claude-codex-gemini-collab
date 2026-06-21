@@ -20,6 +20,16 @@
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
 
+[2026-06-21] **git push权限失败：环境变量GH_TOKEN权限不足（已多次重复）**
+- **错误:** `git push`报错403 Permission denied，每次都重试失败
+- **根因:** 环境变量`GH_TOKEN`/`GITHUB_TOKEN`权限不足，但keyring中的token有完整权限(repo,workflow)
+- **解决方案:** 在push前执行`unset GH_TOKEN GITHUB_TOKEN`，让git使用keyring中的完整权限token
+- **强制规则:** 
+  1. 遇到git push权限错误时，先`unset GH_TOKEN GITHUB_TOKEN`
+  2. 不要反复重试相同的push命令
+  3. 每次遇到403错误立即应用此方案
+- **防止重复:** 已记录到buglog.json (bug-056)
+
 [2026-06-21] **OMC hook关键词误触发全局技能（已解决）**
 - **错误:** 讨论三方协作项目时，OMC hook检测到旧项目名缩写，自动路由到全局技能而非本地`taolun`
 - **根因:** 技能注册名`claude-codex-gemini-collab`包含"collab"→Hook匹配→误路由到OMC ccg

@@ -834,6 +834,71 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-21T06:03:12.269Z"
+    },
+    {
+      "id": "bug-053",
+      "timestamp": "2026-06-21T06:55:22.469Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/collab_skills.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 9→13 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-21T06:55:22.469Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-06-21T07:07:28.548Z",
+      "error_message": "Wrong reference: collab_skills should be generate_spec_driven_prd",
+      "file": "scripts/collab_discuss.py",
+      "root_cause": "Used \"collab_skills\" instead of \"generate_spec_driven_prd\"",
+      "fix": "Changed collab_skills → generate_spec_driven_prd",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-21T07:07:34.466Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-06-21T07:26:47.899Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/collab_status_display.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 21→28 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-21T07:26:47.899Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-06-21T07:55:00.633532+00:00",
+      "error_message": "git push失败: Permission denied (403)",
+      "file": "git配置",
+      "root_cause": "环境变量GH_TOKEN权限不足，但keyring中的token有完整权限(repo,workflow)",
+      "fix": "unset GH_TOKEN GITHUB_TOKEN后使用keyring token推送",
+      "tags": [
+        "git",
+        "authentication",
+        "环境变量冲突",
+        "重复错误"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-21T07:55:00.633567+00:00"
     }
   ]
 }
