@@ -30,6 +30,7 @@ from collab_state import (
 from collab_skills import load_skill_prompt, topic_is_vague
 from collab_skills_utils import generate_doubt_driven_prompt, generate_spec_driven_prd
 from collab_context_engineering import build_shared_context, inject_context_to_prompt
+from collab_incremental_implementation import generate_implementation_plan
 
 
 def make_response_id(task_id: str, round_num: int, agent: str) -> str:
@@ -2365,9 +2366,21 @@ def run_discussion(
             )
             if spec_prd:
                 prd_path = os.path.join(base_dir, f"PRD-{task_id}.md")
+
+                # P2: Incremental Implementation - 生成实施计划
+                impl_plan = generate_implementation_plan(
+                    action_items=last_consensus_detail.get('action_items', []),
+                    decision=last_consensus_detail.get('decision', '')
+                )
+
                 with open(prd_path, 'w', encoding='utf-8') as f:
                     f.write(spec_prd)
+                    if impl_plan:
+                        f.write(f"\n\n{impl_plan}")
+
                 print(f"📋 Spec-driven PRD saved: {prd_path}")
+                if impl_plan:
+                    print(f"📊 Implementation plan included")
 
             # Save consensus contract for execution phase
             save_consensus_contract(base_dir, task_id, task_state)
