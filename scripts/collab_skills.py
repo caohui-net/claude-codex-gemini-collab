@@ -46,3 +46,10 @@ def topic_is_vague(topic):
     # 只有模糊词+短→vague
     has_vague = any(word in topic for word in vague_words)
     return len(topic) < 30 or (has_vague and len(topic) < 50)
+
+
+# Re-export utils functions
+from collab_skills_utils import (
+    generate_doubt_driven_prompt,
+    generate_spec_driven_prd
+)

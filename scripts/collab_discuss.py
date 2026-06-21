@@ -2351,6 +2351,18 @@ def run_discussion(
             task_state = attach_quality_metrics(task_state)
             save_task_state(base_dir, task_id, task_state)
 
+            # Generate spec-driven PRD after consensus
+            spec_prd = collab_skills.generate_spec_driven_prd(
+                topic=task_state.get('topic', ''),
+                consensus_detail=last_consensus_detail,
+                artifacts=artifacts_refs
+            )
+            if spec_prd:
+                prd_path = os.path.join(base_dir, f"PRD-{task_id}.md")
+                with open(prd_path, 'w', encoding='utf-8') as f:
+                    f.write(spec_prd)
+                print(f"📋 Spec-driven PRD saved: {prd_path}")
+
             # Save consensus contract for execution phase
             save_consensus_contract(base_dir, task_id, task_state)
             save_result = save_consensus_to_agentmemory(base_dir, task_id, task_state, requested_scope=active_scope)
@@ -2385,6 +2397,16 @@ def run_discussion(
                 elif "agent" in entry:
                     print(f"    {entry['agent']}: {entry['elapsed_sec']:.1f}s (CLI: {entry['cli_elapsed_sec']:.1f}s)")
             return 0
+
+        # Generate doubt-driven prompt for next round
+        if last_consensus_detail:
+            doubt_prompt = collab_skills.generate_doubt_driven_prompt(
+                topic=task_state.get('topic', ''),
+                dissent=last_consensus_detail.get('dissent', ''),
+                blocking_issues=last_consensus_detail.get('blocking_issues', [])
+            )
+            if doubt_prompt:
+                print(f"\n💭 Doubt-driven guidance:\n{doubt_prompt}\n")
 
         if blocking:
             print(f"⚠️  Blocking issues: {', '.join(blocking)}")
