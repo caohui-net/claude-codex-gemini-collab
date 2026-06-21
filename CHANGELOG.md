@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Agent Response Validation** - Schema-based validation for multi-agent responses
+  - Created `AgentResponseValidator` with jsonschema enforcement
+  - Required fields: agent, consensus, response, blocking_issues
+  - Integrated validation into `collab_discuss.parse_agent_response()`
+  - Added integration tests for validation workflow
+  - Validation failures logged and rejected before processing
+
+### Fixed
+
+- **Cerebrum Protection Rule** - Prevent repeated .omc/ directory modifications
+  - Added CRITICAL rule in Do-Not-Repeat: never modify `.omc/` (deprecated)
+  - Active collaboration directory is `.collab/`
+  - Created `.claude/rules/collaboration-paths.md` with verification commands
+
 ## [0.4.4] - 2026-06-07
 
 ### Fixed
