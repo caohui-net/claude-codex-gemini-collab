@@ -28,7 +28,7 @@ from collab_state import (
     complete_round, get_pending_participants, get_task_state_file
 )
 from collab_skills import load_skill_prompt, topic_is_vague
-from collab_skills_utils import inject_doubt_driven_hint, generate_prd_from_consensus
+from collab_skills_utils import generate_doubt_driven_prompt, generate_spec_driven_prd
 
 
 def make_response_id(task_id: str, round_num: int, agent: str) -> str:
@@ -2352,7 +2352,7 @@ def run_discussion(
             save_task_state(base_dir, task_id, task_state)
 
             # Generate spec-driven PRD after consensus
-            spec_prd = collab_skills.generate_spec_driven_prd(
+            spec_prd = generate_spec_driven_prd(
                 topic=task_state.get('topic', ''),
                 consensus_detail=last_consensus_detail,
                 artifacts=artifacts_refs
@@ -2400,7 +2400,7 @@ def run_discussion(
 
         # Generate doubt-driven prompt for next round
         if last_consensus_detail:
-            doubt_prompt = collab_skills.generate_doubt_driven_prompt(
+            doubt_prompt = generate_doubt_driven_prompt(
                 topic=task_state.get('topic', ''),
                 dissent=last_consensus_detail.get('dissent', ''),
                 blocking_issues=last_consensus_detail.get('blocking_issues', [])
