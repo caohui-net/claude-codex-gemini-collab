@@ -20,6 +20,17 @@
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
 
+[2026-06-21] **CRITICAL: 不要修改 .omc/ 目录（已多次违反）**
+- **错误:** 多次修改 `.omc/collaboration/protocol.md` 等文件
+- **根因:** 误以为 .omc/ 是可写工作区，但此项目中 .omc/ 已弃用
+- **实际状态:** 协作文件已迁移到 `.collab/`，`.omc/` 仅保留历史参考
+- **强制规则:** 
+  1. **永远不要修改 `.omc/` 下任何文件**（除非用户明确要求）
+  2. 协作相关修改只能在 `.collab/` 目录
+  3. 修改文件前必须先检查：`ls -la .collab/ .omc/` 确认当前使用的目录
+  4. 遇到路径选择时，优先使用 `.collab/` 而非 `.omc/`
+- **检查方法:** 任何涉及协作文件的任务，先运行 `find . -name "protocol.md" -o -name "state.json" | head -5` 确认正确路径
+
 [2026-06-12] **collab_discuss.py 字段名不一致导致验证失败**
 - **错误:** `collab_event.py:120` 使用 `event.get("id")` 但实际字段是 `event_id`
 - **症状:** 讨论启动立即失败，报错 "events.jsonl line 1 has invalid event id: None"
