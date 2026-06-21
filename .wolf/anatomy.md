@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-21T05:59:40.676Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-21T06:03:12.235Z
 > Files: 582 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -123,7 +123,7 @@
 - `daemon-audit.log` (~129685 tok)
 - `project-memory.json` (~3363 tok)
 - `project-state.json` (~154 tok)
-- `session-context.json` (~267 tok)
+- `session-context.json` (~304 tok)
 
 ## .omc/artifacts/ask/
 

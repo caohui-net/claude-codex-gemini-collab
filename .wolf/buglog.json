@@ -809,15 +809,31 @@
       "error_message": "Significant refactor of ",
       "file": ".omc/session-context.json",
       "root_cause": "31 lines replaced/restructured",
-      "fix": "Rewrote 40→27 lines (31 removed)",
+      "fix": "Rewrote 40→27 lines (31 removed) | Also: \"cerebrum.md已记录：[2026-06-21] OMC hook关键词误触发（已解决）\"; \"next_focus\": \"重启Claude Code，测试'使用taolun'是否正确加载，验证",
       "tags": [
         "auto-detected",
         "refactor",
         "json"
       ],
       "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-21T06:03:11.293Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-06-21T06:03:12.269Z",
+      "error_message": "Incorrect value in code",
+      "file": ".omc/session-context.json",
+      "root_cause": "Had \"2026-06-21T13:58:00Z\"",
+      "fix": "Changed to \"2026-06-21T14:02:56Z\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-06-21T05:59:40.690Z"
+      "last_seen": "2026-06-21T06:03:12.269Z"
     }
   ]
 }
