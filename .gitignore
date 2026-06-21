@@ -63,3 +63,7 @@ response.json
 # OpenWolf runtime session state
 .wolf/hooks/_session.json
 .collab/artifacts/
+
+# Code analysis indexes
+.codegraph/
+.understand-anything/
