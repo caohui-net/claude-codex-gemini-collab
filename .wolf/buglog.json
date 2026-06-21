@@ -899,6 +899,25 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-21T07:55:00.633567+00:00"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-06-21T08:09:39.239461Z",
+      "error_message": "RMux显示disabled: tmux wrapper指向已删除的rmux路径 + daemon协议版本不匹配",
+      "file": "~/.local/bin/tmux, rmux daemon",
+      "root_cause": "1) tmux wrapper指向已删除的~/.local/bin/rmux (0.3.1), 2) 旧daemon用协议1, 新客户端0.6.1用协议2",
+      "fix": "1) 更新wrapper指向/usr/bin/rmux, 2) rmux kill-server重启daemon",
+      "tags": [
+        "rmux",
+        "wrapper",
+        "protocol",
+        "daemon"
+      ],
+      "related_bugs": [
+        "bug-055"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-06-21T08:09:39.239499Z"
     }
   ]
 }

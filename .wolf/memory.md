@@ -974,3 +974,13 @@
 | 15:46 | Session end: 26 writes across 9 files (collab_discuss.py, test_agent_skills_e2e.py, collab_skills_utils.py, test_injection_points.py, collab_context_engineering.py) | 8 reads | ~43239 tok |
 | 15:46 | Session end: 26 writes across 9 files (collab_discuss.py, test_agent_skills_e2e.py, collab_skills_utils.py, test_injection_points.py, collab_context_engineering.py) | 8 reads | ~43239 tok |
 | 15:47 | Session end: 26 writes across 9 files (collab_discuss.py, test_agent_skills_e2e.py, collab_skills_utils.py, test_injection_points.py, collab_context_engineering.py) | 8 reads | ~43239 tok |
+| 15:51 | Session end: 26 writes across 9 files (collab_discuss.py, test_agent_skills_e2e.py, collab_skills_utils.py, test_injection_points.py, collab_context_engineering.py) | 8 reads | ~43239 tok |
+| 15:52 | Session end: 26 writes across 9 files (collab_discuss.py, test_agent_skills_e2e.py, collab_skills_utils.py, test_injection_points.py, collab_context_engineering.py) | 8 reads | ~43239 tok |
+| 15:56 | Session end: 26 writes across 9 files (collab_discuss.py, test_agent_skills_e2e.py, collab_skills_utils.py, test_injection_points.py, collab_context_engineering.py) | 8 reads | ~43239 tok |
+
+## Session: 2026-06-21 16:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 16:03 | 版本号更新 | pyproject.toml | 0.4.7→0.5.0 (agent-skills集成) | ~250 |
+| 16:09 | rmux disabled修复 | ~/.local/bin/tmux, rmux daemon | wrapper路径+协议版本修复 | ~350 |
