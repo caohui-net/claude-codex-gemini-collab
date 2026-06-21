@@ -29,6 +29,7 @@ from collab_state import (
 )
 from collab_skills import load_skill_prompt, topic_is_vague
 from collab_skills_utils import generate_doubt_driven_prompt, generate_spec_driven_prd
+from collab_context_engineering import build_shared_context, inject_context_to_prompt
 
 
 def make_response_id(task_id: str, round_num: int, agent: str) -> str:
@@ -2192,6 +2193,11 @@ def run_discussion(
                         related_consensus=task_state.get("agentmemory", {}).get("related_consensus", []),
                         potential_conflicts=task_state.get("agentmemory", {}).get("potential_conflicts", []),
                     )
+
+                    # P1: Context Engineering - 注入前序agent关键发现
+                    if round_num > 1 and replies:
+                        shared_ctx = build_shared_context(round_num, [r.parsed for r in replies if r.parsed])
+                        prompt = inject_context_to_prompt(prompt, shared_ctx)
 
                     agent_start = time.time()
                     future = executor.submit(
