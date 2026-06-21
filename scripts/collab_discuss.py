@@ -27,6 +27,8 @@ from collab_state import (
     start_round, start_participant, complete_participant, fail_participant,
     complete_round, get_pending_participants, get_task_state_file
 )
+from collab_skills import load_skill_prompt, topic_is_vague
+from collab_skills_utils import inject_doubt_driven_hint, generate_prd_from_consensus
 
 
 def make_response_id(task_id: str, round_num: int, agent: str) -> str:
@@ -1871,6 +1873,15 @@ def run_discussion(
     mode: 'full' (default) - multi-round persistent, requires init
           'fast' - single-round stateless, no init required (ccg-style)
     """
+    # Pre-discuss: interview-me澄清模糊topic
+    if not resume and topic_is_vague(topic):
+        interview_prompt = load_skill_prompt("interview-me")
+        if interview_prompt:
+            print("🔍 [interview-me] Topic需要澄清...")
+            # 简化实现：提示用户topic可能模糊，建议明确化
+            print(f"   💡 Tip: 当前topic较模糊，建议包含更多技术细节")
+            print(f"   📝 工作流: {interview_prompt[:100]}...")
+
     discussion_start = time.time()
     collab_dir = base_dir / ".collab"
 

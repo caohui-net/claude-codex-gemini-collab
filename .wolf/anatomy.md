@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-21T06:03:12.235Z
-> Files: 582 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-06-21T06:55:57.487Z
+> Files: 590 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -113,6 +113,14 @@
 
 ## .collab/
 
+
+## .collab/artifacts/
+
+- `agent-skills-analysis.md` — Agent-Skills 相关性分析 (~652 tok)
+- `agent-skills-integration-final-plan.md` — Agent-Skills P0技能整合最终方案 (~1754 tok)
+- `agent-skills-integration-plan-v2.md` — Agent-Skills P0整合方案 v2.0 - Prompt注入模式 (~1764 tok)
+- `agent-skills-integration-review.md` — Agent-Skills整合方案审查报告 (~718 tok)
+- `taolun-compatibility-contract.md` — Taolun兼容性合同 v1.0 (~518 tok)
 
 ## .github/workflows/
 
@@ -683,14 +691,20 @@
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~9339 tok)
 - `agent_response_validator.py` — validate_response (~376 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29787 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~29939 tok)
 - `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
 - `collab_memory_bridge.mjs` — collab_memory_bridge.mjs (~529 tok)
 - `collab_memory_bridge.py` — Python wrapper for collab_memory_bridge.mjs — sync events.jsonl → agentmemory. (~226 tok)
+- `collab_skills_utils.py` — Agent-skills集成工具函数 - 最小化版本 (~234 tok)
+- `collab_skills.py` — Agent-skills技能加载器 - Prompt注入模式 (~404 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~829 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2055 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~553 tok)
 - `test_response_validator.py` — 测试响应验证器 (~252 tok)
+
+## tests/
+
+- `test_agent_skills_integration.py` — Agent-skills P0集成测试 (~619 tok)
 
 ## tests/integration/
 
