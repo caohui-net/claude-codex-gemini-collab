@@ -1953,6 +1953,11 @@ def run_discussion(
             task_state.setdefault("agentmemory", {})["requested_scope"] = requested_scope
         print(f"🛠️  [Skill: Collab] Starting discussion for {task_id}")
 
+        # Ensure events.jsonl exists before appending
+        events_file = Path(base_dir) / ".collab" / "events.jsonl"
+        if not events_file.exists():
+            events_file.touch()
+
         # Append discussion_started event
         append_event(
             base_dir,

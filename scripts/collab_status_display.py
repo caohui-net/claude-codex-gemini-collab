@@ -20,12 +20,26 @@ def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = 
 
     print(f"\n{BOLD}{CYAN}━━━ Runtime Status ━━━{RESET}")
 
-    # TMUX info - show rmux availability/usage status
+    # TMUX info - detect rmux version dynamically
     if use_tmux is not None:
-        if use_tmux and tmux_version:
-            tmux_status = f"✓ {tmux_version}"
-        elif use_tmux:
-            tmux_status = "✓ enabled"
+        if use_tmux:
+            # Try to get actual rmux version (prefer system install)
+            rmux_paths = ["/usr/bin/rmux", "/usr/local/bin/rmux",
+                         os.path.expanduser("~/.local/bin/rmux"),
+                         os.path.expanduser("~/.cargo/bin/rmux"),
+                         "rmux"]
+            version_detected = False
+            for rmux_cmd in rmux_paths:
+                try:
+                    result = subprocess.run([rmux_cmd, "-V"], capture_output=True, text=True, timeout=1)
+                    if result.returncode == 0 and result.stdout.strip():
+                        tmux_status = f"✓ {result.stdout.strip()}"
+                        version_detected = True
+                        break
+                except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
+                    continue
+            if not version_detected:
+                tmux_status = f"✓ {tmux_version}" if tmux_version else "✓ enabled"
         else:
             tmux_status = "✗ disabled"
     else:
