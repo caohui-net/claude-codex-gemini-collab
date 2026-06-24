@@ -2105,14 +2105,22 @@ def run_discussion(
                     task_state = start_participant(task_state, round_num, agent)
                     save_task_state(base_dir, task_id, task_state)
 
+                    # Codex (API) and Gemini (plan mode) cannot read files themselves.
+                    # Inline the context file content instead of passing the path.
+                    agent_topic = topic
+                    agent_context_file = context_file
+                    if context_file and Path(context_file).exists():
+                        agent_context_file = None
+                        agent_topic = Path(context_file).read_text()
+
                     prompt = build_discussion_prompt(
-                        topic,
+                        agent_topic,
                         task_id,
                         agent,
                         round_num,
                         history,
                         artifacts_refs,
-                        context_file,
+                        agent_context_file,
                         previous_responses=protocol_context["previous_responses"],
                         open_questions=protocol_context["open_questions"],
                         targeted_challenges=protocol_context["targeted_challenges"],
