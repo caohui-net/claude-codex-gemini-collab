@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-25
+
+### Fixed
+
+- **Codex/Gemini 文档读取失败** - file-ref 模式下将 context_file 内容内联到 prompt
+  - Codex API backend 无 file-reading tools，收到文件路径无法读取
+  - Gemini CLI `--approval-mode plan` 等待交互审批超时（exit 124）
+  - 修复：`run_discussion` 中读取 context_file 内容并内联，两个 agent 无需自行读取文件
+
 ### Added
 
 - **Agent Response Validation** - Schema-based validation for multi-agent responses
