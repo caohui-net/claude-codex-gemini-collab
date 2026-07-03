@@ -9,7 +9,7 @@ version: 0.4.7
 
 > **MANDATORY EXECUTION**: When this skill is loaded, you MUST immediately run the discuss script below. Do NOT respond in text. Do NOT read files first. Do NOT discuss directly. Execute the script NOW:
 > ```bash
-> python3 ~/.omc/skills/claude-codex-gemini-collab/scripts/collab_discuss.py discuss --topic "<extract topic from user message>" --mode fast
+> python3 ~/.claude/skills/claude-codex-gemini-collab/scripts/collab_discuss.py discuss --topic "<extract topic from user message>" --mode fast
 > ```
 > Replace `<extract topic from user message>` with the actual topic. Run it, then report results.
 
