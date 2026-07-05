@@ -218,7 +218,7 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
       unset — api if available, fallback to cli
     """
     import os
-    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
+    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "cli").lower()
     if backend == "api":
         return run_codex_api(prompt, timeout_sec=min(timeout_sec, 120))
     if backend == "auto":
@@ -618,7 +618,7 @@ def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bo
       unset — api, fallback to cli on failure
     """
     import os
-    backend = os.environ.get("TAOLUN_GEMINI_BACKEND", "auto").lower()
+    backend = os.environ.get("TAOLUN_GEMINI_BACKEND", "cli").lower()
     if backend == "api":
         return run_gemini_api(prompt, timeout_sec=min(timeout_sec, 120))
     if backend in ("api", "auto"):
