@@ -1207,3 +1207,11 @@
 | 15:43 | Edited .gitignore | expanded (+15 lines) | ~108 |
 | 15:44 | Session end: 1 writes across 1 files (.gitignore) | 8 reads | ~6804 tok |
 | 15:46 | Edited .gitignore | 5→8 lines | ~43 |
+| 15:49 | Session end: 2 writes across 1 files (.gitignore) | 8 reads | ~6850 tok |
+
+## Session: 2026-07-06 17:11
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:13 | Created docs/agent-communication-mechanism.md | — | ~2702 |
+| 17:14 | 研究完成：三Agent CLI通讯机制 | docs/agent-communication-mechanism.md | 507行完整文档，涵盖Codex/Gemini/Claude CLI调用方式、执行后端、响应解析 | ~6500 tok |
