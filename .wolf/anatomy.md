@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-06-21T07:40:45.885Z
-> Files: 596 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-06T07:46:14.151Z
+> Files: 642 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -32,12 +32,121 @@
 - `loop_detector.py` — from: detect_doom_loop (~1695 tok)
 - `test_rmux_integration.py` — Test rmux integration in agent_cli. (~1278 tok)
 
+## ../../.claude/skills/taolun/
+
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3040 tok)
+
+## ../../.claude/skills/taolun/scripts/
+
+- `taolun_daemon.py` — CCG Collaboration Daemon - MVP implementation. (~4046 tok)
+
+## ../graduation-leave-system/
+
+- `CLAUDE.md` — OpenWolf (~669 tok)
+- `README.md` — Project documentation (~541 tok)
+
+## ../graduation-leave-system/.omc/snapshots/
+
+- `snapshot-2026-06-23-backend-config-fix.md` — 状态快照 - 2026-06-23 Backend配置路径修复 (~371 tok)
+
+## ../graduation-leave-system/.wolf/
+
+- `cerebrum.md` — Cerebrum (~502 tok)
+
+## ../graduation-leave-system/backend/
+
+- `export_missing.py` — 导出缺失性别/专业的学生记录 (~222 tok)
+- `import_users.py` — import_counselors, import_students (~743 tok)
+
+## ../graduation-leave-system/backend/apps/applications/
+
+- `models.py` — Model: Application, 15 fields (~908 tok)
+- `serializers.py` — ApplicationListSerializer: get_has_attachments, get_attachment_count, get_approvals, get_has_attachm (~1420 tok)
+- `services.py` — 审批流程路由服务 (~219 tok)
+- `views.py` — applications_view, list_applications, create_application (~4419 tok)
+
+## ../graduation-leave-system/backend/apps/applications/tests/
+
+- `test_stay_school.py` — 留校审批功能测试 (~300 tok)
+
+## ../graduation-leave-system/backend/apps/users/management/commands/
+
+- `import_users.py` — Command: handle, import_counselors, import_students (~772 tok)
+
+## ../graduation-leave-system/backend/backend/apps/applications/
+
+- `services.py` — 审批流程路由服务 (~224 tok)
+
+## ../graduation-leave-system/backend/backend/apps/applications/tests/
+
+- `test_stay_school.py` — StaySchoolApplicationTestCase: setUp, test_stay_school_initial_status, test_leave_school_initial_sta (~715 tok)
+
+## ../graduation-leave-system/backend/backend/docs/
+
+- `production-deployment-checklist.md` — 生产环境部署执行清单 (~853 tok)
+- `staging-test-checklist.md` — Staging环境测试清单 (~454 tok)
+
+## ../graduation-leave-system/backend/backend/scripts/
+
+- `deploy-prod.sh` — 生产环境灰度部署脚本 (~482 tok)
+- `deploy-staging.sh` — Staging环境部署脚本 (~335 tok)
+- `monitor-prod.sh` — 生产环境监控脚本 (~416 tok)
+- `rollback-prod.sh` — 生产环境回滚脚本 (~302 tok)
+
+## ../graduation-leave-system/backend/config/
+
+- `base.py` (~79 tok)
+
+## ../graduation-leave-system/backend/config/backend/config/
+
+- `base.py` (~79 tok)
+- `dev.py` (~152 tok)
+- `prod.py` (~188 tok)
+- `staging.py` (~158 tok)
+
+## ../graduation-leave-system/backend/config/settings/
+
+- `base.py` — Declares DEFAULT_AUTO_FIELD (~1707 tok)
+- `staging.py` — Staging settings - mirrors production but allows testing. (~143 tok)
+
+## ../graduation-leave-system/backend/docs/
+
+- `留校请假审批部署完成报告.md` — 留校/请假审批功能部署完成报告 (~768 tok)
+- `三环境同步机制详解.md` — 三环境同步机制详解 (~1146 tok)
+- `INDEX.md` — 文档索引 (~368 tok)
+
+## ../graduation-leave-system/backend/frontend/src/views/
+
+- `ApplicationTypeSelect.vue` — Vue: ApplicationTypeSelect (~393 tok)
+
+## ../graduation-leave-system/backend/scripts/
+
+- `check-file-structure.sh` — 环境文件路径检测脚本 (~257 tok)
+- `rollback_migration_0008.sql` — Rollback script for migration 0008: application_type and stay_* fields (~211 tok)
+
+## ../graduation-leave-system/docs/
+
+- `部署检查清单.md` — 部署前检查清单 (~495 tok)
+- `留校请假审批部署计划.md` — 留校/请假审批功能部署计划 (~941 tok)
+- `留校请假审批实施方案.md` — 留校/请假审批功能实施方案 (~2488 tok)
+- `数据处理流程.md` — 数据处理流程 (~196 tok)
+- `数据导入记录.md` — 数据导入记录 (~186 tok)
+- `数据库字段映射.md` — 数据库字段映射关系 (~489 tok)
+- `数据速查.md` — 数据速查 (~345 tok)
+- `CSV字段映射.md` — CSV字段映射 (~157 tok)
+- `INDEX.md` — 文档索引 (~1451 tok)
+
+## ../graduation-leave-system/frontend/src/views/
+
+- `ApplicationForm.vue` — Vue: ApplicationForm (~1044 tok)
+- `ApplicationTypeSelect.vue` — Vue: ApplicationTypeSelect (~449 tok)
+
 ## ./
 
-- `.gitignore` — Git ignore rules (~224 tok)
+- `.gitignore` — Git ignore rules (~330 tok)
 - `.mcp.json` (~7 tok)
 - `agentmemory-integration-plan.md` — agentmemory整合方案 (~2629 tok)
-- `CHANGELOG.md` — Changelog (~3421 tok)
+- `CHANGELOG.md` — Changelog (~3491 tok)
 - `CLAUDE.md` — OpenWolf (~57 tok)
 - `discussion_ux_proposal.md` — 三方直接讨论交互 UX 设计方案 (~960 tok)
 - `findings.md` — TASK-20260607-1157 Findings (~608 tok)
@@ -680,7 +789,7 @@
 ## ccg_collab/scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~6588 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28813 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~28913 tok)
 
 ## docs/
 

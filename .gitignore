@@ -64,6 +64,26 @@ response.json
 .wolf/hooks/_session.json
 .collab/artifacts/
 
+# Collaboration runtime files
+.collab/daemon-audit.log
+.collab/memory_bridge_cursor
+.collab/state/
+.collab/events.jsonl
+
+# Other agent configs
+.gemini/
+.kiro/
+.orca/
+.qoder/
+.cursorrules
+.windsurfrules
+.opencode.json
+
 # Code analysis indexes
 .codegraph/
 .understand-anything/
+# Added by code-review-graph
+.code-review-graph/
+
+# State database binaries
+data/state_store.db/*.bin

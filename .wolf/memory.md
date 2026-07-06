@@ -984,3 +984,226 @@
 |------|--------|---------|---------|--------|
 | 16:03 | 版本号更新 | pyproject.toml | 0.4.7→0.5.0 (agent-skills集成) | ~250 |
 | 16:09 | rmux disabled修复 | ~/.local/bin/tmux, rmux daemon | wrapper路径+协议版本修复 | ~350 |
+
+## Session: 2026-06-21 23:07
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 23:15 | Edited ../../.claude/skills/taolun/scripts/taolun_daemon.py | modified validate_path() | ~188 |
+| 23:16 | Session end: 1 writes across 1 files (taolun_daemon.py) | 3 reads | ~30729 tok |
+| 12:20 | Session end: 1 writes across 1 files (taolun_daemon.py) | 4 reads | ~33517 tok |
+| 14:40 | Session end: 1 writes across 1 files (taolun_daemon.py) | 5 reads | ~33517 tok |
+| 14:44 | Session end: 1 writes across 1 files (taolun_daemon.py) | 7 reads | ~33517 tok |
+| 14:45 | Session end: 1 writes across 1 files (taolun_daemon.py) | 8 reads | ~33517 tok |
+| 14:47 | Session end: 1 writes across 1 files (taolun_daemon.py) | 8 reads | ~33517 tok |
+| 14:49 | Session end: 1 writes across 1 files (taolun_daemon.py) | 9 reads | ~33517 tok |
+| 14:51 | Session end: 1 writes across 1 files (taolun_daemon.py) | 9 reads | ~33517 tok |
+| 14:51 | Session end: 1 writes across 1 files (taolun_daemon.py) | 9 reads | ~33517 tok |
+| 14:56 | Session end: 1 writes across 1 files (taolun_daemon.py) | 9 reads | ~33517 tok |
+| 15:01 | Session end: 1 writes across 1 files (taolun_daemon.py) | 9 reads | ~33517 tok |
+| 15:01 | Created ../graduation-leave-system/docs/数据导入记录.md | — | ~73 |
+| 15:01 | Edited ../graduation-leave-system/docs/数据导入记录.md | expanded (+22 lines) | ~153 |
+| 15:02 | Created ../graduation-leave-system/docs/CSV字段映射.md | — | ~168 |
+| 15:02 | Created ../graduation-leave-system/docs/数据处理流程.md | — | ~209 |
+| 15:02 | Session end: 5 writes across 4 files (taolun_daemon.py, 数据导入记录.md, CSV字段映射.md, 数据处理流程.md) | 9 reads | ~34163 tok |
+| 15:30 | Session end: 5 writes across 4 files (taolun_daemon.py, 数据导入记录.md, CSV字段映射.md, 数据处理流程.md) | 14 reads | ~34163 tok |
+| 15:32 | Created ../graduation-leave-system/docs/数据速查.md | — | ~182 |
+| 15:32 | Edited ../graduation-leave-system/docs/数据速查.md | expanded (+40 lines) | ~194 |
+| 15:32 | Session end: 7 writes across 5 files (taolun_daemon.py, 数据导入记录.md, CSV字段映射.md, 数据处理流程.md, 数据速查.md) | 14 reads | ~34566 tok |
+| 15:33 | Edited ../graduation-leave-system/CLAUDE.md | expanded (+6 lines) | ~82 |
+| 15:33 | Session end: 8 writes across 6 files (taolun_daemon.py, 数据导入记录.md, CSV字段映射.md, 数据处理流程.md, 数据速查.md) | 15 reads | ~34711 tok |
+| 15:40 | Created ../graduation-leave-system/docs/数据库字段映射.md | — | ~522 |
+| 15:40 | Session end: 9 writes across 7 files (taolun_daemon.py, 数据导入记录.md, CSV字段映射.md, 数据处理流程.md, 数据速查.md) | 15 reads | ~35270 tok |
+| 15:43 | Session end: 9 writes across 7 files (taolun_daemon.py, 数据导入记录.md, CSV字段映射.md, 数据处理流程.md, 数据速查.md) | 15 reads | ~35270 tok |
+
+## Session: 2026-06-22 16:14
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 16:18 | Created ../graduation-leave-system/docs/留校请假审批实施方案.md | — | ~2058 |
+| 16:18 | Session end: 1 writes across 1 files (留校请假审批实施方案.md) | 3 reads | ~2205 tok |
+| 16:42 | Session end: 1 writes across 1 files (留校请假审批实施方案.md) | 4 reads | ~2205 tok |
+| 16:44 | Edited ../graduation-leave-system/docs/留校请假审批实施方案.md | modified create() | ~732 |
+| 16:44 | Session end: 2 writes across 1 files (留校请假审批实施方案.md) | 5 reads | ~2989 tok |
+| 16:46 | Created ../graduation-leave-system/docs/留校请假审批部署计划.md | — | ~1004 |
+| 16:47 | Created ../graduation-leave-system/backend/config/settings/staging.py | — | ~143 |
+| 16:47 | Edited ../graduation-leave-system/backend/config/settings/base.py | expanded (+6 lines) | ~102 |
+| 16:50 | Edited ../graduation-leave-system/backend/apps/applications/models.py | modified DormCheckoutStatus() | ~229 |
+| 16:50 | Edited ../graduation-leave-system/backend/apps/applications/models.py | modified Application() | ~397 |
+| 16:52 | Created ../graduation-leave-system/backend/backend/apps/applications/services.py | — | ~224 |
+| 16:53 | Edited ../graduation-leave-system/backend/apps/applications/views.py | modified create_application() | ~383 |
+| 16:54 | Edited ../graduation-leave-system/backend/apps/applications/serializers.py | 7→8 lines | ~164 |
+| 16:54 | Created ../graduation-leave-system/backend/apps/applications/tests/test_stay_school.py | — | ~300 |
+| 16:54 | Created ../graduation-leave-system/frontend/src/views/ApplicationTypeSelect.vue | — | ~449 |
+| 16:55 | Session end: 12 writes across 10 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~6488 tok |
+| 16:56 | Created ../graduation-leave-system/frontend/src/views/ApplicationForm.vue | — | ~1044 |
+| 16:57 | Created ../graduation-leave-system/docs/部署检查清单.md | — | ~528 |
+| 16:57 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~8173 tok |
+| 16:58 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~8173 tok |
+| 17:00 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~8173 tok |
+| 17:03 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~8173 tok |
+| 17:04 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~8173 tok |
+| 17:06 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~8173 tok |
+| 17:07 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 12 reads | ~8173 tok |
+| 17:09 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 13 reads | ~8173 tok |
+| 17:09 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 13 reads | ~8173 tok |
+| 17:15 | Session end: 14 writes across 12 files (留校请假审批实施方案.md, 留校请假审批部署计划.md, staging.py, base.py, models.py) | 14 reads | ~8173 tok |
+| 17:17 | Edited ../graduation-leave-system/backend/apps/applications/views.py | added 2 import(s) | ~315 |
+| 17:18 | Edited ../graduation-leave-system/backend/apps/applications/views.py | modified create_application() | ~28 |
+| 17:18 | Created ../graduation-leave-system/backend/apps/applications/services.py | — | ~219 |
+| 17:18 | Edited ../graduation-leave-system/backend/apps/applications/views.py | 9→13 lines | ~216 |
+
+## Session: 2026-06-22 17:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:19 | Edited ../graduation-leave-system/backend/apps/applications/views.py | 13→17 lines | ~255 |
+| 17:19 | Edited ../graduation-leave-system/backend/apps/applications/serializers.py | modified validate() | ~416 |
+| 17:23 | Session end: 2 writes across 2 files (views.py, serializers.py) | 2 reads | ~671 tok |
+| 17:27 | Created ../graduation-leave-system/backend/config/backend/config/base.py | — | ~79 |
+| 17:27 | Created ../graduation-leave-system/backend/config/backend/config/dev.py | — | ~152 |
+| 17:27 | Created ../graduation-leave-system/backend/config/backend/config/staging.py | — | ~158 |
+| 17:27 | Created ../graduation-leave-system/backend/config/backend/config/prod.py | — | ~188 |
+| 14:40 | Created ../graduation-leave-system/backend/config/base.py | — | ~79 |
+| 15:04 | Created ../graduation-leave-system/backend/scripts/rollback_migration_0008.sql | — | ~211 |
+| 15:08 | Created ../graduation-leave-system/backend/backend/apps/applications/tests/test_stay_school.py | — | ~715 |
+| 15:11 | Created ../graduation-leave-system/backend/frontend/src/views/ApplicationTypeSelect.vue | — | ~393 |
+| 15:13 | Session end: 10 writes across 9 files (views.py, serializers.py, base.py, dev.py, staging.py) | 12 reads | ~3469 tok |
+| 15:14 | Created ../graduation-leave-system/backend/backend/scripts/deploy-staging.sh | — | ~335 |
+| 15:14 | Created ../graduation-leave-system/backend/backend/scripts/deploy-prod.sh | — | ~482 |
+| 15:14 | Created ../graduation-leave-system/backend/backend/scripts/rollback-prod.sh | — | ~302 |
+| 15:15 | Created ../graduation-leave-system/backend/backend/scripts/monitor-prod.sh | — | ~416 |
+| 15:15 | Created ../graduation-leave-system/backend/backend/docs/staging-test-checklist.md | — | ~485 |
+| 15:16 | Created ../graduation-leave-system/backend/backend/docs/production-deployment-checklist.md | — | ~910 |
+| 15:17 | Created ../graduation-leave-system/backend/docs/留校请假审批部署完成报告.md | — | ~820 |
+| 15:18 | Session end: 17 writes across 16 files (views.py, serializers.py, base.py, dev.py, staging.py) | 12 reads | ~7486 tok |
+| 15:21 | Session end: 17 writes across 16 files (views.py, serializers.py, base.py, dev.py, staging.py) | 12 reads | ~7486 tok |
+| 15:24 | Session end: 17 writes across 16 files (views.py, serializers.py, base.py, dev.py, staging.py) | 12 reads | ~7486 tok |
+| 15:25 | Session end: 17 writes across 16 files (views.py, serializers.py, base.py, dev.py, staging.py) | 12 reads | ~7486 tok |
+| 15:26 | Created ../graduation-leave-system/backend/scripts/check-file-structure.sh | — | ~257 |
+| 15:27 | Session end: 18 writes across 17 files (views.py, serializers.py, base.py, dev.py, staging.py) | 12 reads | ~7761 tok |
+| 16:11 | Session end: 18 writes across 17 files (views.py, serializers.py, base.py, dev.py, staging.py) | 12 reads | ~7761 tok |
+
+## Session: 2026-06-23 16:13
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 16:35 | Created ../graduation-leave-system/.omc/snapshots/snapshot-2026-06-23-backend-config-fix.md | — | ~396 |
+| 16:35 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 5 reads | ~424 tok |
+| 16:36 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 5 reads | ~424 tok |
+| 16:38 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 5 reads | ~424 tok |
+| 16:38 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 5 reads | ~424 tok |
+| 16:40 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 5 reads | ~424 tok |
+| 16:44 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 7 reads | ~424 tok |
+| 16:50 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 8 reads | ~424 tok |
+| 16:52 | Session end: 1 writes across 1 files (snapshot-2026-06-23-backend-config-fix.md) | 8 reads | ~424 tok |
+| 16:53 | Created ../graduation-leave-system/backend/docs/三环境同步机制详解.md | — | ~1222 |
+| 16:56 | Session end: 2 writes across 2 files (snapshot-2026-06-23-backend-config-fix.md, 三环境同步机制详解.md) | 8 reads | ~1733 tok |
+| 16:58 | Created ../graduation-leave-system/backend/docs/INDEX.md | — | ~392 |
+| 16:59 | Edited ../graduation-leave-system/README.md | expanded (+12 lines) | ~112 |
+| 17:00 | Session end: 4 writes across 4 files (snapshot-2026-06-23-backend-config-fix.md, 三环境同步机制详解.md, INDEX.md, README.md) | 10 reads | ~5061 tok |
+| 17:02 | Session end: 4 writes across 4 files (snapshot-2026-06-23-backend-config-fix.md, 三环境同步机制详解.md, INDEX.md, README.md) | 10 reads | ~5061 tok |
+
+## Session: 2026-06-23 17:06
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:07 | Created ../graduation-leave-system/docs/INDEX.md | — | ~1815 |
+| 17:07 | Session end: 1 writes across 1 files (INDEX.md) | 1 reads | ~1944 tok |
+| 17:10 | Edited ../graduation-leave-system/docs/INDEX.md | expanded (+6 lines) | ~29 |
+| 17:11 | Session end: 2 writes across 1 files (INDEX.md) | 1 reads | ~1975 tok |
+| 17:13 | Created ../graduation-leave-system/docs/INDEX.md | — | ~1506 |
+| 17:13 | Session end: 3 writes across 1 files (INDEX.md) | 1 reads | ~3588 tok |
+| 17:16 | Edited ../graduation-leave-system/docs/INDEX.md | 9→12 lines | ~143 |
+| 17:16 | Session end: 4 writes across 1 files (INDEX.md) | 1 reads | ~3741 tok |
+| 17:18 | Edited ../graduation-leave-system/README.md | 18→13 lines | ~102 |
+| 17:18 | Session end: 5 writes across 2 files (INDEX.md, README.md) | 2 reads | ~6639 tok |
+| 17:23 | Created ../graduation-leave-system/backend/import_users.py | — | ~743 |
+| 17:24 | Created ../graduation-leave-system/backend/apps/users/management/commands/import_users.py | — | ~768 |
+| 17:27 | Edited ../graduation-leave-system/backend/config/settings/base.py | reduced (-9 lines) | ~53 |
+| 17:29 | Edited ../graduation-leave-system/backend/apps/users/management/commands/import_users.py | 4→4 lines | ~46 |
+| 17:30 | Session end: 9 writes across 4 files (INDEX.md, README.md, import_users.py, base.py) | 4 reads | ~8249 tok |
+| 17:35 | Session end: 9 writes across 4 files (INDEX.md, README.md, import_users.py, base.py) | 5 reads | ~8249 tok |
+| 17:36 | Created ../graduation-leave-system/backend/export_missing.py | — | ~222 |
+| 17:37 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:38 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:40 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:41 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:42 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:43 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:43 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:49 | Session end: 10 writes across 5 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 5 reads | ~8471 tok |
+| 17:51 | Edited ../graduation-leave-system/.wolf/cerebrum.md | expanded (+13 lines) | ~224 |
+| 17:51 | Session end: 11 writes across 6 files (INDEX.md, README.md, import_users.py, base.py, export_missing.py) | 6 reads | ~8711 tok |
+
+## Session: 2026-06-24 09:33
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-24 09:40
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 10:06 | Edited ccg_collab/scripts/collab_discuss.py | modified exists() | ~355 |
+| 10:07 | Session end: 1 writes across 1 files (collab_discuss.py) | 1 reads | ~29168 tok |
+| 10:18 | Session end: 1 writes across 1 files (collab_discuss.py) | 1 reads | ~29168 tok |
+| 10:19 | Session end: 1 writes across 1 files (collab_discuss.py) | 1 reads | ~29168 tok |
+| 08:44 | Session end: 1 writes across 1 files (collab_discuss.py) | 1 reads | ~29168 tok |
+| 08:48 | Edited pyproject.toml | "0.5.0" → "0.5.1" | ~5 |
+| 08:48 | Edited CHANGELOG.md | expanded (+9 lines) | ~79 |
+| 08:49 | Session end: 3 writes across 3 files (collab_discuss.py, pyproject.toml, CHANGELOG.md) | 3 reads | ~32864 tok |
+| 08:59 | Session end: 3 writes across 3 files (collab_discuss.py, pyproject.toml, CHANGELOG.md) | 4 reads | ~32864 tok |
+| 09:00 | Session end: 3 writes across 3 files (collab_discuss.py, pyproject.toml, CHANGELOG.md) | 4 reads | ~32864 tok |
+| 09:57 | Session end: 3 writes across 3 files (collab_discuss.py, pyproject.toml, CHANGELOG.md) | 4 reads | ~32864 tok |
+| 09:59 | Session end: 3 writes across 3 files (collab_discuss.py, pyproject.toml, CHANGELOG.md) | 4 reads | ~32864 tok |
+| 10:03 | Session end: 3 writes across 3 files (collab_discuss.py, pyproject.toml, CHANGELOG.md) | 5 reads | ~35878 tok |
+
+## Session: 2026-06-25 06:54
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 06:57 | Edited ../../.claude/skills/taolun/SKILL.md | 5→5 lines | ~118 |
+| 06:58 | Session end: 1 writes across 1 files (SKILL.md) | 2 reads | ~3140 tok |
+| 07:06 | Edited ../../.claude/skills/taolun/SKILL.md | expanded (+6 lines) | ~244 |
+| 07:06 | Session end: 2 writes across 1 files (SKILL.md) | 2 reads | ~3401 tok |
+| 07:16 | Session end: 2 writes across 1 files (SKILL.md) | 2 reads | ~3401 tok |
+| 14:18 | Session end: 2 writes across 1 files (SKILL.md) | 2 reads | ~3401 tok |
+
+## Session: 2026-06-26 01:31
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-26 01:51
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-27 16:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-27 16:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-27 16:35
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-06-30 00:06
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-07-05 19:06
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:43 | Edited .gitignore | expanded (+15 lines) | ~108 |
+| 15:44 | Session end: 1 writes across 1 files (.gitignore) | 8 reads | ~6804 tok |
+| 15:46 | Edited .gitignore | 5→8 lines | ~43 |

@@ -1,1 +1,7 @@
-{"workflow_id":"claude-codex-gemini-collab","current_task":null,"active_agent":"none","status":"idle","last_event_id":0}
+{
+  "last_event_id": 22,
+  "status": "discussion",
+  "current_task": null,
+  "active_agent": null,
+  "workflow_id": "claude-codex-gemini-collab"
+}

@@ -918,6 +918,102 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-06-21T08:09:39.239499Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-06-22T08:44:32.285Z",
+      "error_message": "Significant refactor of ",
+      "file": "../graduation-leave-system/docs/留校请假审批实施方案.md",
+      "root_cause": "26 lines replaced/restructured",
+      "fix": "Rewrote 36→143 lines (26 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T08:44:32.285Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-06-22T09:18:01.065Z",
+      "error_message": "Significant refactor of ",
+      "file": "../graduation-leave-system/backend/apps/applications/views.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 7→4 lines (3 removed) | Also: draft.leave_date = serializer.validated_data['leav; draft.status = ApplicationStatus.PENDING_DORM_MANA | Also: leave_date=serializer.validated_data['leave_date']; status=ApplicationStatus.PENDING_DORM_MANAGER,",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-06-22T09:19:17.235Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-06-22T09:19:44.403Z",
+      "error_message": "Significant refactor of ",
+      "file": "../graduation-leave-system/backend/apps/applications/serializers.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 11→27 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-22T09:19:44.403Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-06-23T09:27:15.194Z",
+      "error_message": "Significant refactor of ",
+      "file": "../graduation-leave-system/backend/config/settings/base.py",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 18→9 lines (9 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-23T09:27:15.194Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-06-24T02:06:47.054Z",
+      "error_message": "Significant refactor of ",
+      "file": "ccg_collab/scripts/collab_discuss.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 14→22 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-24T02:06:47.054Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-06-25T00:48:17.981Z",
+      "error_message": "Incorrect value in code",
+      "file": "pyproject.toml",
+      "root_cause": "Had \"0.5.0\"",
+      "fix": "Changed to \"0.5.1\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "toml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-25T00:48:17.981Z"
     }
   ]
 }
