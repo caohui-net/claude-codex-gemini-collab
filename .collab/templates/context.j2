@@ -1,0 +1,31 @@
+{{ prompt }}
+
+{% if chunks|length == 1 %}
+## 文档内容
+
+**文件名**: {{ filename }}
+**路径**: {{ filepath }}
+
+{{ chunks[0] }}
+
+{% else %}
+## 文档内容（分块 {{ current_chunk }}/{{ total_chunks }}）
+
+**文件名**: {{ filename }}
+**路径**: {{ filepath }}
+**分块**: 第{{ current_chunk }}部分（共{{ total_chunks }}部分）
+
+{{ chunks[current_chunk - 1] }}
+
+{% if current_chunk > 1 %}
+> **提示**: 这是文档的第{{ current_chunk }}部分，前面还有{{ current_chunk - 1 }}部分内容
+{% endif %}
+
+{% if current_chunk < total_chunks %}
+> **提示**: 这是文档的第{{ current_chunk }}部分，后面还有{{ total_chunks - current_chunk }}部分内容
+{% endif %}
+
+{% endif %}
+
+---
+**请基于以上内容回答问题。**
