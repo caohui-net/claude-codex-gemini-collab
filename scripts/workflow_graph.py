@@ -8,8 +8,13 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from typing import TypedDict, List, Optional
 import asyncio
 import json
+import time
 from pathlib import Path
 from functools import wraps
+from audit_logger import AuditLogger
+
+# 初始化审计日志
+_audit_logger = AuditLogger()
 
 
 def async_retry(max_attempts: int = 3, base_delay: float = 2.0):
@@ -44,7 +49,11 @@ class CollabState(TypedDict):
 
 @async_retry(max_attempts=3, base_delay=2.0)
 async def run_agent(agent_name: str, prompt: str, docs: List[str] = None) -> str:
-    """异步调用单个agent（带重试）"""
+    """异步调用单个agent（带重试+审计）"""
+    start_time = time.time()
+    error = None
+    result = None
+
     cmd = ["python3", "scripts/agent_cli.py", agent_name, prompt]
     if docs:
         for doc in docs:
@@ -59,13 +68,20 @@ async def run_agent(agent_name: str, prompt: str, docs: List[str] = None) -> str
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
 
         if proc.returncode == 0:
-            return stdout.decode('utf-8')
+            result = stdout.decode('utf-8')
+            return result
         else:
-            raise RuntimeError(f"Agent failed: {stderr.decode('utf-8')}")
-    except asyncio.TimeoutError:
-        raise TimeoutError(f"Agent {agent_name} timeout")
+            error = f"Agent failed: {stderr.decode('utf-8')}"
+            raise RuntimeError(error)
+    except asyncio.TimeoutError as e:
+        error = f"Agent {agent_name} timeout"
+        raise TimeoutError(error)
     except Exception as e:
-        raise RuntimeError(f"Agent {agent_name} error: {str(e)}")
+        error = f"Agent {agent_name} error: {str(e)}"
+        raise RuntimeError(error)
+    finally:
+        duration = time.time() - start_time
+        _audit_logger.log(agent_name, prompt, result, duration, error)
 
 
 async def codex_node(state: CollabState) -> dict:
