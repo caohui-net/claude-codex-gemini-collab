@@ -9,6 +9,26 @@ from typing import TypedDict, List, Optional
 import asyncio
 import json
 from pathlib import Path
+from functools import wraps
+
+
+def async_retry(max_attempts: int = 3, base_delay: float = 2.0):
+    """异步重试装饰器（指数退避）"""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            for attempt in range(max_attempts):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    if attempt == max_attempts - 1:
+                        raise
+                    delay = base_delay * (2 ** attempt)
+                    print(f"⚠️  重试 {attempt + 1}/{max_attempts}，等待{delay}s...")
+                    await asyncio.sleep(delay)
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 class CollabState(TypedDict):
@@ -22,8 +42,9 @@ class CollabState(TypedDict):
     error: Optional[str]
 
 
+@async_retry(max_attempts=3, base_delay=2.0)
 async def run_agent(agent_name: str, prompt: str, docs: List[str] = None) -> str:
-    """异步调用单个agent"""
+    """异步调用单个agent（带重试）"""
     cmd = ["python3", "scripts/agent_cli.py", agent_name, prompt]
     if docs:
         for doc in docs:
@@ -40,11 +61,11 @@ async def run_agent(agent_name: str, prompt: str, docs: List[str] = None) -> str
         if proc.returncode == 0:
             return stdout.decode('utf-8')
         else:
-            return f"Error: {stderr.decode('utf-8')}"
+            raise RuntimeError(f"Agent failed: {stderr.decode('utf-8')}")
     except asyncio.TimeoutError:
-        return "Error: Timeout"
+        raise TimeoutError(f"Agent {agent_name} timeout")
     except Exception as e:
-        return f"Error: {str(e)}"
+        raise RuntimeError(f"Agent {agent_name} error: {str(e)}")
 
 
 async def codex_node(state: CollabState) -> dict:
