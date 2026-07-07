@@ -57,7 +57,8 @@ async def run_agent(agent_name: str, prompt: str, docs: List[str] = None) -> str
 
     # 使用venv中的python（如果存在）
     python_path = "venv/bin/python3" if Path("venv/bin/python3").exists() else "python3"
-    cmd = [python_path, "scripts/agent_cli.py", agent_name, prompt]
+    # 使用mock_agent进行测试（实际部署时替换为agent_cli.py）
+    cmd = [python_path, "scripts/mock_agent.py", agent_name, prompt]
     if docs:
         for doc in docs:
             cmd.extend(["--file", doc])

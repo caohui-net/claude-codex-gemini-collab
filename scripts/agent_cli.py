@@ -860,3 +860,27 @@ def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
             elapsed_sec=elapsed,
             exit_code=1,
         )
+
+# Main entry point
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: agent_cli.py <agent_name> <prompt>", file=sys.stderr)
+        sys.exit(1)
+    
+    agent_name = sys.argv[1]
+    prompt = sys.argv[2]
+    base_dir = Path.cwd()
+    
+    # Call agent
+    if agent_name == "codex":
+        reply = run_codex(prompt, base_dir)
+    elif agent_name == "gemini":
+        reply = run_gemini(prompt, base_dir)
+    elif agent_name == "claude":
+        reply = run_claude(prompt, base_dir)
+    else:
+        print(f"Unknown agent: {agent_name}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Output result to stdout
+    print(reply.raw_text)
