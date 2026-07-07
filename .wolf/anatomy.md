@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-06T07:46:14.151Z
-> Files: 642 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-07T08:40:09.540Z
+> Files: 644 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -793,15 +793,17 @@
 
 ## docs/
 
+- `agent-communication-mechanism.md` — Multi-Agent CLI Communication Mechanism (~2533 tok)
+- `multi-agent-tech-analysis-2026-07-07.md` — 多Agent协作系统技术分析报告 (~2852 tok)
 - `PROJECT-SUMMARY.md` — Project Summary (~7187 tok)
 - `RUFLO-INTEGRATION-ANALYSIS.md` — Ruflo项目整合分析报告 (~2378 tok)
 
 ## scripts/
 
-- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~9339 tok)
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~9738 tok)
 - `agent_response_validator.py` — validate_response (~376 tok)
 - `collab_context_engineering.py` — Agent-Skills P1: Context Engineering - 跨agent上下文共享 (~389 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30541 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30611 tok)
 - `collab_incremental_implementation.py` — Agent-Skills P2: Incremental Implementation - 任务分解与排序 (~607 tok)
 - `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
 - `collab_memory_bridge.mjs` — collab_memory_bridge.mjs (~529 tok)
