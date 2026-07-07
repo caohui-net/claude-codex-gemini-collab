@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""集成测试 - 端到端workflow验证"""
+import sys
+import asyncio
+from pathlib import Path
+
+# 添加scripts到路径
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+
+from workflow_graph import run_collaboration
+
+
+async def test_basic_workflow():
+    """测试基本workflow"""
+    print("=" * 60)
+    print("集成测试：3-agent并行workflow")
+    print("=" * 60)
+
+    # 简单测试prompt
+    test_prompt = "请分析Python中的异步编程优缺点"
+
+    print(f"\n📝 测试prompt: {test_prompt}")
+    print("\n🚀 启动workflow...")
+
+    try:
+        result = await run_collaboration(test_prompt, documents=None)
+
+        print("\n✅ Workflow执行成功！")
+        print("\n📊 结果概览:")
+        print(f"  - Codex结果长度: {len(result.get('codex_result', ''))} 字符")
+        print(f"  - Gemini结果长度: {len(result.get('gemini_result', ''))} 字符")
+        print(f"  - Claude结果长度: {len(result.get('claude_result', ''))} 字符")
+        print(f"  - 最终报告长度: {len(result.get('final_report', ''))} 字符")
+
+        if result.get('final_report'):
+            print(f"\n📄 最终报告前200字符:")
+            print(result['final_report'][:200])
+
+        return True
+
+    except Exception as e:
+        print(f"\n❌ 测试失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+if __name__ == "__main__":
+    success = asyncio.run(test_basic_workflow())
+    sys.exit(0 if success else 1)
