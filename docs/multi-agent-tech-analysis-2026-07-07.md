@@ -445,6 +445,459 @@ class DiscussionCheckpoint:
 
 ---
 
+## 第二部分B：文件读取与上下文注入 🆕
+
+### 遗漏的关键技术：3种文件访问模式
+
+前述分析中将文件访问归为P2（可选），但深入研究发现**swarmclaw的知识源管理系统**是一个被遗漏的高价值方案。
+
+---
+
+### 模式1：直接文件注入（当前项目）
+
+**实现位置**：`scripts/agent_cli.py:225-253`
+
+```python
+if size < 5120:  # <5KB阈值
+    content = file_path.read_text(encoding="utf-8", errors="ignore")
+    stdin_data = f"{prompt}\n\n[文件内容: {rel_path}]\n{content}"
+```
+
+**特点**：
+- ✅ 简单直接，零配置
+- ✅ 适合小文件快速注入
+- ❌ 5KB大小限制
+- ❌ 无结构化管理
+- ❌ 每次全量读取，无缓存
+
+**适用场景**：配置文件、小脚本、示例代码
+
+---
+
+### 模式2：沙盒工具调用（open-multi-agent）
+
+**架构**（已在正文P2提及）：
+
+```typescript
+.agent-workspace/
+├── input/          // 只读输入（项目文件副本）
+├── working/        // 临时工作空间（Agent可写）
+└── output/         // 最终产物
+
+const result = await toolExecutor.execute('file_read', {
+    path: 'src/main.ts'
+})
+// 结果自动注入Agent上下文
+```
+
+**特点**：
+- ✅ 路径隔离（防止误操作）
+- ✅ 操作审计（记录所有文件访问）
+- ✅ 权限分离（只读/读写）
+- ⚠️ 需要ToolExecutor抽象层
+- ❌ 无语义检索，仅路径访问
+
+**适用场景**：需要隔离的文件操作、代码生成任务
+
+---
+
+### 模式3：知识源管理系统（swarmclaw）⭐ **高价值发现**
+
+**来源**：swarmclaw项目（workflow深度分析）
+
+**架构**：
+
+```
+┌──────────────────────────────────────────┐
+│      Knowledge Sources (知识源)          │
+├──────────────────────────────────────────┤
+│ • File uploads (PDF, text, docx)         │
+│ • URL sources (web content with sync)    │
+│ • Chunking + Indexing (自动分块)         │
+│ • Semantic retrieval (语义检索)          │
+│ • Citation-grounded responses (引用溯源) │
+└──────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────┐
+│       Memory System (记忆系统)           │
+├──────────────────────────────────────────┤
+│ • Preferences (用户偏好)                 │
+│ • Facts (事实知识)                       │
+│ • Instructions (执行指令)                │
+│ • Conversation context (对话历史)       │
+└──────────────────────────────────────────┘
+```
+
+**上下文注入流程**（5步）：
+
+```python
+# Step 1: 搜索记忆（按agentId + 关键词）
+memories = memory_system.search(
+    agent_id="researcher-001",
+    keywords=["competitor", "pricing"]
+)
+
+# Step 2: 搜索知识源（按关键词语义检索）
+knowledge = knowledge_sources.search(
+    keywords=["competitor", "pricing"],
+    limit=5,
+    min_relevance=0.7
+)
+
+# Step 3: 增强提示词（注入检索到的上下文）
+augmented_prompt = f"""
+{original_prompt}
+
+## Relevant Context from Memory:
+{format_memories(memories)}
+
+## Relevant Context from Knowledge Sources:
+{format_knowledge_with_citations(knowledge)}
+"""
+
+# Step 4: Agent执行（带增强上下文）
+result = await agent.execute(augmented_prompt)
+
+# Step 5: 保存新学习（持久化到记忆系统）
+memory_system.save({
+    "agent_id": "researcher-001",
+    "type": "fact",
+    "content": result.key_findings,
+    "timestamp": datetime.now(),
+    "source": "discussion-2026-07-07"
+})
+```
+
+**关键特性**：
+
+| 特性 | 说明 | 价值 |
+|-----|------|------|
+| **文件分块** | 大文件自动切分（避免token溢出） | 突破大小限制 |
+| **语义检索** | 基于相似度匹配（非全文搜索） | 智能上下文 |
+| **引用溯源** | 响应包含来源引用（可验证） | 可信度高 |
+| **持久化存储** | 跨会话记忆（不丢失历史） | 长期积累 |
+| **Source管理** | archive/restore/supersede | 版本控制 |
+
+**特点**：
+- ✅ 无大小限制（分块处理）
+- ✅ 智能检索（语义相似度）
+- ✅ 跨会话记忆（持久化）
+- ✅ 引用溯源（可追溯）
+- ⚠️ 实现复杂度高
+- ⚠️ 需要向量嵌入支持
+
+**适用场景**：大规模知识库、文档问答系统、长期协作项目
+
+---
+
+### 3种模式对比矩阵
+
+| 维度 | 模式1: 直接注入 | 模式2: 沙盒工具 | 模式3: 知识源系统 |
+|-----|---------------|----------------|-----------------|
+| **文件大小** | <5KB | 无限制 | 无限制 |
+| **格式支持** | 纯文本 | 纯文本 | PDF/文本/URL |
+| **检索方式** | 无（全量） | 路径访问 | 语义检索 |
+| **分块处理** | ❌ | ❌ | ✅ 自动 |
+| **引用溯源** | ❌ | ❌ | ✅ Citation |
+| **跨会话记忆** | ❌ | ❌ | ✅ 持久化 |
+| **隔离性** | ❌ 低 | ✅ 沙盒 | ⚠️ 隐式 |
+| **实现复杂度** | ⭐ 低 | ⭐⭐ 中 | ⭐⭐⭐⭐ 高 |
+| **Token效率** | ⚠️ 全量注入 | ⚠️ 全量注入 | ✅ 智能检索 |
+| **适用项目** | MVP快速验证 | 生产级隔离 | 知识密集型 |
+
+---
+
+### 实施路径建议
+
+#### 快速增强（P0.5）：轻量级上下文检索
+
+**目标**：在不引入复杂依赖的前提下，突破5KB限制并提供智能检索。
+
+**新建文件**：`scripts/context_manager.py`
+
+```python
+"""轻量级上下文管理（基于文件索引）"""
+import json
+from pathlib import Path
+from typing import List, Tuple
+
+class ContextManager:
+    def __init__(self, index_file=".collab/file_index.json"):
+        self.index_file = Path(index_file)
+        self.index = self._load_index()
+    
+    def _load_index(self) -> dict:
+        """加载文件索引"""
+        if self.index_file.exists():
+            return json.loads(self.index_file.read_text())
+        return {}
+    
+    def search_relevant_files(
+        self, 
+        keywords: List[str], 
+        limit=5
+    ) -> List[Tuple[str, float]]:
+        """基于关键词搜索相关文件（简单TF-IDF）"""
+        scores = {}
+        for file_path, metadata in self.index.items():
+            # 简单的关键词匹配评分
+            score = sum(
+                metadata.get('content', '').lower().count(kw.lower())
+                for kw in keywords
+            )
+            if score > 0:
+                scores[file_path] = score
+        
+        # 返回Top-N（按评分排序）
+        sorted_files = sorted(
+            scores.items(), 
+            key=lambda x: x[1], 
+            reverse=True
+        )
+        return sorted_files[:limit]
+    
+    def inject_context(
+        self, 
+        prompt: str, 
+        file_paths: List[str],
+        max_size_per_file=2000
+    ) -> str:
+        """注入文件内容到提示词"""
+        context_parts = []
+        
+        for path in file_paths:
+            try:
+                content = Path(path).read_text(
+                    encoding='utf-8',
+                    errors='ignore'
+                )[:max_size_per_file]
+                context_parts.append(
+                    f"## File: {path}\n```\n{content}\n```"
+                )
+            except Exception as e:
+                context_parts.append(
+                    f"## File: {path}\n[Error reading: {e}]"
+                )
+        
+        if context_parts:
+            return (
+                f"{prompt}\n\n"
+                f"## Relevant Context:\n" +
+                "\n\n".join(context_parts)
+            )
+        return prompt
+    
+    def update_index(self, file_path: str):
+        """更新单个文件的索引"""
+        path = Path(file_path)
+        if not path.exists():
+            return
+        
+        self.index[file_path] = {
+            "content": path.read_text(
+                encoding='utf-8',
+                errors='ignore'
+            )[:5000],  # 仅索引前5000字符
+            "size": path.stat().st_size,
+            "modified": path.stat().st_mtime
+        }
+        
+        self.index_file.parent.mkdir(exist_ok=True)
+        self.index_file.write_text(json.dumps(self.index, indent=2))
+```
+
+**集成到现有代码**：
+
+```python
+# 修改：scripts/agent_cli.py
+from .context_manager import ContextManager
+
+def run_codex(prompt: str, base_dir: Path, files: list[str] = None, ...):
+    # 如果提供了关键词，使用智能检索
+    if not files and keywords:
+        cm = ContextManager()
+        relevant_files = cm.search_relevant_files(keywords, limit=5)
+        files = [f for f, score in relevant_files]
+    
+    # 注入上下文
+    if files:
+        cm = ContextManager()
+        prompt = cm.inject_context(prompt, files)
+    
+    # ... 现有逻辑 ...
+```
+
+**工作量**：⭐ 小（1-2天）  
+**收益**：🚀 高ROI（突破5KB限制，智能检索）
+
+---
+
+#### 中期增强（P1.5）：文件分块 + 索引
+
+**目标**：处理大型文件（>5KB），支持PDF/Word等格式。
+
+**新建文件**：`scripts/chunking.py`
+
+```python
+"""文件分块与索引管理"""
+from pathlib import Path
+from typing import List, Dict
+import hashlib
+
+def chunk_large_file(
+    file_path: Path, 
+    chunk_size=2000,
+    overlap=200
+) -> List[Dict]:
+    """将大文件分块（支持重叠以保持上下文连续性）"""
+    content = file_path.read_text(encoding='utf-8', errors='ignore')
+    
+    # 按段落分块
+    paragraphs = content.split("\n\n")
+    chunks = []
+    current_chunk = []
+    current_size = 0
+    chunk_id = 0
+    
+    for para in paragraphs:
+        para_size = len(para)
+        
+        if current_size + para_size > chunk_size and current_chunk:
+            # 保存当前块
+            chunk_text = "\n\n".join(current_chunk)
+            chunks.append({
+                "id": chunk_id,
+                "content": chunk_text,
+                "hash": hashlib.md5(chunk_text.encode()).hexdigest()[:8],
+                "start_line": len("\n".join(current_chunk[:1]).split("\n")),
+                "size": len(chunk_text)
+            })
+            
+            # 保留overlap用于下一块（保持上下文）
+            if overlap > 0 and current_chunk:
+                current_chunk = current_chunk[-1:]  # 保留最后一段
+                current_size = len(current_chunk[0])
+            else:
+                current_chunk = []
+                current_size = 0
+            
+            chunk_id += 1
+        
+        current_chunk.append(para)
+        current_size += para_size
+    
+    # 保存最后一块
+    if current_chunk:
+        chunk_text = "\n\n".join(current_chunk)
+        chunks.append({
+            "id": chunk_id,
+            "content": chunk_text,
+            "hash": hashlib.md5(chunk_text.encode()).hexdigest()[:8],
+            "size": len(chunk_text)
+        })
+    
+    return chunks
+
+# 索引结构示例
+"""
+{
+    "src/main.ts": {
+        "total_size": 15000,
+        "total_chunks": 8,
+        "last_indexed": "2026-07-07T16:00:00Z",
+        "chunks": [
+            {
+                "id": 0,
+                "hash": "a3f5c891",
+                "keywords": ["class", "Main", "constructor"],
+                "start_line": 1,
+                "size": 2100
+            },
+            ...
+        ]
+    }
+}
+"""
+```
+
+**工作量**：⭐⭐⭐ 中（3-4天）  
+**收益**：💎 高（突破大小限制，支持复杂文档）
+
+---
+
+#### 长期演进（P3）：完整RAG系统
+
+**目标**：企业级知识管理（参考swarmclaw完整实现）。
+
+**核心组件**：
+1. **向量嵌入**：使用sentence-transformers或OpenAI Embeddings
+2. **向量数据库**：ChromaDB / Pinecone / Weaviate
+3. **语义检索**：余弦相似度Top-K
+4. **引用溯源**：返回source_id + chunk_id
+5. **知识图谱**：实体关系抽取（可选）
+
+**参考架构**：
+
+```python
+from sentence_transformers import SentenceTransformer
+import chromadb
+
+class RAGSystem:
+    def __init__(self):
+        self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
+        self.client = chromadb.Client()
+        self.collection = self.client.get_or_create_collection("knowledge")
+    
+    def index_document(self, doc_id: str, chunks: List[str]):
+        """索引文档块"""
+        embeddings = self.embedder.encode(chunks)
+        self.collection.add(
+            ids=[f"{doc_id}-{i}" for i in range(len(chunks))],
+            embeddings=embeddings.tolist(),
+            documents=chunks,
+            metadatas=[{"doc_id": doc_id, "chunk_id": i} 
+                      for i in range(len(chunks))]
+        )
+    
+    def search(self, query: str, limit=5):
+        """语义搜索"""
+        query_embedding = self.embedder.encode([query])[0]
+        results = self.collection.query(
+            query_embeddings=[query_embedding.tolist()],
+            n_results=limit
+        )
+        return results
+```
+
+**工作量**：⭐⭐⭐⭐⭐ 大（2-3周）  
+**收益**：🌟 极高（工业级知识管理，完全对标swarmclaw）
+
+---
+
+### 更新后的实施优先级
+
+| 优先级 | 项目 | 工作量 | 风险 | 收益 | 依赖 | 时间线 |
+|-------|------|-------|------|------|------|-------|
+| **P0** | JSON-RPC 2.0 | ⭐⭐⭐ | ⭐ | 🎯 基础 | 无 | Week 1 |
+| **🆕 P0.5** | **轻量级上下文检索** | ⭐ | ⭐ | 🚀 高ROI | 无 | Week 1 |
+| **P1** | Async重构 | ⭐⭐⭐⭐ | ⭐⭐ | 🚀 性能 | P0 | Week 2 |
+| **P1** | 混合并行 | ⭐⭐ | ⭐ | ⚡ 提速 | P1 Async | Week 3 |
+| **🆕 P1.5** | **文件分块索引** | ⭐⭐⭐ | ⭐ | 💎 突破限制 | P0.5 | Week 4 |
+| **P2** | 沙盒工具 | ⭐⭐⭐ | ⭐ | 🔒 隔离 | 无 | Week 5+ |
+| **P2** | 停止恢复 | ⭐⭐ | ⭐ | 🛡️ 恢复 | 无 | Week 5+ |
+| **🆕 P3** | **完整RAG系统** | ⭐⭐⭐⭐⭐ | ⭐⭐ | 🌟 终极 | P1.5 | Month 2+ |
+
+**关键变化**：
+- 新增P0.5（轻量级检索）：快速ROI，突破5KB限制
+- 新增P1.5（文件分块）：中期增强，处理大文件
+- 新增P3（RAG系统）：长期目标，对标swarmclaw
+
+**立即行动（本周）**：
+1. ✅ P0：JSON-RPC 2.0协议
+2. 🆕 ✅ P0.5：轻量级上下文检索（仅200行代码，高收益）
+
+---
+
 ## 第三部分：参考项目
 
 ### 1. swarmclaw (JSON-RPC来源)
