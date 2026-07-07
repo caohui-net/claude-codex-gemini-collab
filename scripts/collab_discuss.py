@@ -1834,13 +1834,14 @@ def invoke_agent_parallel(
     base_dir: Path,
     timeout_sec: int,
     use_tmux: bool,
-    keep_session: bool
+    keep_session: bool,
+    files: Optional[List[str]] = None
 ) -> AgentReply:
     """Invoke single agent (for parallel execution)."""
     if agent == "codex":
-        reply = run_codex(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
+        reply = run_codex(prompt, base_dir, files, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
     elif agent == "gemini":
-        reply = run_gemini(prompt, base_dir, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
+        reply = run_gemini(prompt, base_dir, files, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
     else:
         reply = AgentReply(
             agent=agent,
@@ -1869,6 +1870,7 @@ def run_discussion(
     resume: bool = False,
     mode: str = "full",
     consensus_scope: Optional[str] = None,
+    files: Optional[List[str]] = None,
 ) -> int:
     """Run multi-round discussion until consensus or max rounds.
 
@@ -2208,7 +2210,7 @@ def run_discussion(
                     agent_start = time.time()
                     future = executor.submit(
                         invoke_agent_parallel, agent, prompt, base_dir,
-                        timeout_sec, use_tmux, keep_session
+                        timeout_sec, use_tmux, keep_session, files
                     )
                     futures[future] = (agent, agent_start)
 
@@ -2512,6 +2514,7 @@ if __name__ == "__main__":
     discuss_parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
     discuss_parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
     discuss_parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
+    discuss_parser.add_argument("--files", nargs='+', help="Files to inject as context (relative to base-dir)")
     discuss_parser.add_argument(
         "--scope",
         choices=["project-specific", "cross-project", "global"],
@@ -2670,7 +2673,7 @@ if __name__ == "__main__":
             rc = run_discussion(base, task_id, topic, participants,
                                 args.max_rounds, hard_max_rounds=10,
                                 timeout_sec=args.timeout_sec, mode=args.mode,
-                                consensus_scope=args.scope)
+                                consensus_scope=args.scope, files=getattr(args, 'files', None))
             # Sync new events to agentmemory (best-effort, non-blocking)
             try:
                 from collab_memory_bridge import sync_events

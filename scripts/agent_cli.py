@@ -209,8 +209,13 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         return AgentReply("codex", "", {"error": str(e)}, "", elapsed, 1)
 
 
-def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
+def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
     """Run Codex for discussion analysis.
+
+    Args:
+        files: Optional list of file paths (relative to base_dir) to inject as context.
+               Small files (<5KB) are injected as full content.
+               Large files are referenced by path (CLI mode only).
 
     Backend selection via TAOLUN_CODEX_BACKEND env var:
       api  — direct API call (fast, no CLI overhead)
@@ -218,6 +223,38 @@ def run_codex(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: boo
       unset — api if available, fallback to cli
     """
     import os
+
+    # Process file injections if provided
+    if files:
+        injected = []
+        large_files = []
+        MAX_INJECT_SIZE = 5120  # 5KB threshold
+
+        for f in files:
+            file_path = base_dir / f
+            if not file_path.exists():
+                continue
+
+            size = file_path.stat().st_size
+            if size < MAX_INJECT_SIZE:
+                # Small file: inject content
+                content = file_path.read_text(errors='ignore')
+                injected.append(f"<file path='{f}'>\n{content}\n</file>")
+            else:
+                # Large file: reference by path (CLI mode only)
+                large_files.append(f)
+
+        # Inject small files into prompt
+        if injected:
+            prompt = "\n".join(injected) + "\n\n" + prompt
+
+        # Large files: add reference and force CLI mode
+        if large_files:
+            refs = ", ".join(large_files)
+            prompt = f"参考文档: {refs}\n\n{prompt}"
+            # Force CLI mode for large files (needs tool access)
+            os.environ["TAOLUN_CODEX_BACKEND"] = "cli"
+
     backend = os.environ.get("TAOLUN_CODEX_BACKEND", "cli").lower()
     if backend == "api":
         return run_codex_api(prompt, timeout_sec=min(timeout_sec, 120))
@@ -609,8 +646,11 @@ def run_gemini_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         return AgentReply("gemini", "", {"error": str(e)}, "", elapsed, 1)
 
 
-def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
+def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
     """Run Gemini for discussion analysis.
+
+    Args:
+        files: Optional list of file paths (relative to base_dir) to inject as context.
 
     Backend selection via TAOLUN_GEMINI_BACKEND env var:
       api  — direct API call
@@ -618,6 +658,33 @@ def run_gemini(prompt: str, base_dir: Path, timeout_sec: int = 180, use_tmux: bo
       unset — api, fallback to cli on failure
     """
     import os
+
+    # Process file injections (same as run_codex)
+    if files:
+        injected = []
+        large_files = []
+        MAX_INJECT_SIZE = 5120
+
+        for f in files:
+            file_path = base_dir / f
+            if not file_path.exists():
+                continue
+
+            size = file_path.stat().st_size
+            if size < MAX_INJECT_SIZE:
+                content = file_path.read_text(errors='ignore')
+                injected.append(f"<file path='{f}'>\n{content}\n</file>")
+            else:
+                large_files.append(f)
+
+        if injected:
+            prompt = "\n".join(injected) + "\n\n" + prompt
+
+        if large_files:
+            refs = ", ".join(large_files)
+            prompt = f"参考文档: {refs}\n\n{prompt}"
+            os.environ["TAOLUN_GEMINI_BACKEND"] = "cli"
+
     backend = os.environ.get("TAOLUN_GEMINI_BACKEND", "cli").lower()
     if backend == "api":
         return run_gemini_api(prompt, timeout_sec=min(timeout_sec, 120))
