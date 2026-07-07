@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 LangGraph工作流编排
-实现混合并行（fan-out + pipeline）
+实现混合并行（fan-out + pipeline）+ 异步执行
 """
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 from typing import TypedDict, List, Optional
-import subprocess
+import asyncio
 import json
 from pathlib import Path
 
@@ -22,45 +22,51 @@ class CollabState(TypedDict):
     error: Optional[str]
 
 
-def run_agent(agent_name: str, prompt: str, docs: List[str] = None) -> str:
-    """调用单个agent"""
+async def run_agent(agent_name: str, prompt: str, docs: List[str] = None) -> str:
+    """异步调用单个agent"""
     cmd = ["python3", "scripts/agent_cli.py", agent_name, prompt]
     if docs:
         for doc in docs:
             cmd.extend(["--file", doc])
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-        if result.returncode == 0:
-            return result.stdout
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
+
+        if proc.returncode == 0:
+            return stdout.decode('utf-8')
         else:
-            return f"Error: {result.stderr}"
-    except subprocess.TimeoutExpired:
+            return f"Error: {stderr.decode('utf-8')}"
+    except asyncio.TimeoutError:
         return "Error: Timeout"
     except Exception as e:
         return f"Error: {str(e)}"
 
 
-def codex_node(state: CollabState) -> dict:
-    """Codex节点"""
-    result = run_agent("codex", state["prompt"], state.get("documents"))
+async def codex_node(state: CollabState) -> dict:
+    """Codex节点（异步）"""
+    result = await run_agent("codex", state["prompt"], state.get("documents"))
     return {"codex_result": result}
 
 
-def gemini_node(state: CollabState) -> dict:
-    """Gemini节点"""
-    result = run_agent("gemini", state["prompt"], state.get("documents"))
+async def gemini_node(state: CollabState) -> dict:
+    """Gemini节点（异步）"""
+    result = await run_agent("gemini", state["prompt"], state.get("documents"))
     return {"gemini_result": result}
 
 
-def claude_node(state: CollabState) -> dict:
-    """Claude节点"""
-    result = run_agent("claude", state["prompt"], state.get("documents"))
+async def claude_node(state: CollabState) -> dict:
+    """Claude节点（异步）"""
+    result = await run_agent("claude", state["prompt"], state.get("documents"))
     return {"claude_result": result}
 
 
-def synthesize_node(state: CollabState) -> dict:
-    """综合节点"""
+async def synthesize_node(state: CollabState) -> dict:
+    """综合节点（异步）"""
     synthesis_prompt = f"""请综合以下三个AI的分析结果：
 
 **Codex分析**:
@@ -75,17 +81,17 @@ def synthesize_node(state: CollabState) -> dict:
 请给出综合报告。"""
 
     # 使用claude做综合（因为它最擅长综合）
-    final_report = run_agent("claude", synthesis_prompt)
+    final_report = await run_agent("claude", synthesis_prompt)
     return {"final_report": final_report}
 
 
-def start_node(state: CollabState) -> dict:
-    """启动节点（fan-out入口）"""
+async def start_node(state: CollabState) -> dict:
+    """启动节点（fan-out入口，异步）"""
     return state
 
 
 def create_workflow(use_checkpointer: bool = False) -> StateGraph:
-    """创建工作流图（fan-out并行）"""
+    """创建工作流图（fan-out并行 + 异步执行）"""
     # 创建StateGraph
     workflow = StateGraph(CollabState)
 
@@ -116,8 +122,8 @@ def create_workflow(use_checkpointer: bool = False) -> StateGraph:
     return app
 
 
-def run_collaboration(prompt: str, documents: List[str] = None) -> dict:
-    """运行协作工作流"""
+async def run_collaboration(prompt: str, documents: List[str] = None) -> dict:
+    """运行协作工作流（异步）"""
     app = create_workflow()
 
     # 初始状态
@@ -131,18 +137,21 @@ def run_collaboration(prompt: str, documents: List[str] = None) -> dict:
         "error": None
     }
 
-    # 执行工作流
+    # 异步执行工作流
     config = {"configurable": {"thread_id": "collab-1"}}
-    result = app.invoke(initial_state, config)
+    result = await app.ainvoke(initial_state, config)
 
     return result
 
 
 if __name__ == "__main__":
-    # 测试
-    result = run_collaboration(
-        prompt="分析Python的优缺点",
-        documents=[]
-    )
-    print("Final Report:")
-    print(result.get("final_report"))
+    # 测试（异步）
+    async def main():
+        result = await run_collaboration(
+            prompt="分析Python的优缺点",
+            documents=[]
+        )
+        print("Final Report:")
+        print(result.get("final_report"))
+
+    asyncio.run(main())
