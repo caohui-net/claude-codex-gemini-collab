@@ -79,22 +79,35 @@ def synthesize_node(state: CollabState) -> dict:
     return {"final_report": final_report}
 
 
+def start_node(state: CollabState) -> dict:
+    """启动节点（fan-out入口）"""
+    return state
+
+
 def create_workflow(use_checkpointer: bool = False) -> StateGraph:
-    """创建工作流图"""
+    """创建工作流图（fan-out并行）"""
     # 创建StateGraph
     workflow = StateGraph(CollabState)
 
     # 添加节点
+    workflow.add_node("start", start_node)
     workflow.add_node("codex", codex_node)
     workflow.add_node("gemini", gemini_node)
     workflow.add_node("claude", claude_node)
     workflow.add_node("synthesize", synthesize_node)
 
-    # 简化：单一入口点到synthesize（暂时串行，后续改为并行）
-    workflow.set_entry_point("codex")
-    workflow.add_edge("codex", "gemini")
-    workflow.add_edge("gemini", "claude")
+    # Fan-out: start → 3个agent并行
+    workflow.set_entry_point("start")
+    workflow.add_edge("start", "codex")
+    workflow.add_edge("start", "gemini")
+    workflow.add_edge("start", "claude")
+
+    # 汇总: 3个agent → synthesize
+    workflow.add_edge("codex", "synthesize")
+    workflow.add_edge("gemini", "synthesize")
     workflow.add_edge("claude", "synthesize")
+
+    # 结束
     workflow.add_edge("synthesize", END)
 
     # 编译图（暂时不使用checkpointer）
