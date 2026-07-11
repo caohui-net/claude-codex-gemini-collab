@@ -884,6 +884,62 @@ def run_claude(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
     )
 
 
+def run_agent_streaming(agent_name: str, prompt: str, stream_file: Path,
+                        base_dir: Path = None, timeout_sec: int = 180) -> AgentReply:
+    """Run agent with streaming output to file.
+
+    Args:
+        agent_name: Agent to run (codex, gemini, claude)
+        prompt: Prompt to send to agent
+        stream_file: Path to write streaming output
+        base_dir: Working directory (default: cwd)
+        timeout_sec: Timeout in seconds
+
+    Returns:
+        AgentReply with final response
+    """
+    if base_dir is None:
+        base_dir = Path.cwd()
+
+    start_time = time.time()
+
+    try:
+        # Call agent and capture output
+        if agent_name == "codex":
+            reply = run_codex(prompt, base_dir, timeout_sec=timeout_sec)
+        elif agent_name == "gemini":
+            reply = run_gemini(prompt, base_dir, timeout_sec=timeout_sec)
+        elif agent_name == "claude":
+            reply = run_claude(prompt, base_dir, timeout_sec=timeout_sec)
+        else:
+            raise ValueError(f"Unknown agent: {agent_name}")
+
+        # Write output to stream file
+        stream_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(stream_file, 'w', encoding='utf-8', buffering=1) as f:
+            f.write(reply.raw_text)
+
+        return reply
+
+    except Exception as e:
+        error_msg = f"Error running {agent_name}: {e}"
+        try:
+            stream_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(stream_file, 'w', encoding='utf-8') as f:
+                f.write(error_msg)
+        except:
+            pass
+
+        return AgentReply(
+            agent=agent_name,
+            raw_text=error_msg,
+            parsed={},
+            artifact_path="",
+            elapsed_sec=time.time() - start_time,
+            exit_code=1
+        )
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: agent_cli.py <agent_name> <prompt>", file=sys.stderr)
