@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-07T08:40:09.540Z
-> Files: 644 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-07T16:14:59.018Z
+> Files: 665 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -11,6 +11,7 @@
 - `test_codex_debug.py` — Test Codex call to trigger debug logging. (~254 tok)
 - `test_codex_direct.py` — Test Codex bypassing daemon. (~230 tok)
 - `test_codex_stderr.py` — Test Codex stderr capture. (~205 tok)
+- `test_inject.md` — 测试文档 (~12 tok)
 
 ## ../../.claude/
 
@@ -222,6 +223,7 @@
 
 ## .collab/
 
+- `state_manager.py` — StateManager: save_workflow, save_agent_state, recover_workflow, get_failed_agents + 4 more (~3071 tok)
 
 ## .collab/artifacts/
 
@@ -230,6 +232,10 @@
 - `agent-skills-integration-plan-v2.md` — Agent-Skills P0整合方案 v2.0 - Prompt注入模式 (~1764 tok)
 - `agent-skills-integration-review.md` — Agent-Skills整合方案审查报告 (~718 tok)
 - `taolun-compatibility-contract.md` — Taolun兼容性合同 v1.0 (~518 tok)
+
+## .collab/templates/
+
+- `context.j2` (~158 tok)
 
 ## .github/workflows/
 
@@ -794,14 +800,20 @@
 ## docs/
 
 - `agent-communication-mechanism.md` — Multi-Agent CLI Communication Mechanism (~2533 tok)
-- `multi-agent-tech-analysis-2026-07-07.md` — 多Agent协作系统技术分析报告 (~2852 tok)
+- `DEPENDENCIES.md` — 依赖安装说明 (~162 tok)
+- `multi-agent-implementation-plan-final.md` — 多Agent协作技术分析与实施计划（最终版） (~1809 tok)
+- `multi-agent-tech-analysis-2026-07-07.md` — 多Agent协作系统技术分析报告 (~5599 tok)
 - `PROJECT-SUMMARY.md` — Project Summary (~7187 tok)
 - `RUFLO-INTEGRATION-ANALYSIS.md` — Ruflo项目整合分析报告 (~2378 tok)
 
 ## scripts/
 
-- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~9738 tok)
+- `a2a_protocol.py` — Agent-to-Agent (A2A) 通信协议 (~389 tok)
+- `a2a_router.py` — A2A消息路由器 (~366 tok)
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~9768 tok)
 - `agent_response_validator.py` — validate_response (~376 tok)
+- `audit_logger.py` — 审计日志模块 (~268 tok)
+- `chunker.py` — MarkdownChunker: chunk, chunk_with_metadata, estimate_tokens (~1636 tok)
 - `collab_context_engineering.py` — Agent-Skills P1: Context Engineering - 跨agent上下文共享 (~389 tok)
 - `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30611 tok)
 - `collab_incremental_implementation.py` — Agent-Skills P2: Incremental Implementation - 任务分解与排序 (~607 tok)
@@ -812,8 +824,17 @@
 - `collab_skills.py` — Agent-skills技能加载器 - Prompt注入模式 (~404 tok)
 - `collab_status_display.py` — Runtime status display for collab discuss command. (~1061 tok)
 - `collab_validate.py` — Validate and repair collaboration state. (~2055 tok)
+- `consensus.py` — 共识判定机制 (~483 tok)
+- `file_injector.py` — inject_files (~826 tok)
 - `install_skill.py` — Install claude-codex-gemini-collab skill with all dependencies. (~553 tok)
+- `jsonrpc_handler.py` — JSONRPCError: register, handle_request, create_request, parse_response + 3 more (~1764 tok)
+- `mock_agent.py` — Mock agent for testing - 返回简单的测试响应 (~163 tok)
+- `rag_search.py` — RAG文档检索工具 (~320 tok)
+- `rag.py` — 简单的向量检索（RAG）模块 - 基于TF-IDF (~680 tok)
+- `recovery.py` — 错误恢复策略 (~429 tok)
+- `smart_router.py` — 智能路由 - 根据任务类型选择最佳agent (~626 tok)
 - `test_response_validator.py` — 测试响应验证器 (~252 tok)
+- `workflow_graph.py` — CollabState: async_retry, decorator, wrapper, run_agent + 8 more (~1674 tok)
 
 ## tests/
 
@@ -822,6 +843,9 @@
 - `test_context_engineering.py` — P1测试：Context Engineering - 跨agent上下文共享 (~672 tok)
 - `test_incremental_implementation.py` — P2测试：Incremental Implementation - 任务分解与排序 (~638 tok)
 - `test_injection_points.py` — 验证注入点在collab_discuss中的集成 (~545 tok)
+- `test_integration.py` — 集成测试 - 端到端workflow验证 (~381 tok)
+- `test_p0_components.py` — P0组件单元测试 (~678 tok)
+- `test_template.py` — 测试Jinja2模板渲染 (~326 tok)
 
 ## tests/integration/
 

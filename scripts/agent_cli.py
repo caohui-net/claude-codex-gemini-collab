@@ -862,6 +862,28 @@ def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
         )
 
 # Main entry point
+def run_claude(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180) -> AgentReply:
+    """Run Claude for synthesis and coordination.
+
+    Note: This is a simplified implementation.
+    Claude typically acts as the main coordinator, not a called agent.
+    """
+    import time
+    start = time.time()
+
+    # For now, return a simple synthesis message
+    synthesis = f"[Claude综合分析]\n\n基于prompt: {prompt[:100]}...\n\n这是一个综合性分析响应。"
+
+    return AgentReply(
+        agent="claude",
+        raw_text=synthesis,
+        parsed={},
+        artifact_path="",
+        elapsed_sec=time.time() - start,
+        exit_code=0
+    )
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: agent_cli.py <agent_name> <prompt>", file=sys.stderr)

@@ -1014,6 +1014,102 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-06-25T00:48:17.981Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-07-07T08:54:59.463Z",
+      "error_message": "Missing await",
+      "file": "docs/multi-agent-tech-analysis-2026-07-07.md",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: ### 模式3：知识源管理系统（swarmclaw）⭐ **高价值发现**; **来源**：swarmclaw项目（workflow深度分析）",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-07T08:55:23.641Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-07-07T14:05:03.638Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "24 lines replaced/restructured",
+      "fix": "Rewrote 29→5 lines (24 removed) | Also: # Process file injections (same as run_codex); injected = []",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-07T14:05:18.858Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-07-07T15:07:05.739Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/workflow_graph.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 22→35 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-07T15:07:05.739Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-07-07T15:08:45.937Z",
+      "error_message": "Missing await",
+      "file": "scripts/workflow_graph.py",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: async def codex_node(state: CollabState) -> dict:; \"\"\"Codex节点（异步）\"\"\" | Also: async def start_node(state: CollabState) -> dict:; \"\"\"启动节点（fan-out入口，异步）\"\"\" | Also: # 测试（异步）; async def main(): | Also: from functools import wraps; def async_retry(max_attempts: int = 3, base_delay: float = 2",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-07-07T15:11:07.798Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-07-07T15:13:06.338Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/workflow_graph.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 24→35 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-07T15:13:06.338Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-07-07T15:45:12.668Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/workflow_graph.py",
+      "root_cause": "Had \"python3\"",
+      "fix": "Changed to \"venv/bin/python3\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-07T15:45:12.668Z"
     }
   ]
 }
