@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Agent CLI 和工作流修复** - 修复运行时错误并切换到生产模式
+  - 添加 `run_claude()` 函数修复 `NameError: name 'run_claude' is not defined`
+  - workflow_graph.py 从 mock_agent 切换到真实 agent_cli（生产就绪）
+  - 解决 jinja2 依赖问题（v3.1.6 已安装）
+  - 新增 tests/test_template.py 验证 Jinja2 模板渲染
+
+### Verified
+
+- 测试验证通过：test_discuss_topic (5个测试), test_discussion_consensus (E2E), test_response_validator (全部通过)
+- 提交: 4f449c4
+
 ## [0.5.1] - 2026-06-25
 
 ### Fixed
