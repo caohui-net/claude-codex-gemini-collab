@@ -1238,6 +1238,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-12T03:37:33.160Z"
+    },
+    {
+      "id": "bug-078",
+      "timestamp": "2026-07-13T01:32:10.083952",
+      "error_message": "讨论脚本执行时没有显示进度和结果",
+      "file": "scripts/collab_discuss.py",
+      "root_cause": "Phase 1和Phase 2代码在worktree branches未merge到master",
+      "fix": "merge phase1+phase2到master并push",
+      "tags": [
+        "merge",
+        "parallel-mode",
+        "progress-display"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T01:32:10.083990"
     }
   ]
 }
