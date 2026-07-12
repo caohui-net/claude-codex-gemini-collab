@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, List, Dict, Optional
 
 from agentmemory_bridge import AgentMemoryBridge, dedupe as dedupe_memory_values
-from agent_cli import run_codex, run_gemini, AgentReply
+from agent_cli import run_codex, run_gemini, run_agent_streaming, AgentReply
 from agent_response_validator import validate_response
 from collab_event import append_event, read_events, read_state
 from collab_init import init_collaboration
@@ -1859,6 +1859,66 @@ def invoke_agent_parallel(
     return reply
 
 
+def tail_file(file_path: Path, max_lines: int = 30) -> str:
+    """Read last N lines from file.
+
+    Args:
+        file_path: Path to file
+        max_lines: Maximum lines to read (default: 30)
+
+    Returns:
+        Last N lines as string
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            return ''.join(lines[-max_lines:])
+    except Exception as e:
+        return f"[Error reading {file_path}: {e}]"
+
+
+def build_stream_aware_prompt(base_prompt: str, agent_name: str,
+                               streams_dir: Path) -> str:
+    """Build prompt with peer agent progress context.
+
+    Args:
+        base_prompt: Original prompt
+        agent_name: Current agent name
+        streams_dir: Directory containing stream files
+
+    Returns:
+        Enhanced prompt with peer context
+    """
+    # Agent execution order
+    agent_order = ["codex", "gemini", "claude"]
+
+    try:
+        current_idx = agent_order.index(agent_name)
+    except ValueError:
+        return base_prompt
+
+    # Read prior agents' streams
+    peer_context = []
+    for prior_agent in agent_order[:current_idx]:
+        stream_file = streams_dir / f"{prior_agent}.stream"
+        if stream_file.exists():
+            recent = tail_file(stream_file, max_lines=30)
+            peer_context.append(f"## {prior_agent}当前进展:\n{recent}\n")
+
+    if not peer_context:
+        return base_prompt
+
+    # Build enhanced prompt
+    context_block = "\n".join(peer_context)
+    return f"""{base_prompt}
+
+---
+**实时上下文**: 以下是其他agents的进行中工作，供参考：
+
+{context_block}
+"""
+
+
 def run_discussion(
     base_dir: Path,
     task_id: str,
@@ -1901,19 +1961,27 @@ def run_discussion(
             print(f"   💡 Consider: --participants gemini  or simplify topic")
         print()
 
-        # Ensure fast artifacts directory
+        # Ensure fast artifacts and streams directories
         fast_artifacts_dir = collab_dir / "artifacts" / "fast"
         fast_artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-        # Run single round: invoke each agent
+        streams_dir = collab_dir / "streams"
+        streams_dir.mkdir(parents=True, exist_ok=True)
+
+        # Run single round with stream awareness
         artifacts_refs = []
         for participant in participants:
             print(f"🤖 Invoking {participant}...")
             try:
+                # Build stream-aware prompt
+                aware_prompt = build_stream_aware_prompt(topic, participant, streams_dir)
+                stream_file = streams_dir / f"{participant}.stream"
+
+                # Call agent with streaming
                 if participant == "codex":
-                    reply = run_codex(topic, base_dir, timeout_sec=timeout_sec)
+                    reply = run_agent_streaming("codex", aware_prompt, stream_file, base_dir, timeout_sec)
                 elif participant == "gemini":
-                    reply = run_gemini(topic, base_dir, timeout_sec=timeout_sec)
+                    reply = run_agent_streaming("gemini", aware_prompt, stream_file, base_dir, timeout_sec)
                 else:
                     print(f"⚠️  Unknown participant: {participant}")
                     continue
