@@ -97,3 +97,84 @@ class Hub:
             f.write(snapshot.to_json())
 
         return snapshot
+
+    def get_snapshot(self, snapshot_id: str) -> Optional[HubSnapshot]:
+        """读取指定快照
+
+        Args:
+            snapshot_id: 快照ID
+
+        Returns:
+            HubSnapshot对象，如果不存在返回None
+        """
+        snapshot_file = self.snapshots_dir / f"{snapshot_id}.json"
+        if not snapshot_file.exists():
+            return None
+
+        with open(snapshot_file, 'r', encoding='utf-8') as f:
+            return HubSnapshot.from_json(f.read())
+
+    def list_snapshots(self, agent: Optional[str] = None) -> List[HubSnapshot]:
+        """列出所有快照
+
+        Args:
+            agent: 可选，仅返回指定agent的快照
+
+        Returns:
+            HubSnapshot列表，按时间戳降序排序
+        """
+        snapshots = []
+        for snapshot_file in self.snapshots_dir.glob("*.json"):
+            try:
+                with open(snapshot_file, 'r', encoding='utf-8') as f:
+                    snapshot = HubSnapshot.from_json(f.read())
+                    if agent is None or snapshot.agent == agent:
+                        snapshots.append(snapshot)
+            except Exception:
+                continue  # 跳过损坏的快照文件
+
+        # 按时间戳降序排序
+        snapshots.sort(key=lambda s: s.timestamp, reverse=True)
+        return snapshots
+
+    def update_current(self, agent: str, snapshot: HubSnapshot) -> None:
+        """原子更新current symlink指向最新快照
+
+        使用临时symlink + rename实现原子性，确保并发安全
+
+        Args:
+            agent: agent名称
+            snapshot: 要设置为current的快照
+        """
+        target = self.snapshots_dir / f"{snapshot.snapshot_id}.json"
+        link_path = self.current_dir / f"{agent}.json"
+        temp_link = self.current_dir / f".{agent}.json.tmp"
+
+        # 删除可能存在的临时文件
+        if temp_link.exists() or temp_link.is_symlink():
+            temp_link.unlink()
+
+        # 创建临时symlink
+        os.symlink(target, temp_link)
+
+        # 原子替换（rename是原子操作）
+        temp_link.replace(link_path)
+
+    def get_current_snapshot(self, agent: str) -> Optional[HubSnapshot]:
+        """获取agent的当前快照
+
+        Args:
+            agent: agent名称
+
+        Returns:
+            当前快照，如果不存在返回None
+        """
+        link_path = self.current_dir / f"{agent}.json"
+        if not link_path.exists():
+            return None
+
+        try:
+            with open(link_path, 'r', encoding='utf-8') as f:
+                return HubSnapshot.from_json(f.read())
+        except Exception:
+            return None
