@@ -84,3 +84,6 @@
 - 不要用系统的`python3 -m pytest`，会被RTK包装 → 使用完整路径
 - 分段输出规则：必须多次分段，避免一次性大量输出
 
+
+### 2026-07-12: collab discuss默认模式
+用户偏好parallel模式为默认。修改argparse default值从"full"改为"parallel"。
