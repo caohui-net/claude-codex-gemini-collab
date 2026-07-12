@@ -72,3 +72,15 @@
 ## Decision Log
 
 <!-- Significant technical decisions with rationale. Why X was chosen over Y. -->
+
+## 2026-07-12 Hub Phase 2完成
+
+### Key Learnings
+- pytest被RTK包装导致收集失败 → 使用`/usr/bin/python3 -m pytest`绕过
+- 测试文件生成后立即通过(18/18)
+- Event sourcing + SSE infrastructure完成
+
+### Do-Not-Repeat
+- 不要用系统的`python3 -m pytest`，会被RTK包装 → 使用完整路径
+- 分段输出规则：必须多次分段，避免一次性大量输出
+

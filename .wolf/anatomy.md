@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T03:20:07.941Z
-> Files: 676 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T03:37:33.145Z
+> Files: 677 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -237,9 +237,10 @@
 ## .claude/worktrees/phase2-hub-architecture/scripts/
 
 - `async_hub.py` — AsyncHub: create_snapshot, get_snapshot, list_snapshots, update_current + 1 more (~520 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30622 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30690 tok)
 - `hub.py` — class: to_dict, from_dict, to_json, from_json + 5 more (~1413 tok)
 - `parallel_engine.py` — run_agent_async, parallel_run_agents (~633 tok)
+- `parallel_handler.py` — Parallel mode handler for collab_discuss (~428 tok)
 
 ## .claude/worktrees/phase2-hub-architecture/tests/
 
