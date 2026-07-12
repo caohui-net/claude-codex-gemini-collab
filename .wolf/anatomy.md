@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-07T16:14:59.018Z
-> Files: 665 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T03:20:07.941Z
+> Files: 676 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -220,6 +220,35 @@
 ## .claude/skills/run-tests/
 
 - `SKILL.md` (~189 tok)
+
+## .claude/worktrees/changelog-update/
+
+- `CHANGELOG.md` — Changelog (~3588 tok)
+
+## .claude/worktrees/phase1-stream-awareness/scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10286 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~31191 tok)
+
+## .claude/worktrees/phase1-stream-awareness/tests/
+
+- `test_stream_awareness.py` — Basic integration test for stream awareness feature. (~1156 tok)
+
+## .claude/worktrees/phase2-hub-architecture/scripts/
+
+- `async_hub.py` — AsyncHub: create_snapshot, get_snapshot, list_snapshots, update_current + 1 more (~520 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30622 tok)
+- `hub.py` — class: to_dict, from_dict, to_json, from_json + 5 more (~1413 tok)
+- `parallel_engine.py` — run_agent_async, parallel_run_agents (~633 tok)
+
+## .claude/worktrees/phase2-hub-architecture/tests/
+
+- `test_hub.py` — Hub功能测试 (~723 tok)
+- `test_parallel.py` — 并行执行引擎测试 (~240 tok)
+
+## .claude/worktrees/realtime-comm-plan/.omc/plans/
+
+- `realtime-communication-plan.md` — 实时通讯改进实施计划 (~1342 tok)
 
 ## .collab/
 
