@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-07-12
+
+### Added
+
+- **Hub Infrastructure Phase 2 Completion** - Full event-sourcing and streaming foundation
+  - Async event streaming endpoint (`/api/v1/events/stream/{task_id}`) with SSE (Server-Sent Events)
+  - Event ring buffer pattern: max 100 events per task for memory efficiency
+  - Atomic event journal with lock-based consistency (mkdir mutex pattern)
+  - Event validation and state machine with cross-file consistency checks
+  - Task progress tracking with real-time push capability
+  - JSONL event log storage for event sourcing
+
 ### Fixed
 
 - **Agent CLI 和工作流修复** - 修复运行时错误并切换到生产模式
@@ -15,7 +27,7 @@ All notable changes to this project will be documented in this file.
 ### Verified
 
 - 测试验证通过：test_discuss_topic (5个测试), test_discussion_consensus (E2E), test_response_validator (全部通过)
-- 提交: 4f449c4
+- Hub infrastructure: EventSourceResponse streaming, collab_event atomic operations, task progress tracking
 
 ## [0.5.1] - 2026-06-25
 
