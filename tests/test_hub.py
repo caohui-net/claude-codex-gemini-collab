@@ -64,3 +64,32 @@ def test_list_snapshots():
         assert len(codex_snapshots) == 1
         assert codex_snapshots[0].agent == "codex"
         print("✓ test_list_snapshots passed")
+
+
+def test_atomic_update():
+    """测试原子更新current symlink"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        hub = Hub(Path(tmpdir))
+
+        # 创建快照
+        snapshot = hub.create_snapshot("claude", "final content")
+
+        # 更新current
+        hub.update_current("claude", snapshot)
+
+        # 获取current
+        current = hub.get_current_snapshot("claude")
+
+        assert current is not None
+        assert current.snapshot_id == snapshot.snapshot_id
+        assert current.content == "final content"
+        print("✓ test_atomic_update passed")
+
+
+if __name__ == "__main__":
+    print("=== Hub Feature Tests ===")
+    test_create_snapshot()
+    test_get_snapshot()
+    test_list_snapshots()
+    test_atomic_update()
+    print("✅ All Hub tests passed!")
