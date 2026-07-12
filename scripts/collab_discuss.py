@@ -1942,7 +1942,14 @@ def run_discussion(
         print(f"📁 Artifacts: {', '.join(artifacts_refs) if artifacts_refs else 'none'}")
         print("\n💡 Fast mode complete. Use full mode for multi-round consensus.")
         return 0
-    elif not collab_dir.exists():
+
+    # Parallel mode: async parallel execution
+    if mode == "parallel":
+        from parallel_handler import run_parallel_discussion
+        return run_parallel_discussion(topic, participants, base_dir, timeout_sec)
+
+    # Full mode checks
+    if not collab_dir.exists():
         print("❌ Collaboration not initialized. Run: collab init")
         return 1
 
@@ -2510,7 +2517,7 @@ if __name__ == "__main__":
     discuss_parser.add_argument("task_id", nargs='?', help="Task ID (optional if --topic provided)")
     discuss_parser.add_argument("topic", nargs='?', help="Discussion topic (positional, or use --topic)")
     discuss_parser.add_argument("--topic", dest="topic_flag", help="Discussion topic (alternative to positional)")
-    discuss_parser.add_argument("--mode", choices=["fast", "full"], default="full", help="fast: single-round stateless (ccg-style), full: multi-round persistent (default)")
+    discuss_parser.add_argument("--mode", choices=["fast", "full", "parallel"], default="full", help="fast: single-round stateless, full: multi-round persistent (default), parallel: async parallel execution")
     discuss_parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
     discuss_parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
     discuss_parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
