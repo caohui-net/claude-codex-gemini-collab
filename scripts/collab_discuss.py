@@ -1942,7 +1942,14 @@ def run_discussion(
         print(f"📁 Artifacts: {', '.join(artifacts_refs) if artifacts_refs else 'none'}")
         print("\n💡 Fast mode complete. Use full mode for multi-round consensus.")
         return 0
-    elif not collab_dir.exists():
+
+    # Parallel mode: async parallel execution
+    if mode == "parallel":
+        from parallel_handler import run_parallel_discussion
+        return run_parallel_discussion(topic, participants, base_dir, timeout_sec)
+
+    # Full mode checks
+    if not collab_dir.exists():
         print("❌ Collaboration not initialized. Run: collab init")
         return 1
 
