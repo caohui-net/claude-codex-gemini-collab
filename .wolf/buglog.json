@@ -1254,6 +1254,39 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-13T01:32:10.083990"
+    },
+    {
+      "id": "bug-079",
+      "timestamp": "2026-07-12T17:33:57.885Z",
+      "error_message": "Incorrect value in code",
+      "file": ".claude/worktrees/default-parallel-mode/scripts/collab_discuss.py",
+      "root_cause": "Had \"full\"",
+      "fix": "Changed to \"parallel\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T17:33:57.885Z"
+    },
+    {
+      "id": "bug-080",
+      "timestamp": "2026-07-14T17:01:42.564646",
+      "error_message": "Codex返回非JSON响应",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "run_codex_api的API请求中缺少response_format参数",
+      "fix": "添加response_format: {type: json_object}强制返回JSON",
+      "tags": [
+        "codex",
+        "json",
+        "api",
+        "response-format"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T17:01:42.564674"
     }
   ]
 }
