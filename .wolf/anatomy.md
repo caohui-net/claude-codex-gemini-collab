@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T03:37:33.145Z
-> Files: 677 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-16T05:20:49.976Z
+> Files: 681 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -10,6 +10,7 @@
 - `claude-r2-环境拆分.md` — Claude Round 2: 验证与最终判断 (~689 tok)
 - `test_codex_debug.py` — Test Codex call to trigger debug logging. (~254 tok)
 - `test_codex_direct.py` — Test Codex bypassing daemon. (~230 tok)
+- `test_codex_json_fix.py` — test_codex_json_response, hello (~467 tok)
 - `test_codex_stderr.py` — Test Codex stderr capture. (~205 tok)
 - `test_inject.md` — 测试文档 (~12 tok)
 
@@ -224,6 +225,18 @@
 ## .claude/worktrees/changelog-update/
 
 - `CHANGELOG.md` — Changelog (~3588 tok)
+
+## .claude/worktrees/default-parallel-mode/scripts/
+
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~31271 tok)
+
+## .claude/worktrees/fix-codex-json-response/scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10301 tok)
+
+## .claude/worktrees/fix-codex-response-format/scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10301 tok)
 
 ## .claude/worktrees/phase1-stream-awareness/scripts/
 
