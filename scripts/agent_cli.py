@@ -184,6 +184,7 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
     body = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
+        "response_format": {"type": "json_object"},
     }).encode()
 
     req = urllib.request.Request(url, data=body, headers={
