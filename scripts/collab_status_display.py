@@ -18,7 +18,7 @@ def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = 
     RESET = "\033[0m"
     BOLD = "\033[1m"
 
-    print(f"\n{BOLD}{CYAN}━━━ Runtime Status ━━━{RESET}")
+    print(f"\n{BOLD}{CYAN}━━━ Runtime Status ━━━{RESET}", flush=True)
 
     # TMUX info - detect rmux version dynamically
     if use_tmux is not None:
@@ -74,22 +74,22 @@ def show_runtime_status(base_dir: str = None, task_id: str = None, topic: str = 
         task_status = "unknown"
 
     # Display
-    print(f"{GREEN}RMux{RESET}: {tmux_status}  {GREEN}Claude{RESET}: {claude_session}..  {GREEN}Status{RESET}: {task_status}")
+    print(f"{GREEN}RMux{RESET}: {tmux_status}  {GREEN}Claude{RESET}: {claude_session}..  {GREEN}Status{RESET}: {task_status}", flush=True)
 
     # Participants and mode
     if participants:
-        print(f"{GREEN}Participants{RESET}: {', '.join(participants)}  {GREEN}Mode{RESET}: {mode or 'full'}")
+        print(f"{GREEN}Participants{RESET}: {', '.join(participants)}  {GREEN}Mode{RESET}: {mode or 'full'}", flush=True)
 
     # Rounds
     if max_rounds:
-        print(f"{GREEN}Rounds{RESET}: 1/{max_rounds}")
+        print(f"{GREEN}Rounds{RESET}: 1/{max_rounds}", flush=True)
 
     # Task
     if task_id:
         display_task = task_id[:60] + "..." if len(task_id) > 60 else task_id
-        print(f"{YELLOW}Task{RESET}: {display_task}")
+        print(f"{YELLOW}Task{RESET}: {display_task}", flush=True)
 
-    print(f"{CYAN}━━━━━━━━━━━━━━━━━━{RESET}\n")
+    print(f"{CYAN}━━━━━━━━━━━━━━━━━━{RESET}\n", flush=True)
 
 
 if __name__ == "__main__":
