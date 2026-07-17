@@ -233,7 +233,7 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
             print("⚠️  文件过大已分块，当前仅处理第一块（多轮支持待实现）", file=sys.stderr)
             os.environ["TAOLUN_CODEX_BACKEND"] = "cli"
 
-    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "cli").lower()
+    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
     if backend == "api":
         return run_codex_api(prompt, timeout_sec=min(timeout_sec, 120))
     if backend == "auto":

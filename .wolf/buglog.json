@@ -1290,19 +1290,22 @@
     },
     {
       "id": "bug-081",
-      "timestamp": "2026-07-17T09:10:34.862Z",
-      "error_message": "Incorrect value in code",
-      "file": ".claude/worktrees/fix-codex-backend-default/scripts/agent_cli.py",
-      "root_cause": "Had \"cli\"",
-      "fix": "Changed to \"api\"",
+      "timestamp": "2026-07-17T17:11:21.422519",
+      "error_message": "Codex超时失败(exit code 124), 360秒后无返回",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "默认backend为cli导致不使用带response_format修复的API模式",
+      "fix": "将TAOLUN_CODEX_BACKEND默认值从cli改为api",
       "tags": [
-        "auto-detected",
-        "wrong-value",
-        "py"
+        "codex",
+        "backend",
+        "timeout",
+        "api"
       ],
-      "related_bugs": [],
+      "related_bugs": [
+        "bug-080"
+      ],
       "occurrences": 1,
-      "last_seen": "2026-07-17T09:10:34.862Z"
+      "last_seen": "2026-07-17T17:11:21.422546"
     }
   ]
 }
