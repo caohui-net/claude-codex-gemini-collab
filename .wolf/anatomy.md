@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-16T05:20:49.976Z
-> Files: 681 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-17T09:10:34.852Z
+> Files: 682 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -229,6 +229,10 @@
 ## .claude/worktrees/default-parallel-mode/scripts/
 
 - `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~31271 tok)
+
+## .claude/worktrees/fix-codex-backend-default/scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10301 tok)
 
 ## .claude/worktrees/fix-codex-json-response/scripts/
 

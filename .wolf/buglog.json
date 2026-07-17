@@ -1287,6 +1287,22 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-07-16T13:30:16.612605"
+    },
+    {
+      "id": "bug-081",
+      "timestamp": "2026-07-17T09:10:34.862Z",
+      "error_message": "Incorrect value in code",
+      "file": ".claude/worktrees/fix-codex-backend-default/scripts/agent_cli.py",
+      "root_cause": "Had \"cli\"",
+      "fix": "Changed to \"api\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-17T09:10:34.862Z"
     }
   ]
 }
