@@ -1340,6 +1340,26 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-18T17:33:09.979713"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-07-18T17:38:01.275137",
+      "error_message": "taolun技能缺少依赖模块file_injector.py和chunker.py",
+      "file": "~/.claude/skills/taolun/scripts/",
+      "root_cause": "同步agent_cli.py时未同步其依赖模块",
+      "fix": "复制file_injector.py和chunker.py到全局技能目录",
+      "tags": [
+        "taolun",
+        "dependencies",
+        "file_injector",
+        "chunker"
+      ],
+      "related_bugs": [
+        "bug-080",
+        "bug-081"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T17:38:01.275159"
     }
   ]
 }
