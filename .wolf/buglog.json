@@ -1323,6 +1323,23 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-17T23:24:49.298819"
+    },
+    {
+      "id": "bug-083",
+      "timestamp": "2026-07-18T17:33:09.979673",
+      "error_message": "taolun技能要求多轮讨论却执行单轮",
+      "file": "~/.claude/skills/taolun/SKILL.md",
+      "root_cause": "SKILL.md硬编码--mode fast，未根据用户意图动态选择",
+      "fix": "添加MODE选择逻辑：多轮关键词→full，快速关键词→fast，默认full",
+      "tags": [
+        "taolun",
+        "mode",
+        "user-intent",
+        "skill"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-18T17:33:09.979713"
     }
   ]
 }
