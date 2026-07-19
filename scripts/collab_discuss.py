@@ -1835,11 +1835,14 @@ def invoke_agent_parallel(
     timeout_sec: int,
     use_tmux: bool,
     keep_session: bool,
-    files: Optional[List[str]] = None
+    files: Optional[List[str]] = None,
+    round_num: int = 1
 ) -> AgentReply:
-    """Invoke single agent (for parallel execution)."""
+    """Invoke single agent (for parallel execution) with two-phase reasoning optimization."""
     if agent == "codex":
-        reply = run_codex(prompt, base_dir, files, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
+        # Two-phase reasoning: Round 1 uses medium (fast), Round 2+ uses high (deep)
+        reasoning_effort = "medium" if round_num == 1 else "high"
+        reply = run_codex(prompt, base_dir, files, timeout_sec, use_tmux=use_tmux, keep_session=keep_session, reasoning_effort=reasoning_effort)
     elif agent == "gemini":
         reply = run_gemini(prompt, base_dir, files, timeout_sec, use_tmux=use_tmux, keep_session=keep_session)
     else:
@@ -2302,7 +2305,7 @@ def run_discussion(
                     agent_start = time.time()
                     future = executor.submit(
                         invoke_agent_parallel, agent, prompt, base_dir,
-                        timeout_sec, use_tmux, keep_session, files
+                        timeout_sec, use_tmux, keep_session, files, round_num
                     )
                     futures[future] = (agent, agent_start)
 

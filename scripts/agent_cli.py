@@ -211,13 +211,15 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         return AgentReply("codex", "", {"error": str(e)}, "", elapsed, 1)
 
 
-def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
-    """Run Codex for discussion analysis.
+def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False, reasoning_effort: str = None) -> AgentReply:
+    """Run Codex for discussion analysis with two-phase reasoning optimization.
 
     Args:
         files: Optional list of file paths (relative to base_dir) to inject as context.
                Small files (<5KB) are injected as full content.
                Large files are referenced by path (CLI mode only).
+        reasoning_effort: Override reasoning effort ("low", "medium", "high").
+                         If None, uses two-phase strategy: medium first, then high if issues found.
 
     Backend selection via TAOLUN_CODEX_BACKEND env var:
       api  — direct API call (fast, no CLI overhead)
@@ -244,6 +246,9 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
             return reply
         # fallback to CLI below
 
+    # CLI mode: use reasoning_effort parameter
+    # Default to None which will use config.toml's setting
+
     start = time.time()
 
     # Check if tmux should be used
@@ -252,8 +257,15 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
     # Try Daemon first (only if not using tmux)
     task_id = None
     if not should_use_tmux:
+        # Build command with optional reasoning_effort override
+        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check"]
+        if reasoning_effort:
+            cmd.extend(["-c", f"model_reasoning_effort={reasoning_effort}"])
+            print(f"🎯 [Codex] 推理模式: {reasoning_effort}", file=sys.stderr, flush=True)
+        cmd.append("-")
+
         task_id = submit_task({
-            "cmd": ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"],
+            "cmd": cmd,
             "cwd": str(base_dir),
             "timeout": timeout_sec,
             "stdin": prompt
@@ -369,7 +381,10 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
 
     # Tmux execution path
     if should_use_tmux:
-        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"]
+        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check"]
+        if reasoning_effort:
+            cmd.extend(["-c", f"model_reasoning_effort={reasoning_effort}"])
+        cmd.append("-")
         stdout, exit_code = run_in_tmux(cmd, str(base_dir), prompt, timeout_sec, keep_session)
         elapsed = time.time() - start
 
