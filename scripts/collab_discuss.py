@@ -1852,9 +1852,26 @@ def invoke_agent_parallel(
             exit_code=1
         )
 
+    # 类型检查：确保reply是AgentReply对象
+    if not isinstance(reply, AgentReply):
+        print(f"⚠️  [{agent}] 返回类型错误: {type(reply)}, 转换为错误响应", file=sys.stderr)
+        reply = AgentReply(
+            agent=agent,
+            raw_text=str(reply),
+            parsed={"error": f"type_error: got {type(reply).__name__}"},
+            artifact_path="",
+            elapsed_sec=0,
+            exit_code=1
+        )
+
     # 应用安全验证
-    if reply.parsed and not reply.parsed.get("error"):
-        reply.parsed = validate_response(reply.parsed, agent)
+    if reply.parsed and isinstance(reply.parsed, dict) and not reply.parsed.get("error"):
+        validated = validate_response(reply.parsed, agent)
+        # 确保validate_response返回字典
+        if isinstance(validated, dict):
+            reply.parsed = validated
+        else:
+            print(f"⚠️  [{agent}] validate_response返回类型错误: {type(validated)}", file=sys.stderr)
 
     return reply
 
