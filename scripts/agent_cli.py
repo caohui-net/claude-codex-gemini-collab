@@ -228,12 +228,11 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
     """
     import os
 
-    # Process file injections if provided (using new injector with chunking support)
+    # 准备文件路径列表（用于--image参数）
+    file_paths = []
     if files:
-        prompt, needs_multi_turn = inject_files(prompt, base_dir, files)
-        if needs_multi_turn:
-            print("⚠️  文件过大已分块，当前仅处理第一块（多轮支持待实现）", file=sys.stderr)
-            os.environ["TAOLUN_CODEX_BACKEND"] = "cli"
+        file_paths = [str(base_dir / f) for f in files]
+        print(f"📎 [Codex] 附加文件: {len(file_paths)}个", file=sys.stderr, flush=True)
 
     backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
     print(f"🔍 [Codex] 使用backend模式: {backend}", file=sys.stderr)
@@ -262,6 +261,9 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
         if reasoning_effort:
             cmd.extend(["-c", f"model_reasoning_effort={reasoning_effort}"])
             print(f"🎯 [Codex] 推理模式: {reasoning_effort}", file=sys.stderr, flush=True)
+        # 添加文件附件
+        for file_path in file_paths:
+            cmd.extend(["--image", file_path])
         cmd.append("-")
 
         task_id = submit_task({
@@ -384,6 +386,9 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
         cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check"]
         if reasoning_effort:
             cmd.extend(["-c", f"model_reasoning_effort={reasoning_effort}"])
+        # 添加文件附件
+        for file_path in file_paths:
+            cmd.extend(["--image", file_path])
         cmd.append("-")
         stdout, exit_code = run_in_tmux(cmd, str(base_dir), prompt, timeout_sec, keep_session)
         elapsed = time.time() - start
