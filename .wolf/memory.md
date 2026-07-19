@@ -1595,3 +1595,15 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+
+## Session: 2026-07-19 15:49
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:49 | 验证Codex --image参数 | test-doc.md, test-doc.html | 支持.md和.html文件，token使用11K-14K | ~2k |
+| 15:50 | 分析集成方案 | agent_cli.py | 使用--image替代inject_files，预期提速50%+ | ~3k |
+| 15:55 | 修改inject_files调用 | agent_cli.py:231-236 | 改为file_paths准备 | ~1k |
+| 15:56 | daemon模式添加--image | agent_cli.py:260-264 | 循环添加--image参数 | ~0.5k |
+| 15:57 | tmux模式添加--image | agent_cli.py:386-389 | 循环添加--image参数 | ~0.5k |
+| 15:58 | 同步到全局目录 | ~/.claude/skills/taolun/ | 修改已同步 | ~0.5k |
+| 16:00 | 提交并推送 | commit 9de6b27 | "feat: 使用Codex原生--image参数处理文件附件" | ~1k |
