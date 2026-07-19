@@ -1360,6 +1360,22 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-07-18T17:38:01.275159"
+    },
+    {
+      "id": "bug-085",
+      "timestamp": "2026-07-19T05:10:26.515Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/skills/taolun/scripts/collab_discuss.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→22 lines (2 removed) | Also: if reply.parsed and not reply.parsed.get(\"error\"):; reply.parsed = validate_response(reply.parsed, age",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-19T05:12:13.774Z"
     }
   ]
 }

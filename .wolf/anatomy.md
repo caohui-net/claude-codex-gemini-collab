@@ -1,13 +1,14 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-17T09:10:34.852Z
-> Files: 682 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-19T05:41:45.575Z
+> Files: 687 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
 - `ccg-project-audit-2026-06-15.md` — claude-codex-gemini-collab 项目整体审核报告 (~149 tok)
 - `claude-r0-环境拆分.md` — Claude Round 0: 系统开发与生产环境拆分方案分析 (~332 tok)
 - `claude-r2-环境拆分.md` — Claude Round 2: 验证与最终判断 (~689 tok)
+- `test_codex_backend.py` — 测试Codex backend在API模式下是否正常工作（包括文件场景） (~352 tok)
 - `test_codex_debug.py` — Test Codex call to trigger debug logging. (~254 tok)
 - `test_codex_direct.py` — Test Codex bypassing daemon. (~230 tok)
 - `test_codex_json_fix.py` — test_codex_json_response, hello (~467 tok)
@@ -36,10 +37,11 @@
 
 ## ../../.claude/skills/taolun/
 
-- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3040 tok)
+- `SKILL.md` — Claude-Codex-Gemini Collaboration Skill (~3122 tok)
 
 ## ../../.claude/skills/taolun/scripts/
 
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30729 tok)
 - `taolun_daemon.py` — CCG Collaboration Daemon - MVP implementation. (~4046 tok)
 
 ## ../graduation-leave-system/
@@ -230,6 +232,11 @@
 
 - `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~31271 tok)
 
+## .claude/worktrees/fix-agent-type-error/scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10344 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~31458 tok)
+
 ## .claude/worktrees/fix-codex-backend-default/scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10301 tok)
@@ -241,6 +248,10 @@
 ## .claude/worktrees/fix-codex-response-format/scripts/
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10301 tok)
+
+## .claude/worktrees/fix-status-bar-flush/scripts/
+
+- `collab_status_display.py` — Runtime status display for collab discuss command. (~1082 tok)
 
 ## .claude/worktrees/phase1-stream-awareness/scripts/
 
