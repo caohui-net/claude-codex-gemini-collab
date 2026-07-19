@@ -211,13 +211,15 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         return AgentReply("codex", "", {"error": str(e)}, "", elapsed, 1)
 
 
-def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
-    """Run Codex for discussion analysis.
+def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False, reasoning_effort: str = None) -> AgentReply:
+    """Run Codex for discussion analysis with two-phase reasoning optimization.
 
     Args:
         files: Optional list of file paths (relative to base_dir) to inject as context.
                Small files (<5KB) are injected as full content.
                Large files are referenced by path (CLI mode only).
+        reasoning_effort: Override reasoning effort ("low", "medium", "high").
+                         If None, uses two-phase strategy: medium first, then high if issues found.
 
     Backend selection via TAOLUN_CODEX_BACKEND env var:
       api  — direct API call (fast, no CLI overhead)
@@ -226,21 +228,25 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
     """
     import os
 
-    # Process file injections if provided (using new injector with chunking support)
+    # 准备文件路径列表（用于--image参数）
+    file_paths = []
     if files:
-        prompt, needs_multi_turn = inject_files(prompt, base_dir, files)
-        if needs_multi_turn:
-            print("⚠️  文件过大已分块，当前仅处理第一块（多轮支持待实现）", file=sys.stderr)
-            os.environ["TAOLUN_CODEX_BACKEND"] = "cli"
+        file_paths = [str(base_dir / f) for f in files]
+        print(f"📎 [Codex] 附加文件: {len(file_paths)}个", file=sys.stderr, flush=True)
 
     backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
+    print(f"🔍 [Codex] 使用backend模式: {backend}", file=sys.stderr)
     if backend == "api":
+        print(f"🔍 [Codex] API模式 timeout={min(timeout_sec, 120)}秒", file=sys.stderr)
         return run_codex_api(prompt, timeout_sec=min(timeout_sec, 120))
     if backend == "auto":
         reply = run_codex_api(prompt, timeout_sec=30)
         if reply.exit_code == 0:
             return reply
         # fallback to CLI below
+
+    # CLI mode: use reasoning_effort parameter
+    # Default to None which will use config.toml's setting
 
     start = time.time()
 
@@ -250,8 +256,18 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
     # Try Daemon first (only if not using tmux)
     task_id = None
     if not should_use_tmux:
+        # Build command with optional reasoning_effort override
+        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check"]
+        if reasoning_effort:
+            cmd.extend(["-c", f"model_reasoning_effort={reasoning_effort}"])
+            print(f"🎯 [Codex] 推理模式: {reasoning_effort}", file=sys.stderr, flush=True)
+        # 添加文件附件
+        for file_path in file_paths:
+            cmd.extend(["--image", file_path])
+        cmd.append("-")
+
         task_id = submit_task({
-            "cmd": ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"],
+            "cmd": cmd,
             "cwd": str(base_dir),
             "timeout": timeout_sec,
             "stdin": prompt
@@ -367,7 +383,13 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
 
     # Tmux execution path
     if should_use_tmux:
-        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check", "-"]
+        cmd = ["codex", "exec", "--cd", str(base_dir), "--skip-git-repo-check"]
+        if reasoning_effort:
+            cmd.extend(["-c", f"model_reasoning_effort={reasoning_effort}"])
+        # 添加文件附件
+        for file_path in file_paths:
+            cmd.extend(["--image", file_path])
+        cmd.append("-")
         stdout, exit_code = run_in_tmux(cmd, str(base_dir), prompt, timeout_sec, keep_session)
         elapsed = time.time() - start
 
