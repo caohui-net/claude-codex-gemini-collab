@@ -1828,6 +1828,36 @@ def run_resume(
     )
 
 
+def validate_and_fix_file_paths(files: Optional[List[str]], base_dir: Path) -> List[str]:
+    """验证文件路径,尝试从/tmp/复制缺失的文件"""
+    if not files:
+        return []
+
+    import shutil
+    validated_files = []
+    for file_path in files:
+        full_path = base_dir / file_path
+
+        if full_path.exists():
+            validated_files.append(file_path)
+            continue
+
+        # 尝试从/tmp/复制
+        tmp_path = Path("/tmp") / Path(file_path).name
+        if tmp_path.exists():
+            print(f"⚠️  [文件修复] {file_path} 不存在,从/tmp/复制...", file=sys.stderr)
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(tmp_path, full_path)
+            validated_files.append(file_path)
+            print(f"✅ [文件修复] 已复制: {tmp_path.name} -> {file_path}", file=sys.stderr)
+        else:
+            raise FileNotFoundError(
+                f"文件不存在: {file_path} (工作区: {full_path}, /tmp/: {tmp_path})"
+            )
+
+    return validated_files
+
+
 def invoke_agent_parallel(
     agent: str,
     prompt: str,
@@ -1839,6 +1869,18 @@ def invoke_agent_parallel(
     round_num: int = 1
 ) -> AgentReply:
     """Invoke single agent (for parallel execution) with two-phase reasoning optimization."""
+    # 验证并修复文件路径
+    if files:
+        try:
+            files = validate_and_fix_file_paths(files, base_dir)
+        except FileNotFoundError as e:
+            return AgentReply(
+                agent=agent,
+                raw_text=f"❌ 文件路径错误: {e}",
+                elapsed_sec=0.0,
+                exit_code=1
+            )
+
     if agent == "codex":
         # Two-phase reasoning: Round 1 uses medium (fast), Round 2+ uses high (deep)
         reasoning_effort = "medium" if round_num == 1 else "high"
