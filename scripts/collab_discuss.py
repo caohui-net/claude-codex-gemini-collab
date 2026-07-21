@@ -1280,7 +1280,21 @@ Agent: claude
 - Which compatibility contracts must remain stable?
 - What evidence or tests are required before concluding?
 """
-    artifact_path = save_artifact(base_dir, task_id, 0, "claude", content)
+    # Use new metadata function for Pre-discuss analysis
+    project_name = base_dir.name
+    file_path = create_discussion_file_with_metadata(
+        project_name=project_name,
+        topic=topic,
+        round_num=0,
+        author="claude",
+        author_role="initiator",
+        content=content,
+        mode="sequential",
+        agents=["claude", "codex", "gemini"],
+        participants=["claude"]
+    )
+    artifact_path = str(file_path.relative_to(base_dir))
+
     return {
         "response_id": response_id,
         "agent": "claude",
@@ -2478,7 +2492,21 @@ def run_discussion(
                     if isinstance(reply.parsed, dict):
                         reply.parsed = normalize_parsed_response(reply.parsed, task_id, round_num, agent)
 
-                    artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
+                    # Create discussion file with metadata
+                    project_name = base_dir.name
+                    file_path = create_discussion_file_with_metadata(
+                        project_name=project_name,
+                        topic=topic,
+                        round_num=round_num,
+                        author=agent,
+                        author_role="participant",
+                        content=reply.raw_text,
+                        mode=mode,
+                        agents=participants,
+                        participants=[agent],
+                        files=[{"path": f, "purpose": "reference"} for f in (files or [])]
+                    )
+                    artifact_path = str(file_path.relative_to(base_dir))
                     artifacts_refs.append(artifact_path)
 
                     # Mark completed
