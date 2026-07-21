@@ -1129,6 +1129,95 @@ def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
     return detail["consensus"], detail["blocking_issues"]
 
 
+def create_discussion_file_with_metadata(
+    project_name: str,
+    topic: str,
+    round_num: int,
+    author: str,
+    author_role: str,
+    content: str,
+    mode: str = "parallel",
+    agents: List[str] = None,
+    participants: List[str] = None,
+    trigger_info: Dict[str, Any] = None,
+    files: List[Dict[str, Any]] = None,
+    **context
+) -> Path:
+    """Create discussion file with YAML frontmatter metadata.
+
+    Returns absolute path to the created file.
+    """
+    import yaml
+
+    # Base directory for all discussions
+    discussions_base = Path.home() / ".claude" / "collab" / "discussions"
+    project_dir = discussions_base / project_name
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate unique discussion ID
+    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    import hashlib
+    discussion_id = f"disc-{timestamp_str}-{hashlib.sha256(f'{project_name}{topic}{round_num}'.encode()).hexdigest()[:4]}"
+
+    # Filename: {topic}_r{round}_{author}_{timestamp}.md
+    safe_topic = re.sub(r'[^\w\s-]', '', topic).strip().replace(' ', '-')[:50]
+    filename = f"{safe_topic}_r{round_num}_{author}_{timestamp_str}.md"
+    file_path = project_dir / filename
+
+    # Build metadata
+    metadata = {
+        # Layer 1: Core identification (required)
+        "project": project_name,
+        "project_path": str(Path.cwd()),
+        "topic": topic,
+        "round": round_num,
+        "discussion_id": discussion_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "author": author,
+        "author_role": author_role,
+    }
+
+    # Layer 2: Context (recommended)
+    if trigger_info:
+        metadata["trigger"] = trigger_info
+
+    if files:
+        metadata["files"] = files
+
+    metadata["mode"] = mode
+
+    if agents:
+        metadata["agents"] = agents
+
+    # Round info (distinguish overall agents from this round's participants)
+    if participants:
+        round_info = {
+            "participants": participants,
+            "author_position": participants.index(author) + 1 if author in participants else 1,
+            "total_in_round": len(participants)
+        }
+        metadata["round_info"] = round_info
+
+    # Layer 3: Relations (optional) - can be added via **context
+    for key in ["parent_discussion", "related_discussions", "decisions", "todos"]:
+        if key in context:
+            metadata[key] = context[key]
+
+    # Layer 4: Stats (optional) - can be added via **context
+    for key in ["stats", "quality", "custom"]:
+        if key in context:
+            metadata[key] = context[key]
+
+    # Write file with YAML frontmatter
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write("---\n")
+        yaml.dump(metadata, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        f.write("---\n\n")
+        f.write(content)
+
+    return file_path
+
+
 def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, content: str) -> str:
     """Save discussion artifact to file."""
     artifacts_dir = base_dir / ".collab" / "artifacts"
