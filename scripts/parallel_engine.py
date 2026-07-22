@@ -34,11 +34,11 @@ async def run_agent_async(agent_name: str, prompt: str, hub: AsyncHub,
 
     # 在executor中运行同步agent函数
     if agent_name == "codex":
-        reply = await loop.run_in_executor(None, run_codex, prompt, base_dir, timeout_sec)
+        reply = await loop.run_in_executor(None, run_codex, prompt, base_dir, None, timeout_sec)
     elif agent_name == "gemini":
-        reply = await loop.run_in_executor(None, run_gemini, prompt, base_dir, timeout_sec)
+        reply = await loop.run_in_executor(None, run_gemini, prompt, base_dir, None, timeout_sec)
     elif agent_name == "claude":
-        reply = await loop.run_in_executor(None, run_claude, prompt, base_dir, timeout_sec)
+        reply = await loop.run_in_executor(None, run_claude, prompt, base_dir, None, timeout_sec)
     else:
         raise ValueError(f"Unknown agent: {agent_name}")
 
