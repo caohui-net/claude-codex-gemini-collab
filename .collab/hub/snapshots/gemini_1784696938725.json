@@ -1,0 +1,10 @@
+{
+  "agent": "gemini",
+  "timestamp": 1784696938.7256844,
+  "content": "测试收到。系统运行正常，当前处于 **Plan（计划）模式**。请问您需要我协助什么任务？",
+  "metadata": {
+    "elapsed_sec": 10.452975988388062,
+    "exit_code": 0
+  },
+  "snapshot_id": "gemini_1784696938725"
+}

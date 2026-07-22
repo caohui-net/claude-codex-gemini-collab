@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-19T05:41:45.575Z
-> Files: 687 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T04:17:03.602Z
+> Files: 690 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -18,6 +18,11 @@
 ## ../../.claude/
 
 - `CLAUDE.md` — oh-my-claudecode - Intelligent Multi-Agent Orchestration (~2452 tok)
+
+## ../../.claude/jobs/80021e17/tmp/
+
+- `discussion-metadata-design.md` — 讨论文件元数据设计方案 (~182 tok)
+- `metadata_function.py` — create_discussion_file_with_metadata (~821 tok)
 
 ## ../../.claude/skills/claude-codex-gemini-collab/
 
@@ -236,6 +241,10 @@
 
 - `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10344 tok)
 - `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~31458 tok)
+
+## .claude/worktrees/fix-codex-api-empty-response/scripts/
+
+- `agent_cli.py` — CLI wrappers for Codex and Gemini agents. (~10588 tok)
 
 ## .claude/worktrees/fix-codex-backend-default/scripts/
 
