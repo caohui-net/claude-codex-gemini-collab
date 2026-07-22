@@ -181,9 +181,18 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         return AgentReply("codex", "", {"error": "missing base_url or api_key"}, "", time.time() - start, 1)
 
     url = base_url.rstrip("/") + "/chat/completions"
+
+    # System prompt to guide Codex behavior
+    system_prompt = """You are Codex, an expert software architect and code reviewer.
+Analyze code changes, identify issues, and provide actionable feedback in JSON format.
+Focus on: correctness, design quality, test coverage, edge cases, and best practices."""
+
     body = json.dumps({
         "model": model,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ],
         "response_format": {"type": "json_object"},
     }).encode()
 
@@ -234,7 +243,7 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
         file_paths = [str(base_dir / f) for f in files]
         print(f"📎 [Codex] 附加文件: {len(file_paths)}个", file=sys.stderr, flush=True)
 
-    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "cli").lower()
+    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
     print(f"🔍 [Codex] 使用backend模式: {backend}", file=sys.stderr)
     if backend == "api":
         print(f"🔍 [Codex] API模式 timeout={min(timeout_sec, 120)}秒", file=sys.stderr)
