@@ -1129,6 +1129,95 @@ def judge_consensus(replies: List[AgentReply]) -> tuple[bool, List[str]]:
     return detail["consensus"], detail["blocking_issues"]
 
 
+def create_discussion_file_with_metadata(
+    project_name: str,
+    topic: str,
+    round_num: int,
+    author: str,
+    author_role: str,
+    content: str,
+    mode: str = "parallel",
+    agents: List[str] = None,
+    participants: List[str] = None,
+    trigger_info: Dict[str, Any] = None,
+    files: List[Dict[str, Any]] = None,
+    **context
+) -> Path:
+    """Create discussion file with YAML frontmatter metadata.
+
+    Returns absolute path to the created file.
+    """
+    import yaml
+
+    # Base directory for all discussions
+    discussions_base = Path.home() / ".claude" / "collab" / "discussions"
+    project_dir = discussions_base / project_name
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate unique discussion ID
+    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    import hashlib
+    discussion_id = f"disc-{timestamp_str}-{hashlib.sha256(f'{project_name}{topic}{round_num}'.encode()).hexdigest()[:4]}"
+
+    # Filename: {topic}_r{round}_{author}_{timestamp}.md
+    safe_topic = re.sub(r'[^\w\s-]', '', topic).strip().replace(' ', '-')[:50]
+    filename = f"{safe_topic}_r{round_num}_{author}_{timestamp_str}.md"
+    file_path = project_dir / filename
+
+    # Build metadata
+    metadata = {
+        # Layer 1: Core identification (required)
+        "project": project_name,
+        "project_path": str(Path.cwd()),
+        "topic": topic,
+        "round": round_num,
+        "discussion_id": discussion_id,
+        "generated_at": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+        "author": author,
+        "author_role": author_role,
+    }
+
+    # Layer 2: Context (recommended)
+    if trigger_info:
+        metadata["trigger"] = trigger_info
+
+    if files:
+        metadata["files"] = files
+
+    metadata["mode"] = mode
+
+    if agents:
+        metadata["agents"] = agents
+
+    # Round info (distinguish overall agents from this round's participants)
+    if participants:
+        round_info = {
+            "participants": participants,
+            "author_position": participants.index(author) + 1 if author in participants else 1,
+            "total_in_round": len(participants)
+        }
+        metadata["round_info"] = round_info
+
+    # Layer 3: Relations (optional) - can be added via **context
+    for key in ["parent_discussion", "related_discussions", "decisions", "todos"]:
+        if key in context:
+            metadata[key] = context[key]
+
+    # Layer 4: Stats (optional) - can be added via **context
+    for key in ["stats", "quality", "custom"]:
+        if key in context:
+            metadata[key] = context[key]
+
+    # Write file with YAML frontmatter
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write("---\n")
+        yaml.dump(metadata, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        f.write("---\n\n")
+        f.write(content)
+
+    return file_path
+
+
 def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, content: str) -> str:
     """Save discussion artifact to file."""
     artifacts_dir = base_dir / ".collab" / "artifacts"
@@ -1191,7 +1280,21 @@ Agent: claude
 - Which compatibility contracts must remain stable?
 - What evidence or tests are required before concluding?
 """
-    artifact_path = save_artifact(base_dir, task_id, 0, "claude", content)
+    # Use new metadata function for Pre-discuss analysis
+    project_name = base_dir.name
+    file_path = create_discussion_file_with_metadata(
+        project_name=project_name,
+        topic=topic,
+        round_num=0,
+        author="claude",
+        author_role="initiator",
+        content=content,
+        mode="sequential",
+        agents=["claude", "codex", "gemini"],
+        participants=["claude"]
+    )
+    artifact_path = str(file_path.relative_to(base_dir))
+
     return {
         "response_id": response_id,
         "agent": "claude",
@@ -1828,6 +1931,36 @@ def run_resume(
     )
 
 
+def validate_and_fix_file_paths(files: Optional[List[str]], base_dir: Path) -> List[str]:
+    """验证文件路径,尝试从/tmp/复制缺失的文件"""
+    if not files:
+        return []
+
+    import shutil
+    validated_files = []
+    for file_path in files:
+        full_path = base_dir / file_path
+
+        if full_path.exists():
+            validated_files.append(file_path)
+            continue
+
+        # 尝试从/tmp/复制
+        tmp_path = Path("/tmp") / Path(file_path).name
+        if tmp_path.exists():
+            print(f"⚠️  [文件修复] {file_path} 不存在,从/tmp/复制...", file=sys.stderr)
+            full_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(tmp_path, full_path)
+            validated_files.append(file_path)
+            print(f"✅ [文件修复] 已复制: {tmp_path.name} -> {file_path}", file=sys.stderr)
+        else:
+            raise FileNotFoundError(
+                f"文件不存在: {file_path} (工作区: {full_path}, /tmp/: {tmp_path})"
+            )
+
+    return validated_files
+
+
 def invoke_agent_parallel(
     agent: str,
     prompt: str,
@@ -1839,6 +1972,18 @@ def invoke_agent_parallel(
     round_num: int = 1
 ) -> AgentReply:
     """Invoke single agent (for parallel execution) with two-phase reasoning optimization."""
+    # 验证并修复文件路径
+    if files:
+        try:
+            files = validate_and_fix_file_paths(files, base_dir)
+        except FileNotFoundError as e:
+            return AgentReply(
+                agent=agent,
+                raw_text=f"❌ 文件路径错误: {e}",
+                elapsed_sec=0.0,
+                exit_code=1
+            )
+
     if agent == "codex":
         # Two-phase reasoning: Round 1 uses medium (fast), Round 2+ uses high (deep)
         reasoning_effort = "medium" if round_num == 1 else "high"
@@ -2347,7 +2492,21 @@ def run_discussion(
                     if isinstance(reply.parsed, dict):
                         reply.parsed = normalize_parsed_response(reply.parsed, task_id, round_num, agent)
 
-                    artifact_path = save_artifact(base_dir, task_id, round_num, agent, reply.raw_text)
+                    # Create discussion file with metadata
+                    project_name = base_dir.name
+                    file_path = create_discussion_file_with_metadata(
+                        project_name=project_name,
+                        topic=topic,
+                        round_num=round_num,
+                        author=agent,
+                        author_role="participant",
+                        content=reply.raw_text,
+                        mode=mode,
+                        agents=participants,
+                        participants=[agent],
+                        files=[{"path": f, "purpose": "reference"} for f in (files or [])]
+                    )
+                    artifact_path = str(file_path.relative_to(base_dir))
                     artifacts_refs.append(artifact_path)
 
                     # Mark completed
