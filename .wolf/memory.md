@@ -1647,3 +1647,15 @@
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
 | 09:18 | 修复bug-086 Codex timeout: 添加文件路径验证 | scripts/collab_discuss.py, .wolf/buglog.json | PR#12创建,validate_and_fix_file_paths()函数实现 | ~1200 |
+
+## Session: 2026-07-22 06:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 06:00 | Fixed Codex API empty response issue | scripts/agent_cli.py | Extracted reasoning_content field, handled null values | ~8000 |
+| 06:00 | Fixed configuration reading compatibility | scripts/agent_cli.py | Support dual-path base_url and dual-field api_key | ~2000 |
+| 06:00 | Fixed files parameter passing chain | scripts/collab_discuss.py, parallel_handler.py, parallel_engine.py, agent_cli.py | Complete 4-layer parameter forwarding | ~5000 |
+| 06:00 | Optimized system prompt | scripts/agent_cli.py | Reduced to single line to avoid API failures | ~1000 |
+| 06:00 | Implemented structured Markdown parser | scripts/codex_response_parser.py, collab_integration_demo.py | CodexResponseParser for content consistency | ~4000 |
+| 06:00 | Merged PR #13 to master | git: 8841d3e | All fixes now globally available | ~500 |
+| 06:00 | Updated Wolf buglog | .wolf/buglog.json | Added bug-087 record | ~1000 |
