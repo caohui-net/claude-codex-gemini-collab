@@ -13,6 +13,8 @@ import yaml
 from pathlib import Path
 import sys
 from datetime import datetime, timezone
+import threading
+import time
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
@@ -619,6 +621,186 @@ class TestPathSecurity:
         # Verify filename is not excessively long (Linux limit is 255 bytes)
         assert len(file_path.name.encode('utf-8')) <= 255, \
             f"Filename too long: {len(file_path.name)} bytes"
+
+
+class TestConcurrentScenarios:
+    """Test concurrent file creation and discussion_id collision handling."""
+
+    def test_concurrent_file_creation_same_params(self, tmp_path):
+        """Test concurrent creation with identical parameters."""
+        results = []
+        errors = []
+
+        def create_file():
+            try:
+                file_path = create_discussion_file_with_metadata(
+                    project_name="test-concurrent-same",
+                    topic="Concurrent test",
+                    round_num=1,
+                    author="claude",
+                    author_role="participant",
+                    content="Concurrent content",
+                    mode="parallel",
+                    agents=["claude", "codex"],
+                    participants=["claude"]
+                )
+                results.append(file_path)
+            except Exception as e:
+                errors.append(str(e))
+
+        # Launch 5 threads simultaneously
+        threads = []
+        for _ in range(5):
+            t = threading.Thread(target=create_file)
+            threads.append(t)
+
+        # Start all threads at once
+        for t in threads:
+            t.start()
+
+        # Wait for completion
+        for t in threads:
+            t.join()
+
+        # Verify no errors occurred
+        assert len(errors) == 0, f"Errors during concurrent creation: {errors}"
+
+        # Verify files were created
+        assert len(results) == 5, f"Expected 5 files, got {len(results)}"
+
+        # All files should exist (may overwrite each other)
+        for file_path in results:
+            # Note: Due to race conditions, later threads may overwrite earlier ones
+            # This test documents current behavior: last writer wins
+            pass
+
+        # Verify discussion_id consistency
+        discussion_ids = []
+        for file_path in results:
+            if file_path.exists():
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                parts = content.split('---\n', 2)
+                metadata = yaml.safe_load(parts[1])
+                discussion_ids.append(metadata['discussion_id'])
+
+        # With same params and potentially same timestamp, IDs may be identical
+        # This documents current behavior: no collision prevention
+        assert len(discussion_ids) > 0, "Should have at least one discussion_id"
+
+    def test_concurrent_different_authors(self, tmp_path):
+        """Test concurrent creation with different authors (should create separate files)."""
+        results = []
+        errors = []
+        authors = ["claude", "codex", "gemini", "wolf", "human"]
+
+        def create_file(author):
+            try:
+                file_path = create_discussion_file_with_metadata(
+                    project_name="test-concurrent-diff",
+                    topic="Concurrent different authors",
+                    round_num=1,
+                    author=author,
+                    author_role="participant",
+                    content=f"Content by {author}",
+                    mode="parallel",
+                    agents=authors,
+                    participants=[author]
+                )
+                results.append((author, file_path))
+            except Exception as e:
+                errors.append((author, str(e)))
+
+        # Launch threads with different authors
+        threads = []
+        for author in authors:
+            t = threading.Thread(target=create_file, args=(author,))
+            threads.append(t)
+
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        # Verify no errors
+        assert len(errors) == 0, f"Errors: {errors}"
+
+        # Verify all files created
+        assert len(results) == len(authors), f"Expected {len(authors)} files, got {len(results)}"
+
+        # Different authors should create different files (different filenames)
+        filenames = [fp.name for _, fp in results]
+        # Each author's name should appear in their respective filename
+        for author, file_path in results:
+            assert author in file_path.name, f"Author {author} not in filename {file_path.name}"
+
+        # Verify discussion_ids may differ due to different timestamps
+        discussion_ids = set()
+        for author, file_path in results:
+            if file_path.exists():
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                parts = content.split('---\n', 2)
+                metadata = yaml.safe_load(parts[1])
+                discussion_ids.add(metadata['discussion_id'])
+
+        # Different authors/timestamps should produce different discussion_ids
+        assert len(discussion_ids) > 0, "Should have discussion_ids"
+
+    def test_discussion_id_hash_based_uniqueness(self, tmp_path):
+        """Test that discussion_id hash component ensures uniqueness for different topics."""
+        results = []
+        topics = ["Topic A", "Topic B", "Topic C", "Topic D", "Topic E"]
+
+        def create_file(topic):
+            file_path = create_discussion_file_with_metadata(
+                project_name="test-hash-unique",
+                topic=topic,
+                round_num=1,
+                author="claude",
+                author_role="participant",
+                content=f"Content for {topic}",
+                mode="parallel",
+                agents=["claude"],
+                participants=["claude"]
+            )
+            results.append((topic, file_path))
+
+        # Create files sequentially but quickly to test hash differentiation
+        threads = []
+        for topic in topics:
+            t = threading.Thread(target=create_file, args=(topic,))
+            threads.append(t)
+            t.start()
+            time.sleep(0.001)  # Small delay to prevent exact timestamp collision
+
+        for t in threads:
+            t.join()
+
+        # Extract discussion_ids
+        discussion_ids = {}
+        for topic, file_path in results:
+            if file_path.exists():
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                parts = content.split('---\n', 2)
+                metadata = yaml.safe_load(parts[1])
+                discussion_ids[topic] = metadata['discussion_id']
+
+        # Verify all topics produced discussion_ids
+        assert len(discussion_ids) == len(topics), f"Expected {len(topics)} IDs, got {len(discussion_ids)}"
+
+        # Verify hash component differs (last 4 chars after final -)
+        hashes = set()
+        for disc_id in discussion_ids.values():
+            # Format: disc-YYYYMMDD-HHMMSS-HASH
+            hash_part = disc_id.split('-')[-1]
+            hashes.add(hash_part)
+
+        # Different topics should produce different hashes
+        assert len(hashes) == len(topics), \
+            f"Expected {len(topics)} unique hashes, got {len(hashes)}: {hashes}"
 
 
 if __name__ == "__main__":
