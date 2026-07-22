@@ -213,9 +213,8 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
             enhanced_prompt = f"{prompt}\n\n## Context Files\n\n" + "\n\n".join(file_contexts)
             print(f"🐛 [Debug] Enhanced prompt length: {len(enhanced_prompt)}", file=sys.stderr, flush=True)
 
-    # System prompt - simplified to avoid empty responses
-    # Note: Complex/long system prompts cause API to return empty content
-    system_prompt = "You are Codex, an expert code reviewer. Provide concise technical analysis."
+    # System prompt - keep short to avoid API failures with long prompts
+    system_prompt = "You are Codex, an expert code reviewer."
 
     body = json.dumps({
         "model": model,
