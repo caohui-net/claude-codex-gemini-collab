@@ -1423,20 +1423,28 @@
       "timestamp": "2026-07-22T09:09:18.485Z",
       "error_message": "Codex API返回被截断为44字节，尽管原始响应有12789字节",
       "file": "scripts/agent_cli.py",
-      "root_cause": "Line 252逻辑bug: 'content = reasoning if reasoning else regular' 当reasoning_content存在但很短时（44字节），优先使用短内容而忽略完整的content字段",
-      "fix": "改为 'content = regular if not reasoning else reasoning'，优先使用regular content，仅当reasoning非空时才使用reasoning",
+      "root_cause": "Line 252逻辑bug: 'content = regular if regular else reasoning' 第一次修复'regular if not reasoning else reasoning'仍然错误，当reasoning非空时仍选择短内容",
+      "fix": "正确修复：'content = regular if regular else reasoning'，优先使用content字段，仅当content为空时才使用reasoning_content",
       "tags": [
         "codex",
         "api",
         "content-extraction",
         "reasoning_content",
-        "truncation"
+        "truncation",
+        "verified"
       ],
       "related_bugs": [
         "bug-087"
       ],
-      "occurrences": 1,
-      "last_seen": "2026-07-22T09:09:18.485Z"
+      "occurrences": 2,
+      "last_seen": "2026-07-22T09:33:22.000Z",
+      "verification": {
+        "status": "fixed",
+        "test_date": "2026-07-22T09:33:22.000Z",
+        "before": "API返回6592字节，提取58字节(0.9%)",
+        "after": "API返回1887字节，提取1310字节(69.4%)",
+        "test_file": "/tmp/test-fix-verification-v2.log"
+      }
     }
   ]
 }
