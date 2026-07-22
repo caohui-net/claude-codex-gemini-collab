@@ -183,8 +183,10 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
     url = base_url.rstrip("/") + "/chat/completions"
 
     # System prompt to guide Codex behavior
+    # Note: response_format removed as it causes empty responses on this endpoint
     system_prompt = """You are Codex, an expert software architect and code reviewer.
 Analyze code changes, identify issues, and provide actionable feedback in JSON format.
+Always structure your response as valid JSON with clear fields.
 Focus on: correctness, design quality, test coverage, edge cases, and best practices."""
 
     body = json.dumps({
@@ -193,7 +195,6 @@ Focus on: correctness, design quality, test coverage, edge cases, and best pract
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ],
-        "response_format": {"type": "json_object"},
     }).encode()
 
     req = urllib.request.Request(url, data=body, headers={
