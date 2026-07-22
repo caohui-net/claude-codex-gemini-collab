@@ -146,11 +146,16 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
         return f"Error: {e}", 1
 
 
-def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
+def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -> AgentReply:
     """Call Codex via API directly (bypasses CLI, no Cloudflare timeout).
 
     Reads config from ~/.codex/auth.json and ~/.codex/config.toml.
     Controlled by env: TAOLUN_CODEX_BACKEND=api (enable) | cli (force CLI).
+
+    Args:
+        prompt: The analysis prompt
+        timeout_sec: HTTP timeout in seconds
+        files: Optional list of file paths to inject as context
     """
     import os
     import urllib.request
@@ -159,11 +164,18 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
 
     start = time.time()
 
+    # Debug: log prompt length
+    print(f"🐛 [Debug] run_codex_api called with prompt length: {len(prompt)}", file=sys.stderr, flush=True)
+    print(f"🐛 [Debug] Prompt preview: {prompt[:100]}...", file=sys.stderr, flush=True)
+    if files:
+        print(f"🐛 [Debug] Files to inject: {len(files)}", file=sys.stderr, flush=True)
+
     # Load API key
     auth_path = Path.home() / ".codex" / "auth.json"
     try:
         auth = json.loads(auth_path.read_text())
-        api_key = auth.get("OPENAI_API_KEY", "")
+        # Try both field names for compatibility
+        api_key = auth.get("api_key", "") or auth.get("OPENAI_API_KEY", "")
     except Exception as e:
         return AgentReply("codex", "", {"error": f"auth read failed: {e}"}, "", time.time() - start, 1)
 
@@ -173,7 +185,10 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         config = tomllib.loads(config_path.read_text())
         provider = config.get("model_provider", "fox")
         model = config.get("model", "gpt-5.5")
-        base_url = config.get("model_providers", {}).get(provider, {}).get("base_url", "")
+        # Try top-level base_url first, then nested structure
+        base_url = config.get("base_url", "")
+        if not base_url:
+            base_url = config.get("model_providers", {}).get(provider, {}).get("base_url", "")
     except Exception as e:
         return AgentReply("codex", "", {"error": f"config read failed: {e}"}, "", time.time() - start, 1)
 
@@ -181,10 +196,32 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         return AgentReply("codex", "", {"error": "missing base_url or api_key"}, "", time.time() - start, 1)
 
     url = base_url.rstrip("/") + "/chat/completions"
+
+    # Inject file contents into prompt if files provided
+    enhanced_prompt = prompt
+    if files:
+        file_contexts = []
+        for file_path in files:
+            try:
+                content = Path(file_path).read_text(encoding='utf-8', errors='ignore')
+                file_contexts.append(f"### File: {file_path}\n```\n{content}\n```")
+                print(f"📎 [Debug] Injected {file_path} ({len(content)} chars)", file=sys.stderr, flush=True)
+            except Exception as e:
+                print(f"⚠️  [Debug] Failed to read {file_path}: {e}", file=sys.stderr, flush=True)
+
+        if file_contexts:
+            enhanced_prompt = f"{prompt}\n\n## Context Files\n\n" + "\n\n".join(file_contexts)
+            print(f"🐛 [Debug] Enhanced prompt length: {len(enhanced_prompt)}", file=sys.stderr, flush=True)
+
+    # System prompt - keep short to avoid API failures with long prompts
+    system_prompt = "You are Codex, an expert code reviewer."
+
     body = json.dumps({
         "model": model,
-        "messages": [{"role": "user", "content": prompt}],
-        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": enhanced_prompt}
+        ],
     }).encode()
 
     req = urllib.request.Request(url, data=body, headers={
@@ -194,8 +231,29 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
 
     try:
         with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
-            data = json.loads(resp.read().decode())
-            content = data["choices"][0]["message"]["content"]
+            raw_response = resp.read().decode()
+            print(f"🐛 [Debug] HTTP status: {resp.status}", file=sys.stderr, flush=True)
+            print(f"🐛 [Debug] Raw response length: {len(raw_response)}", file=sys.stderr, flush=True)
+
+            data = json.loads(raw_response)
+            print(f"🐛 [Debug] Parsed JSON keys: {list(data.keys())}", file=sys.stderr, flush=True)
+
+            # 打印完整的choices结构来诊断为什么content为空
+            if "choices" in data and len(data["choices"]) > 0:
+                choice = data["choices"][0]
+                print(f"🐛 [Debug] Choice keys: {list(choice.keys())}", file=sys.stderr, flush=True)
+                print(f"🐛 [Debug] Choice structure: {json.dumps(choice, ensure_ascii=False)[:300]}", file=sys.stderr, flush=True)
+
+            # Extract content: prefer reasoning_content for o1-like models, fallback to content
+            # Note: reasoning_content can be null, not just empty string
+            message = data["choices"][0]["message"]
+            reasoning = message.get("reasoning_content")
+            regular = message.get("content", "")
+            content = reasoning if reasoning else regular
+
+            print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
+            print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
+
             elapsed = time.time() - start
             parsed = {}
             try:
@@ -205,7 +263,9 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
             return AgentReply("codex", content, parsed, "", elapsed, 0)
     except urllib.error.HTTPError as e:
         elapsed = time.time() - start
-        return AgentReply("codex", "", {"error": f"http {e.code}: {e.read(200).decode()}"}, "", elapsed, e.code)
+        error_body = e.read().decode() if hasattr(e, 'read') else str(e)
+        print(f"🐛 [Debug] HTTP Error {e.code}: {error_body[:200]}", file=sys.stderr, flush=True)
+        return AgentReply("codex", "", {"error": f"http {e.code}: {error_body[:200]}"}, "", elapsed, e.code)
     except Exception as e:
         elapsed = time.time() - start
         return AgentReply("codex", "", {"error": str(e)}, "", elapsed, 1)
@@ -238,7 +298,7 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
     print(f"🔍 [Codex] 使用backend模式: {backend}", file=sys.stderr)
     if backend == "api":
         print(f"🔍 [Codex] API模式 timeout={min(timeout_sec, 120)}秒", file=sys.stderr)
-        return run_codex_api(prompt, timeout_sec=min(timeout_sec, 120))
+        return run_codex_api(prompt, timeout_sec=min(timeout_sec, 120), files=file_paths)
     if backend == "auto":
         reply = run_codex_api(prompt, timeout_sec=30)
         if reply.exit_code == 0:

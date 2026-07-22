@@ -87,3 +87,4 @@ response.json
 
 # State database binaries
 data/state_store.db/*.bin
+.venv

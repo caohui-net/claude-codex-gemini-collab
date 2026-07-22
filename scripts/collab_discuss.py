@@ -2179,7 +2179,7 @@ def run_discussion(
     # Parallel mode: async parallel execution
     if mode == "parallel":
         from parallel_handler import run_parallel_discussion
-        return run_parallel_discussion(topic, participants, base_dir, timeout_sec)
+        return run_parallel_discussion(topic, participants, base_dir, timeout_sec, files=files)
 
     # Full mode checks
     if not collab_dir.exists():
@@ -2924,10 +2924,18 @@ if __name__ == "__main__":
                               tmux_version=tmux_info.get('version') if tmux_info else None)
             sys.stdout.flush()  # Force output before run_discussion starts
 
+            # Debug: 追踪files参数
+            files_arg = getattr(args, 'files', None)
+            if files_arg:
+                print(f"🐛 [Debug] collab_discuss main: files={files_arg}", file=sys.stderr, flush=True)
+            else:
+                print(f"🐛 [Debug] collab_discuss main: files is None", file=sys.stderr, flush=True)
+
             rc = run_discussion(base, task_id, topic, participants,
                                 args.max_rounds, hard_max_rounds=10,
                                 timeout_sec=args.timeout_sec, mode=args.mode,
-                                consensus_scope=args.scope, files=getattr(args, 'files', None))
+                                consensus_scope=args.scope, files=files_arg)
+
             # Sync new events to agentmemory (best-effort, non-blocking)
             try:
                 from collab_memory_bridge import sync_events
