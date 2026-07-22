@@ -234,7 +234,7 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
         file_paths = [str(base_dir / f) for f in files]
         print(f"📎 [Codex] 附加文件: {len(file_paths)}个", file=sys.stderr, flush=True)
 
-    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
+    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "cli").lower()
     print(f"🔍 [Codex] 使用backend模式: {backend}", file=sys.stderr)
     if backend == "api":
         print(f"🔍 [Codex] API模式 timeout={min(timeout_sec, 120)}秒", file=sys.stderr)
