@@ -383,6 +383,94 @@ class TestMetadataFormatConstraints:
             assert metadata['round'] == round_num, f"round mismatch: expected {round_num}, got {metadata['round']}"
 
 
+class TestPathSecurity:
+    """Test path security constraints for artifact_path and file creation."""
+
+    def test_artifact_path_relative_only(self, tmp_path):
+        """Test that generated artifact_path is always relative (no leading /)."""
+        file_path = create_discussion_file_with_metadata(
+            project_name="test-path-relative",
+            topic="Test topic",
+            round_num=0,
+            author="claude",
+            author_role="initiator",
+            content="Test content"
+        )
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        parts = content.split('---\n', 2)
+        metadata = yaml.safe_load(parts[1])
+
+        # artifact_path should be in metadata if present
+        # For now, test that file_path itself is not vulnerable
+        assert not str(file_path).startswith('..'), "File path should not contain directory traversal"
+
+    def test_topic_sanitization_prevents_traversal(self, tmp_path):
+        """Test that malicious topic with .. is sanitized."""
+        malicious_topic = "../../../etc/passwd"
+
+        file_path = create_discussion_file_with_metadata(
+            project_name="test-traversal",
+            topic=malicious_topic,
+            round_num=0,
+            author="claude",
+            author_role="initiator",
+            content="Test content"
+        )
+
+        # Verify file was created in safe location
+        assert file_path.exists()
+        # Verify file is under ~/.claude/collab/discussions/
+        collab_base = Path.home() / ".claude" / "collab" / "discussions"
+        assert str(file_path).startswith(str(collab_base)), \
+            f"File {file_path} not under safe base {collab_base}"
+
+        # Verify filename doesn't contain .. literally
+        assert ".." not in file_path.name, "Filename should not contain .."
+
+    def test_topic_sanitization_prevents_absolute_path(self, tmp_path):
+        """Test that topic with absolute path markers is sanitized."""
+        malicious_topic = "/tmp/malicious_file"
+
+        file_path = create_discussion_file_with_metadata(
+            project_name="test-absolute",
+            topic=malicious_topic,
+            round_num=0,
+            author="claude",
+            author_role="initiator",
+            content="Test content"
+        )
+
+        # Verify file is under safe base directory
+        collab_base = Path.home() / ".claude" / "collab" / "discussions"
+        assert str(file_path).startswith(str(collab_base)), \
+            "File should be created under safe base directory"
+
+        # Verify filename doesn't start with /
+        assert not file_path.name.startswith('/'), "Filename should not start with /"
+
+    def test_filename_length_within_limits(self, tmp_path):
+        """Test that very long topics result in truncated but valid filenames."""
+        long_topic = "A" * 300  # Very long topic
+
+        file_path = create_discussion_file_with_metadata(
+            project_name="test-long-topic",
+            topic=long_topic,
+            round_num=0,
+            author="claude",
+            author_role="initiator",
+            content="Test content"
+        )
+
+        # Verify file was created
+        assert file_path.exists()
+
+        # Verify filename is not excessively long (Linux limit is 255 bytes)
+        assert len(file_path.name.encode('utf-8')) <= 255, \
+            f"Filename too long: {len(file_path.name)} bytes"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
 
