@@ -244,13 +244,13 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
                 print(f"🐛 [Debug] Choice keys: {list(choice.keys())}", file=sys.stderr, flush=True)
                 print(f"🐛 [Debug] Choice structure: {json.dumps(choice, ensure_ascii=False)[:300]}", file=sys.stderr, flush=True)
 
-            # Extract content: prefer reasoning_content for o1-like models, fallback to content
-            # Note: reasoning_content can be null, not just empty string
+            # Extract content: prefer content field, fallback to reasoning_content only if content is empty
+            # Note: reasoning_content can be null or a short placeholder, content has the actual response
             message = data["choices"][0]["message"]
             reasoning = message.get("reasoning_content")
             regular = message.get("content", "")
-            # Use regular content if reasoning is None or empty, otherwise use reasoning
-            content = regular if not reasoning else reasoning
+            # Always prefer regular content first, only use reasoning if regular is empty
+            content = regular if regular else reasoning
 
             print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
             print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
