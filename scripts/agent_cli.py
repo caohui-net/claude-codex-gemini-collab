@@ -159,6 +159,10 @@ def run_codex_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
 
     start = time.time()
 
+    # Debug: log prompt length
+    print(f"🐛 [Debug] run_codex_api called with prompt length: {len(prompt)}", file=sys.stderr, flush=True)
+    print(f"🐛 [Debug] Prompt preview: {prompt[:100]}...", file=sys.stderr, flush=True)
+
     # Load API key
     auth_path = Path.home() / ".codex" / "auth.json"
     try:
@@ -206,6 +210,8 @@ Focus on: correctness, design quality, test coverage, edge cases, and best pract
         with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
             data = json.loads(resp.read().decode())
             content = data["choices"][0]["message"]["content"]
+            print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
+            print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
             elapsed = time.time() - start
             parsed = {}
             try:
