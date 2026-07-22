@@ -10,7 +10,8 @@ from parallel_engine import parallel_run_agents
 
 
 def run_parallel_discussion(topic: str, participants: List[str],
-                           base_dir: Path, timeout_sec: int = 180) -> int:
+                           base_dir: Path, timeout_sec: int = 180,
+                           files: Optional[List[str]] = None) -> int:
     """运行parallel模式discussion
 
     Args:
@@ -18,6 +19,7 @@ def run_parallel_discussion(topic: str, participants: List[str],
         participants: 参与的agents列表
         base_dir: 项目根目录
         timeout_sec: 每个agent的超时时间
+        files: 可选的文件列表（相对于base_dir的路径）
 
     Returns:
         退出码（0=成功）
@@ -30,7 +32,7 @@ def run_parallel_discussion(topic: str, participants: List[str],
 
     # 运行并行执行
     try:
-        results = asyncio.run(parallel_run_agents(participants, topic, base_dir, timeout_sec))
+        results = asyncio.run(parallel_run_agents(participants, topic, base_dir, timeout_sec, files))
 
         # 输出结果
         print("\n" + "="*60)

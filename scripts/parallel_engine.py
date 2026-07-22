@@ -8,7 +8,7 @@
 import asyncio
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -17,7 +17,8 @@ from agent_cli import run_codex, run_gemini, run_claude, AgentReply
 
 
 async def run_agent_async(agent_name: str, prompt: str, hub: AsyncHub,
-                         base_dir: Path, timeout_sec: int = 180) -> AgentReply:
+                         base_dir: Path, timeout_sec: int = 180,
+                         files: Optional[List[str]] = None) -> AgentReply:
     """异步运行单个agent并保存到Hub
 
     Args:
@@ -26,19 +27,24 @@ async def run_agent_async(agent_name: str, prompt: str, hub: AsyncHub,
         hub: AsyncHub实例
         base_dir: 项目根目录
         timeout_sec: 超时时间
+        files: 可选的文件列表（相对于base_dir的路径）
 
     Returns:
         AgentReply对象
     """
     loop = asyncio.get_event_loop()
 
-    # 在executor中运行同步agent函数
+    # Debug: 追踪files参数
+    if files:
+        print(f"🐛 [Debug] run_agent_async({agent_name}): files={len(files)} items", file=sys.stderr, flush=True)
+
+    # 在executor中运行同步agent函数，传递files参数
     if agent_name == "codex":
-        reply = await loop.run_in_executor(None, run_codex, prompt, base_dir, None, timeout_sec)
+        reply = await loop.run_in_executor(None, run_codex, prompt, base_dir, files, timeout_sec)
     elif agent_name == "gemini":
-        reply = await loop.run_in_executor(None, run_gemini, prompt, base_dir, None, timeout_sec)
+        reply = await loop.run_in_executor(None, run_gemini, prompt, base_dir, files, timeout_sec)
     elif agent_name == "claude":
-        reply = await loop.run_in_executor(None, run_claude, prompt, base_dir, None, timeout_sec)
+        reply = await loop.run_in_executor(None, run_claude, prompt, base_dir, files, timeout_sec)
     else:
         raise ValueError(f"Unknown agent: {agent_name}")
 
@@ -53,7 +59,7 @@ async def run_agent_async(agent_name: str, prompt: str, hub: AsyncHub,
 
 
 async def parallel_run_agents(agents: List[str], prompt: str, base_dir: Path,
-                              timeout_sec: int = 180) -> Dict[str, AgentReply]:
+                              timeout_sec: int = 180, files: Optional[List[str]] = None) -> Dict[str, AgentReply]:
     """并行运行多个agents
 
     Args:
@@ -61,6 +67,7 @@ async def parallel_run_agents(agents: List[str], prompt: str, base_dir: Path,
         prompt: 提示词
         base_dir: 项目根目录
         timeout_sec: 超时时间
+        files: 可选的文件列表（相对于base_dir的路径）
 
     Returns:
         {agent_name: AgentReply} 字典
@@ -69,7 +76,7 @@ async def parallel_run_agents(agents: List[str], prompt: str, base_dir: Path,
 
     # 创建并行任务
     tasks = [
-        run_agent_async(agent, prompt, hub, base_dir, timeout_sec)
+        run_agent_async(agent, prompt, hub, base_dir, timeout_sec, files)
         for agent in agents
     ]
 
