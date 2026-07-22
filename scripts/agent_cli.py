@@ -249,7 +249,8 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
             message = data["choices"][0]["message"]
             reasoning = message.get("reasoning_content")
             regular = message.get("content", "")
-            content = reasoning if reasoning else regular
+            # Use regular content if reasoning is None or empty, otherwise use reasoning
+            content = regular if not reasoning else reasoning
 
             print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
             print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
