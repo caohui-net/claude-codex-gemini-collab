@@ -383,6 +383,156 @@ class TestMetadataFormatConstraints:
             assert metadata['round'] == round_num, f"round mismatch: expected {round_num}, got {metadata['round']}"
 
 
+class TestBackwardCompatibility:
+    """Test backward compatibility between v1.0 and v1.1 metadata formats."""
+
+    def test_v1_0_format_without_round_info(self, tmp_path):
+        """Test that v1.0 format (without round_info) can still be parsed."""
+        # Create a v1.0-style metadata file manually
+        v1_0_content = """---
+project: test-v1-0-compat
+project_path: /home/user/test-project
+topic: Test v1.0 compatibility
+round: 1
+discussion_id: disc-20260722-100000-abc1
+generated_at: 2026-07-22T10:00:00Z
+author: codex
+author_role: participant
+mode: parallel
+agents:
+- claude
+- codex
+- gemini
+---
+
+This is v1.0 format discussion content (no round_info field).
+"""
+
+        test_file = tmp_path / "v1_0_test.md"
+        test_file.write_text(v1_0_content, encoding='utf-8')
+
+        # Verify file can be parsed
+        with open(test_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        parts = content.split('---\n', 2)
+        assert len(parts) >= 3
+
+        metadata = yaml.safe_load(parts[1])
+
+        # Verify required v1.0 fields are present
+        assert metadata['project'] == 'test-v1-0-compat'
+        assert metadata['round'] == 1
+        assert metadata['author'] == 'codex'
+        assert metadata['agents'] == ['claude', 'codex', 'gemini']
+
+        # Verify round_info is absent (v1.0 doesn't have it)
+        assert 'round_info' not in metadata
+
+    def test_v1_1_format_with_round_info(self, tmp_path):
+        """Test that v1.1 format (with round_info) works correctly."""
+        file_path = create_discussion_file_with_metadata(
+            project_name="test-v1-1-compat",
+            topic="Test v1.1 compatibility",
+            round_num=1,
+            author="codex",
+            author_role="participant",
+            content="This is v1.1 format with round_info.",
+            agents=["claude", "codex", "gemini"],
+            participants=["codex", "gemini"]
+        )
+
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        parts = content.split('---\n', 2)
+        metadata = yaml.safe_load(parts[1])
+
+        # Verify v1.1-specific field is present
+        assert 'round_info' in metadata
+        assert metadata['round_info']['participants'] == ['codex', 'gemini']
+        assert metadata['round_info']['total_in_round'] == 2
+
+    def test_mixed_v1_0_and_v1_1_coexistence(self, tmp_path):
+        """Test that v1.0 and v1.1 formats can coexist in same discussion."""
+        # Create v1.0 file manually
+        v1_0_content = """---
+project: test-mixed-compat
+project_path: /home/user/test-project
+topic: Mixed version test
+round: 0
+discussion_id: disc-20260722-100000-abc1
+generated_at: 2026-07-22T10:00:00Z
+author: claude
+author_role: initiator
+---
+
+Round 0 content (v1.0 format).
+"""
+        v1_0_file = tmp_path / "v1_0_round_0.md"
+        v1_0_file.write_text(v1_0_content, encoding='utf-8')
+
+        # Create v1.1 file using function
+        v1_1_file = create_discussion_file_with_metadata(
+            project_name="test-mixed-compat",
+            topic="Mixed version test",
+            round_num=1,
+            author="codex",
+            author_role="participant",
+            content="Round 1 content (v1.1 format).",
+            agents=["claude", "codex"],
+            participants=["codex"]
+        )
+
+        # Both files should exist and be parseable
+        assert v1_0_file.exists()
+        assert v1_1_file.exists()
+
+        # Parse both
+        with open(v1_0_file, 'r', encoding='utf-8') as f:
+            v1_0_meta = yaml.safe_load(f.read().split('---\n', 2)[1])
+        with open(v1_1_file, 'r', encoding='utf-8') as f:
+            v1_1_meta = yaml.safe_load(f.read().split('---\n', 2)[1])
+
+        # Same project
+        assert v1_0_meta['project'] == v1_1_meta['project']
+        # v1.0 no round_info, v1.1 has round_info
+        assert 'round_info' not in v1_0_meta
+        assert 'round_info' in v1_1_meta
+
+    def test_unknown_fields_ignored_gracefully(self, tmp_path):
+        """Test that unknown/future fields are ignored (forward compatibility)."""
+        future_content = """---
+project: test-future-fields
+project_path: /home/user/test-project
+topic: Future fields test
+round: 0
+discussion_id: disc-20260722-100000-abc1
+generated_at: 2026-07-22T10:00:00Z
+author: claude
+author_role: initiator
+future_field_v2: "This field doesn't exist in v1.1"
+experimental_feature: true
+---
+
+Content with future unknown fields.
+"""
+        test_file = tmp_path / "future_fields.md"
+        test_file.write_text(future_content, encoding='utf-8')
+
+        # Should parse without errors
+        with open(test_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        parts = content.split('---\n', 2)
+        metadata = yaml.safe_load(parts[1])
+
+        # Required fields still work
+        assert metadata['project'] == 'test-future-fields'
+        assert metadata['author'] == 'claude'
+        # Unknown fields present but don't break parsing
+        assert 'future_field_v2' in metadata
+        assert 'experimental_feature' in metadata
+
+
 class TestPathSecurity:
     """Test path security constraints for artifact_path and file creation."""
 
