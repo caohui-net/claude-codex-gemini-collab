@@ -1172,7 +1172,7 @@ def create_discussion_file_with_metadata(
         "topic": topic,
         "round": round_num,
         "discussion_id": discussion_id,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
         "author": author,
         "author_role": author_role,
     }
