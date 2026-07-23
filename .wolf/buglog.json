@@ -1445,6 +1445,23 @@
         "after": "API返回1887字节，提取1310字节(69.4%)",
         "test_file": "/tmp/test-fix-verification-v2.log"
       }
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-07-23T01:40:00.000Z",
+      "error_message": "Discussion files created outside project directory (ValueError: path is not relative to base_dir)",
+      "file": "~/.claude/skills/taolun/scripts/collab_discuss.py",
+      "root_cause": "Line 1157: discussions_base = Path.home() / '.claude' / 'collab' / 'discussions' - creates files in global directory instead of project's .collab/discussions/",
+      "fix": "1. Added base_dir parameter to create_discussion_file_with_metadata function signature; 2. Changed Line 1157 to: discussions_dir = base_dir / '.collab' / 'discussions'; 3. Updated Line 1293 and Line 2567 callers to pass base_dir parameter",
+      "tags": [
+        "path-security",
+        "file-location",
+        "relative-path",
+        "global-skill-fix"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T01:40:00.000Z"
     }
   ]
 }
