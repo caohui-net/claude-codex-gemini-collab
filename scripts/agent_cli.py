@@ -29,6 +29,93 @@ class AgentReply:
 
 # ========== HTTP & Config Utilities ==========
 
+class AgentConfig:
+    """统一配置管理器 - 支持多种配置格式"""
+
+    def __init__(self, agent_name: str):
+        self.agent = agent_name
+        self._config: dict = {}
+        self._error: str = ""
+        self._load()
+
+    def _load(self):
+        """根据agent类型加载相应配置"""
+        if self.agent == "codex":
+            self._load_codex()
+        elif self.agent == "gemini":
+            self._load_gemini()
+
+    def _load_codex(self):
+        """加载Codex配置：auth.json + config.toml"""
+        # Load auth.json
+        auth_path = Path.home() / ".codex" / "auth.json"
+        auth, err = _load_json_config(auth_path)
+        if err:
+            self._error = err
+            return
+
+        api_key = auth.get("api_key", "") or auth.get("OPENAI_API_KEY", "")
+        if not api_key:
+            self._error = "missing api_key in auth.json"
+            return
+
+        # Load config.toml
+        config_path = Path.home() / ".codex" / "config.toml"
+        try:
+            import tomllib
+            config = tomllib.loads(config_path.read_text())
+            provider = config.get("model_provider", "fox")
+            model = config.get("model", "gpt-5.5")
+
+            # Try top-level base_url first, then nested
+            base_url = config.get("base_url", "")
+            if not base_url:
+                base_url = config.get("model_providers", {}).get(provider, {}).get("base_url", "")
+
+            self._config = {
+                "api_key": api_key,
+                "base_url": base_url,
+                "model": model,
+                "provider": provider,
+            }
+        except Exception as e:
+            self._error = f"config.toml read failed: {e}"
+
+    def _load_gemini(self):
+        """加载Gemini配置：.env"""
+        env_path = Path.home() / ".gemini" / ".env"
+        cfg: dict = {}
+        try:
+            for line in env_path.read_text().splitlines():
+                line = line.strip()
+                if "=" in line and not line.startswith("#"):
+                    k, _, v = line.partition("=")
+                    cfg[k.strip()] = v.strip()
+        except Exception as e:
+            self._error = f"env read failed: {e}"
+            return
+
+        self._config = {
+            "base_url": cfg.get("GOOGLE_GEMINI_BASE_URL", "").rstrip("/"),
+            "api_key": cfg.get("GEMINI_API_KEY", ""),
+            "model": cfg.get("GEMINI_MODEL", "gemini-3-pro-preview"),
+        }
+
+    def get(self, key: str, default=None):
+        """获取配置项"""
+        return self._config.get(key, default)
+
+    def validate(self, *required_keys) -> tuple[bool, str]:
+        """验证必需配置项，返回 (是否有效, 错误信息)"""
+        if self._error:
+            return False, self._error
+
+        missing = [k for k in required_keys if not self.get(k)]
+        if missing:
+            return False, f"missing: {', '.join(missing)}"
+        return True, ""
+
+
 def _http_post_json(url: str, body: dict, headers: dict, timeout_sec: int = 60) -> tuple[dict, int, str]:
     """Send HTTP POST request with JSON body.
 
@@ -206,30 +293,15 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
     if files:
         print(f"🐛 [Debug] Files to inject: {len(files)}", file=sys.stderr, flush=True)
 
-    # Load API key using utility
-    auth_path = Path.home() / ".codex" / "auth.json"
-    auth, auth_err = _load_json_config(auth_path)
-    if auth_err:
-        return AgentReply("codex", "", {"error": auth_err}, "", time.time() - start, 1)
-    api_key = auth.get("api_key", "") or auth.get("OPENAI_API_KEY", "")
-    if not api_key:
-        return AgentReply("codex", "", {"error": "missing api_key in auth.json"}, "", time.time() - start, 1)
+    # Load configuration using unified manager
+    config = AgentConfig("codex")
+    valid, err = config.validate("api_key", "base_url", "model")
+    if not valid:
+        return AgentReply("codex", "", {"error": err}, "", time.time() - start, 1)
 
-    # Load base_url and model from config.toml
-    config_path = Path.home() / ".codex" / "config.toml"
-    try:
-        config = tomllib.loads(config_path.read_text())
-        provider = config.get("model_provider", "fox")
-        model = config.get("model", "gpt-5.5")
-        # Try top-level base_url first, then nested structure
-        base_url = config.get("base_url", "")
-        if not base_url:
-            base_url = config.get("model_providers", {}).get(provider, {}).get("base_url", "")
-    except Exception as e:
-        return AgentReply("codex", "", {"error": f"config read failed: {e}"}, "", time.time() - start, 1)
-
-    if not base_url or not api_key:
-        return AgentReply("codex", "", {"error": "missing base_url or api_key"}, "", time.time() - start, 1)
+    api_key = config.get("api_key")
+    base_url = config.get("base_url")
+    model = config.get("model")
 
     url = base_url.rstrip("/") + "/chat/completions"
 
@@ -688,24 +760,15 @@ def run_gemini_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
 
     start = time.time()
 
-    # Load ~/.gemini/.env (manual parsing since it's not JSON)
-    env_path = Path.home() / ".gemini" / ".env"
-    cfg: dict = {}
-    try:
-        for line in env_path.read_text().splitlines():
-            line = line.strip()
-            if "=" in line and not line.startswith("#"):
-                k, _, v = line.partition("=")
-                cfg[k.strip()] = v.strip()
-    except Exception as e:
-        return AgentReply("gemini", "", {"error": f"env read failed: {e}"}, "", time.time() - start, 1)
+    # Load configuration using unified manager
+    config = AgentConfig("gemini")
+    valid, err = config.validate("api_key", "base_url", "model")
+    if not valid:
+        return AgentReply("gemini", "", {"error": err}, "", time.time() - start, 1)
 
-    base_url = cfg.get("GOOGLE_GEMINI_BASE_URL", "").rstrip("/")
-    api_key = cfg.get("GEMINI_API_KEY", "")
-    model = cfg.get("GEMINI_MODEL", "gemini-3-pro-preview")
-
-    if not base_url or not api_key:
-        return AgentReply("gemini", "", {"error": "missing GOOGLE_GEMINI_BASE_URL or GEMINI_API_KEY"}, "", time.time() - start, 1)
+    base_url = config.get("base_url")
+    api_key = config.get("api_key")
+    model = config.get("model")
 
     url = f"{base_url}/v1beta/models/{model}:generateContent"
     body = {"contents": [{"parts": [{"text": prompt}], "role": "user"}]}
