@@ -1,5 +1,30 @@
 """Agent-skills集成工具函数"""
 
+def inject_doubt_driven_hint(blocking_issues):
+    """简化版doubt-driven提示生成（仅blocking_issues）"""
+    if not blocking_issues:
+        return ""
+
+    return f"""[Doubt-Driven审查建议]
+发现 {len(blocking_issues)} 个blocking_issues:
+{', '.join(blocking_issues[:3])}
+建议应用对抗性审查流程。"""
+
+def generate_prd_from_consensus(decision, evidence, action_items):
+    """基于共识参数生成PRD（简化版）"""
+    prd = f"""# PRD: 协作决策
+
+## 决策
+{decision}
+
+## 证据
+{chr(10).join(f'- {e}' for e in evidence)}
+
+## 行动项
+{chr(10).join(f'- owner: {item["owner"]}, task: {item["task"]}' for item in action_items)}
+"""
+    return prd
+
 def generate_doubt_driven_prompt(topic, dissent, blocking_issues):
     """生成doubt-driven提示：针对blocking问题提供引导性问题"""
     if not blocking_issues:

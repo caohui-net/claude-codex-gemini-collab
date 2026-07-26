@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from functools import wraps
 from audit_logger import AuditLogger
-from consensus import check_consensus
+from consensus import detect_consensus
 
 # 初始化审计日志
 _audit_logger = AuditLogger()
@@ -108,14 +108,15 @@ async def claude_node(state: CollabState) -> dict:
 
 async def synthesize_node(state: CollabState) -> dict:
     """综合节点（异步）+ 共识判定"""
-    results = [
-        state.get('codex_result', ''),
-        state.get('gemini_result', ''),
-        state.get('claude_result', '')
-    ]
+    # 构建agent响应字典用于共识检测
+    results = {
+        'codex': state.get('codex_result', ''),
+        'gemini': state.get('gemini_result', ''),
+        'claude': state.get('claude_result', '')
+    }
 
     # 检查共识
-    consensus = check_consensus(results, threshold=0.7)
+    has_consensus, avg_similarity = detect_consensus(results, threshold=0.7)
 
     synthesis_prompt = f"""请综合以下三个AI的分析结果：
 
@@ -129,8 +130,8 @@ async def synthesize_node(state: CollabState) -> dict:
 {state.get('claude_result', 'N/A')}
 
 **共识分析**:
-- 平均相似度: {consensus['average_similarity']}
-- 是否达成共识: {'是' if consensus['has_consensus'] else '否'}
+- 平均相似度: {avg_similarity:.2f}
+- 是否达成共识: {'是' if has_consensus else '否'}
 
 请给出综合报告。"""
 
