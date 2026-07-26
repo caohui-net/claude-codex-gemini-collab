@@ -1649,3 +1649,27 @@
 | 09:18 | 修复bug-086 Codex timeout: 添加文件路径验证 | scripts/collab_discuss.py, .wolf/buglog.json | PR#12创建,validate_and_fix_file_paths()函数实现 | ~1200 |
 | 12:11 | Session end: 2 writes across 2 files (discussion-metadata-design.md, metadata_function.py) | 3 reads | ~31640 tok |
 | 12:17 | Edited .claude/worktrees/fix-codex-api-empty-response/scripts/agent_cli.py | inline fix | ~20 |
+
+## Session: 2026-07-25 17:17
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-07-25 17:17
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-07-25 17:17
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-07-26 08:46
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 08:46 | P0+P1修复完成：单元测试+安全防护 | scripts/agent_cli.py, scripts/test_agent_cli.py | 13个单元测试100%通过，SSRF+路径遍历防护实施，commit 88b8e5b | ~70000 |
+| 08:46 | 创建完整测试套件 | scripts/test_agent_cli.py | 测试覆盖：extract_response_content(6), _load_json_config(3), _http_post_json(3), AgentConfig(1) | ~30000 |
+| 08:46 | 实施SSRF防护 | scripts/agent_cli.py:_http_post_json | URL白名单验证（api.openai.com等4个域名） | ~5000 |
+| 08:46 | 实施路径遍历防护 | scripts/agent_cli.py:_load_json_config | home目录限制，阻止访问系统文件 | ~3000 |
