@@ -123,6 +123,22 @@ def _http_post_json(url: str, body: dict, headers: dict, timeout_sec: int = 60) 
     """
     import urllib.request
     import urllib.error
+    from urllib.parse import urlparse
+
+    # SSRF防护：URL白名单验证
+    ALLOWED_DOMAINS = [
+        "api.openai.com",
+        "generativelanguage.googleapis.com",
+        "localhost",
+        "127.0.0.1",
+    ]
+
+    try:
+        parsed = urlparse(url)
+        if parsed.hostname not in ALLOWED_DOMAINS:
+            return {}, 0, f"Security: URL domain '{parsed.hostname}' not in whitelist"
+    except Exception as e:
+        return {}, 0, f"Security: Invalid URL format: {e}"
 
     try:
         body_bytes = json.dumps(body).encode()
@@ -145,7 +161,14 @@ def _load_json_config(path: Path) -> tuple[dict, str]:
     Returns: (config_dict, error_message)
     """
     try:
-        return json.loads(path.read_text()), ""
+        # 路径遍历防护：确保路径在用户home目录下
+        resolved_path = path.resolve()
+        home_dir = Path.home().resolve()
+
+        if not str(resolved_path).startswith(str(home_dir)):
+            return {}, f"Security: Path '{path}' is outside user home directory"
+
+        return json.loads(resolved_path.read_text()), ""
     except Exception as e:
         return {}, f"Failed to load {path}: {e}"
 
