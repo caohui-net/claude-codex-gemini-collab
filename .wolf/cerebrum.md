@@ -93,3 +93,28 @@
 **正确做法**：创建内容后展示路径+前10-20行预览/摘要，说明"完整内容见文件"。
 **错误做法**：只说"✓完成"不展示任何结果内容。
 分段输出≠不输出，而是"长内容分多次展示"。
+
+## 2026-07-22 Codex API修复与模型特性
+
+### Key Learnings
+- **gpt-5.6-sol模型非标准响应字段**: 该模型返回`reasoning_content`字段而非标准OpenAI API的`content`字段，需要优先提取reasoning_content并处理null值情况
+- **prompt长度敏感性**: gpt-5.6-sol对prompt总长度敏感，>2500字符会导致API失败或只返回reasoning_content而无详细分析
+- **JSON关键词触发推理模式**: prompt中包含"JSON"关键词会触发模型的reasoning模式，导致只返回思考过程而不输出实际JSON结构
+- **结构化输出替代方案**: 使用固定格式的Markdown模板（### 概述/### 问题/### 建议）配合正则表达式解析器可以保证输出一致性，避免JSON关键词问题
+
+### Do-Not-Repeat
+[2026-07-22] **不要假设OpenAI兼容API都遵循标准响应格式**
+- **错误:** 直接使用`message.get("content")`提取响应内容，导致gpt-5.6-sol等模型返回空字符串
+- **根因:** 不同模型提供商的OpenAI兼容API可能使用非标准字段名（如reasoning_content）
+- **正确做法:** 
+  1. 优先提取reasoning_content字段：`reasoning = message.get("reasoning_content")`
+  2. Fallback到标准content字段：`content = reasoning if reasoning else message.get("content", "")`
+  3. 处理null值情况（不仅是空字符串）
+  4. 添加调试日志记录实际响应结构
+- **验证方法:** 在API调用中添加debug日志打印完整response JSON结构
+
+[2026-07-22] **避免在prompt中使用"JSON"关键词**
+- **错误:** system prompt或user prompt中包含"以JSON格式输出"等描述会触发o1-like模型的推理模式
+- **症状:** API返回很短的reasoning_content（~40字符）而不是预期的详细JSON输出
+- **解决方案:** 使用"请按以下格式输出"配合Markdown结构模板，避免"JSON"关键词
+- **后处理:** 在应用层使用正则表达式解析器（如CodexResponseParser）将结构化Markdown转换为dict

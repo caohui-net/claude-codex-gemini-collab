@@ -1396,19 +1396,72 @@
     },
     {
       "id": "bug-087",
-      "timestamp": "2026-07-22T04:17:03.615Z",
-      "error_message": "Incorrect value in code",
-      "file": ".claude/worktrees/fix-codex-api-empty-response/scripts/agent_cli.py",
-      "root_cause": "Had \"api\"",
-      "fix": "Changed to \"cli\"",
+      "timestamp": "2026-07-22T06:19:05.373018Z",
+      "error_message": "Codex API返回空响应+文件传递失败+JSON输出不稳定",
+      "file": "scripts/agent_cli.py, scripts/parallel_engine.py, scripts/collab_discuss.py",
+      "root_cause": "1) gpt-5.6-sol返回reasoning_content字段而非content, 2) 配置读取期望嵌套结构, 3) parallel模式files参数未传递, 4) prompt长度>2500触发失败, 5) JSON关键词触发推理模式",
+      "fix": "1) 优先提取reasoning_content+处理null值, 2) 支持双路径配置读取, 3) 完整4层files参数传递链, 4) 精简system prompt为单行, 5) 实现CodexResponseParser结构化Markdown解析器",
       "tags": [
-        "auto-detected",
-        "wrong-value",
-        "py"
+        "codex",
+        "api",
+        "reasoning_content",
+        "files",
+        "parallel",
+        "json",
+        "parser"
+      ],
+      "related_bugs": [
+        "bug-080",
+        "bug-081",
+        "bug-086"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-07-22T06:19:05.373054Z"
+    },
+    {
+      "id": "bug-088",
+      "timestamp": "2026-07-22T09:09:18.485Z",
+      "error_message": "Codex API返回被截断为44字节，尽管原始响应有12789字节",
+      "file": "scripts/agent_cli.py",
+      "root_cause": "Line 252逻辑bug: 'content = regular if regular else reasoning' 第一次修复'regular if not reasoning else reasoning'仍然错误，当reasoning非空时仍选择短内容",
+      "fix": "正确修复：'content = regular if regular else reasoning'，优先使用content字段，仅当content为空时才使用reasoning_content",
+      "tags": [
+        "codex",
+        "api",
+        "content-extraction",
+        "reasoning_content",
+        "truncation",
+        "verified"
+      ],
+      "related_bugs": [
+        "bug-087"
+      ],
+      "occurrences": 2,
+      "last_seen": "2026-07-22T09:33:22.000Z",
+      "verification": {
+        "status": "fixed",
+        "test_date": "2026-07-22T09:33:22.000Z",
+        "before": "API返回6592字节，提取58字节(0.9%)",
+        "after": "API返回1887字节，提取1310字节(69.4%)",
+        "test_file": "/tmp/test-fix-verification-v2.log"
+      }
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-07-23T01:40:00.000Z",
+      "error_message": "Discussion files created outside project directory (ValueError: path is not relative to base_dir)",
+      "file": "~/.claude/skills/taolun/scripts/collab_discuss.py",
+      "root_cause": "Line 1157: discussions_base = Path.home() / '.claude' / 'collab' / 'discussions' - creates files in global directory instead of project's .collab/discussions/",
+      "fix": "1. Added base_dir parameter to create_discussion_file_with_metadata function signature; 2. Changed Line 1157 to: discussions_dir = base_dir / '.collab' / 'discussions'; 3. Updated Line 1293 and Line 2567 callers to pass base_dir parameter",
+      "tags": [
+        "path-security",
+        "file-location",
+        "relative-path",
+        "global-skill-fix"
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-07-22T04:17:03.615Z"
+      "last_seen": "2026-07-23T01:40:00.000Z"
     }
   ]
 }

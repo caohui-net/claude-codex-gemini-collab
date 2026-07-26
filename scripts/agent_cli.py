@@ -27,6 +27,152 @@ class AgentReply:
     exit_code: int
 
 
+# ========== HTTP & Config Utilities ==========
+
+class AgentConfig:
+    """统一配置管理器 - 支持多种配置格式"""
+
+    def __init__(self, agent_name: str):
+        self.agent = agent_name
+        self._config: dict = {}
+        self._error: str = ""
+        self._load()
+
+    def _load(self):
+        """根据agent类型加载相应配置"""
+        if self.agent == "codex":
+            self._load_codex()
+        elif self.agent == "gemini":
+            self._load_gemini()
+
+    def _load_codex(self):
+        """加载Codex配置：auth.json + config.toml"""
+        # Load auth.json
+        auth_path = Path.home() / ".codex" / "auth.json"
+        auth, err = _load_json_config(auth_path)
+        if err:
+            self._error = err
+            return
+
+        api_key = auth.get("api_key", "") or auth.get("OPENAI_API_KEY", "")
+        if not api_key:
+            self._error = "missing api_key in auth.json"
+            return
+
+        # Load config.toml
+        config_path = Path.home() / ".codex" / "config.toml"
+        try:
+            import tomllib
+            config = tomllib.loads(config_path.read_text())
+            provider = config.get("model_provider", "fox")
+            model = config.get("model", "gpt-5.5")
+
+            # Try top-level base_url first, then nested
+            base_url = config.get("base_url", "")
+            if not base_url:
+                base_url = config.get("model_providers", {}).get(provider, {}).get("base_url", "")
+
+            self._config = {
+                "api_key": api_key,
+                "base_url": base_url,
+                "model": model,
+                "provider": provider,
+            }
+        except Exception as e:
+            self._error = f"config.toml read failed: {e}"
+
+    def _load_gemini(self):
+        """加载Gemini配置：.env"""
+        env_path = Path.home() / ".gemini" / ".env"
+        cfg: dict = {}
+        try:
+            for line in env_path.read_text().splitlines():
+                line = line.strip()
+                if "=" in line and not line.startswith("#"):
+                    k, _, v = line.partition("=")
+                    cfg[k.strip()] = v.strip()
+        except Exception as e:
+            self._error = f"env read failed: {e}"
+            return
+
+        self._config = {
+            "base_url": cfg.get("GOOGLE_GEMINI_BASE_URL", "").rstrip("/"),
+            "api_key": cfg.get("GEMINI_API_KEY", ""),
+            "model": cfg.get("GEMINI_MODEL", "gemini-3-pro-preview"),
+        }
+
+    def get(self, key: str, default=None):
+        """获取配置项"""
+        return self._config.get(key, default)
+
+    def validate(self, *required_keys) -> tuple[bool, str]:
+        """验证必需配置项，返回 (是否有效, 错误信息)"""
+        if self._error:
+            return False, self._error
+
+        missing = [k for k in required_keys if not self.get(k)]
+        if missing:
+            return False, f"missing: {', '.join(missing)}"
+        return True, ""
+
+
+def _http_post_json(url: str, body: dict, headers: dict, timeout_sec: int = 60) -> tuple[dict, int, str]:
+    """Send HTTP POST request with JSON body.
+
+    Returns: (response_json, status_code, error_message)
+    """
+    import urllib.request
+    import urllib.error
+    from urllib.parse import urlparse
+
+    # SSRF防护：URL白名单验证
+    ALLOWED_DOMAINS = [
+        "api.openai.com",
+        "generativelanguage.googleapis.com",
+        "localhost",
+        "127.0.0.1",
+    ]
+
+    try:
+        parsed = urlparse(url)
+        if parsed.hostname not in ALLOWED_DOMAINS:
+            return {}, 0, f"Security: URL domain '{parsed.hostname}' not in whitelist"
+    except Exception as e:
+        return {}, 0, f"Security: Invalid URL format: {e}"
+
+    try:
+        body_bytes = json.dumps(body).encode()
+        req = urllib.request.Request(url, data=body_bytes, headers=headers)
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            response_data = json.loads(resp.read().decode())
+            return response_data, resp.status, ""
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else ""
+        return {}, e.code, f"HTTP {e.code}: {error_body[:200]}"
+    except urllib.error.URLError as e:
+        return {}, 0, f"URL error: {e.reason}"
+    except Exception as e:
+        return {}, 0, f"Request failed: {e}"
+
+
+def _load_json_config(path: Path) -> tuple[dict, str]:
+    """Load JSON config file.
+
+    Returns: (config_dict, error_message)
+    """
+    try:
+        # 路径遍历防护：确保路径在用户home目录下
+        resolved_path = path.resolve()
+        home_dir = Path.home().resolve()
+
+        if not str(resolved_path).startswith(str(home_dir)):
+            return {}, f"Security: Path '{path}' is outside user home directory"
+
+        return json.loads(resolved_path.read_text()), ""
+    except Exception as e:
+        return {}, f"Failed to load {path}: {e}"
+
+
 def strip_markdown_json(text: str) -> str:
     """Strip markdown JSON code blocks."""
     text = text.strip()
@@ -37,6 +183,22 @@ def strip_markdown_json(text: str) -> str:
     if text.endswith("```"):
         text = text[:-3]
     return text.strip()
+
+
+def extract_response_content(text: str) -> str:
+    """Extract content between [RESPONSE_START] and [RESPONSE_END] markers.
+
+    Args:
+        text: Raw response text
+
+    Returns:
+        Extracted content, or original text if markers not found
+    """
+    if "[RESPONSE_START]" in text and "[RESPONSE_END]" in text:
+        start_idx = text.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+        end_idx = text.index("[RESPONSE_END]")
+        return text[start_idx:end_idx].strip()
+    return text
 
 
 def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_session: bool = False) -> tuple[str, int]:
@@ -170,30 +332,15 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
     if files:
         print(f"🐛 [Debug] Files to inject: {len(files)}", file=sys.stderr, flush=True)
 
-    # Load API key
-    auth_path = Path.home() / ".codex" / "auth.json"
-    try:
-        auth = json.loads(auth_path.read_text())
-        # Try both field names for compatibility
-        api_key = auth.get("api_key", "") or auth.get("OPENAI_API_KEY", "")
-    except Exception as e:
-        return AgentReply("codex", "", {"error": f"auth read failed: {e}"}, "", time.time() - start, 1)
+    # Load configuration using unified manager
+    config = AgentConfig("codex")
+    valid, err = config.validate("api_key", "base_url", "model")
+    if not valid:
+        return AgentReply("codex", "", {"error": err}, "", time.time() - start, 1)
 
-    # Load base_url and model from config.toml
-    config_path = Path.home() / ".codex" / "config.toml"
-    try:
-        config = tomllib.loads(config_path.read_text())
-        provider = config.get("model_provider", "fox")
-        model = config.get("model", "gpt-5.5")
-        # Try top-level base_url first, then nested structure
-        base_url = config.get("base_url", "")
-        if not base_url:
-            base_url = config.get("model_providers", {}).get(provider, {}).get("base_url", "")
-    except Exception as e:
-        return AgentReply("codex", "", {"error": f"config read failed: {e}"}, "", time.time() - start, 1)
-
-    if not base_url or not api_key:
-        return AgentReply("codex", "", {"error": "missing base_url or api_key"}, "", time.time() - start, 1)
+    api_key = config.get("api_key")
+    base_url = config.get("base_url")
+    model = config.get("model")
 
     url = base_url.rstrip("/") + "/chat/completions"
 
@@ -216,59 +363,50 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
     # System prompt - keep short to avoid API failures with long prompts
     system_prompt = "You are Codex, an expert code reviewer."
 
-    body = json.dumps({
+    # Build request body
+    body = {
         "model": model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": enhanced_prompt}
         ],
-    }).encode()
+    }
 
-    req = urllib.request.Request(url, data=body, headers={
+    headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-    })
+    }
 
+    # Send HTTP request using utility
+    data, status_code, http_err = _http_post_json(url, body, headers, timeout_sec)
+    if http_err:
+        return AgentReply("codex", "", {"error": http_err}, "", time.time() - start, 1)
+
+    print(f"🐛 [Debug] HTTP status: {status_code}", file=sys.stderr, flush=True)
+    print(f"🐛 [Debug] Parsed JSON keys: {list(data.keys())}", file=sys.stderr, flush=True)
+
+    # 打印完整的choices结构来诊断为什么content为空
+    if "choices" in data and len(data["choices"]) > 0:
+        choice = data["choices"][0]
+        print(f"🐛 [Debug] Choice keys: {list(choice.keys())}", file=sys.stderr, flush=True)
+        print(f"🐛 [Debug] Choice structure: {json.dumps(choice, ensure_ascii=False)[:300]}", file=sys.stderr, flush=True)
+
+    # Extract content: prefer content field, fallback to reasoning_content only if content is empty
+    message = data["choices"][0]["message"]
+    reasoning = message.get("reasoning_content")
+    regular = message.get("content", "")
+    content = regular if regular else reasoning
+
+    print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
+    print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
+
+    elapsed = time.time() - start
+    parsed = {}
     try:
-        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
-            raw_response = resp.read().decode()
-            print(f"🐛 [Debug] HTTP status: {resp.status}", file=sys.stderr, flush=True)
-            print(f"🐛 [Debug] Raw response length: {len(raw_response)}", file=sys.stderr, flush=True)
-
-            data = json.loads(raw_response)
-            print(f"🐛 [Debug] Parsed JSON keys: {list(data.keys())}", file=sys.stderr, flush=True)
-
-            # 打印完整的choices结构来诊断为什么content为空
-            if "choices" in data and len(data["choices"]) > 0:
-                choice = data["choices"][0]
-                print(f"🐛 [Debug] Choice keys: {list(choice.keys())}", file=sys.stderr, flush=True)
-                print(f"🐛 [Debug] Choice structure: {json.dumps(choice, ensure_ascii=False)[:300]}", file=sys.stderr, flush=True)
-
-            # Extract content: prefer reasoning_content for o1-like models, fallback to content
-            # Note: reasoning_content can be null, not just empty string
-            message = data["choices"][0]["message"]
-            reasoning = message.get("reasoning_content")
-            regular = message.get("content", "")
-            content = reasoning if reasoning else regular
-
-            print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
-            print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
-
-            elapsed = time.time() - start
-            parsed = {}
-            try:
-                parsed = json.loads(strip_markdown_json(content))
-            except json.JSONDecodeError:
-                parsed = {"raw": content}
-            return AgentReply("codex", content, parsed, "", elapsed, 0)
-    except urllib.error.HTTPError as e:
-        elapsed = time.time() - start
-        error_body = e.read().decode() if hasattr(e, 'read') else str(e)
-        print(f"🐛 [Debug] HTTP Error {e.code}: {error_body[:200]}", file=sys.stderr, flush=True)
-        return AgentReply("codex", "", {"error": f"http {e.code}: {error_body[:200]}"}, "", elapsed, e.code)
-    except Exception as e:
-        elapsed = time.time() - start
-        return AgentReply("codex", "", {"error": str(e)}, "", elapsed, 1)
+        parsed = json.loads(strip_markdown_json(content))
+    except json.JSONDecodeError:
+        parsed = {"raw": content}
+    return AgentReply("codex", content, parsed, "", elapsed, 0)
 
 
 def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False, reasoning_effort: str = None) -> AgentReply:
@@ -363,12 +501,10 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
                     pass
 
                 # Strategy 2: Extract between markers (most reliable)
-                if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
-                    start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                    end_idx = response.index("[RESPONSE_END]")
-                    response = response[start_idx:end_idx].strip()
+                response = extract_response_content(response)
+
                 # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
-                elif "\ntokens used" in response and "\ncodex\n" in response:
+                if "\ntokens used" in response and "\ncodex\n" in response:
                     tokens_idx = response.index("\ntokens used")
                     last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
                     if last_codex_idx >= 0:
@@ -478,12 +614,10 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
             pass
 
         # Strategy 2: Extract between markers (most reliable)
-        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
-            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = response.index("[RESPONSE_END]")
-            response = response[start_idx:end_idx].strip()
+        response = extract_response_content(response)
+
         # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
-        elif "\ntokens used" in response and "\ncodex\n" in response:
+        if "\ntokens used" in response and "\ncodex\n" in response:
             tokens_idx = response.index("\ntokens used")
             last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
             if last_codex_idx >= 0:
@@ -568,12 +702,10 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
             pass
 
         # Strategy 2: Extract between markers (most reliable)
-        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
-            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = response.index("[RESPONSE_END]")
-            response = response[start_idx:end_idx].strip()
+        response = extract_response_content(response)
+
         # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
-        elif "\ntokens used" in response and "\ncodex\n" in response:
+        if "\ntokens used" in response and "\ncodex\n" in response:
             tokens_idx = response.index("\ntokens used")
             last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
             if last_codex_idx >= 0:
@@ -661,49 +793,36 @@ def run_gemini_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
 
     start = time.time()
 
-    # Load ~/.gemini/.env
-    env_path = Path.home() / ".gemini" / ".env"
-    cfg: dict = {}
-    try:
-        for line in env_path.read_text().splitlines():
-            line = line.strip()
-            if "=" in line and not line.startswith("#"):
-                k, _, v = line.partition("=")
-                cfg[k.strip()] = v.strip()
-    except Exception as e:
-        return AgentReply("gemini", "", {"error": f"env read failed: {e}"}, "", time.time() - start, 1)
+    # Load configuration using unified manager
+    config = AgentConfig("gemini")
+    valid, err = config.validate("api_key", "base_url", "model")
+    if not valid:
+        return AgentReply("gemini", "", {"error": err}, "", time.time() - start, 1)
 
-    base_url = cfg.get("GOOGLE_GEMINI_BASE_URL", "").rstrip("/")
-    api_key = cfg.get("GEMINI_API_KEY", "")
-    model = cfg.get("GEMINI_MODEL", "gemini-3-pro-preview")
-
-    if not base_url or not api_key:
-        return AgentReply("gemini", "", {"error": "missing GOOGLE_GEMINI_BASE_URL or GEMINI_API_KEY"}, "", time.time() - start, 1)
+    base_url = config.get("base_url")
+    api_key = config.get("api_key")
+    model = config.get("model")
 
     url = f"{base_url}/v1beta/models/{model}:generateContent"
-    body = json.dumps({"contents": [{"parts": [{"text": prompt}], "role": "user"}]}).encode()
-    req = urllib.request.Request(url, data=body, headers={
+    body = {"contents": [{"parts": [{"text": prompt}], "role": "user"}]}
+    headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-    })
+    }
 
+    # Send HTTP request using utility
+    data, status_code, http_err = _http_post_json(url, body, headers, timeout_sec)
+    if http_err:
+        return AgentReply("gemini", "", {"error": http_err}, "", time.time() - start, 1)
+
+    content = data["candidates"][0]["content"]["parts"][0]["text"]
+    elapsed = time.time() - start
+    parsed = {}
     try:
-        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
-            data = json.loads(resp.read().decode())
-            content = data["candidates"][0]["content"]["parts"][0]["text"]
-            elapsed = time.time() - start
-            parsed = {}
-            try:
-                parsed = json.loads(strip_markdown_json(content))
-            except json.JSONDecodeError:
-                parsed = {"raw": content}
-            return AgentReply("gemini", content, parsed, "", elapsed, 0)
-    except urllib.error.HTTPError as e:
-        elapsed = time.time() - start
-        return AgentReply("gemini", "", {"error": f"http {e.code}: {e.read(200).decode()}"}, "", elapsed, e.code)
-    except Exception as e:
-        elapsed = time.time() - start
-        return AgentReply("gemini", "", {"error": str(e)}, "", elapsed, 1)
+        parsed = json.loads(strip_markdown_json(content))
+    except json.JSONDecodeError:
+        parsed = {"raw": content}
+    return AgentReply("gemini", content, parsed, "", elapsed, 0)
 
 
 def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
@@ -776,12 +895,7 @@ def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
                     full_response = output.get("response", "")
 
                     # Extract content between markers if present
-                    if "[RESPONSE_START]" in full_response and "[RESPONSE_END]" in full_response:
-                        start_idx = full_response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                        end_idx = full_response.index("[RESPONSE_END]")
-                        response = full_response[start_idx:end_idx].strip()
-                    else:
-                        response = full_response
+                    response = extract_response_content(full_response)
 
                     response = strip_markdown_json(response)
                     try:

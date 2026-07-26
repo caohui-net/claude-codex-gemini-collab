@@ -2133,13 +2133,63 @@ def run_discussion(
         streams_dir = collab_dir / "streams"
         streams_dir.mkdir(parents=True, exist_ok=True)
 
+        # Inject file contents into topic if files provided (fix for gpt-5.6-sol short prompt issue)
+        enhanced_topic = topic
+        if files:
+            file_contexts = []
+            for file_path in files:
+                try:
+                    content = Path(file_path).read_text(encoding='utf-8', errors='ignore')
+                    file_contexts.append(f"### File: {file_path}\n```\n{content}\n```")
+                    print(f"📎 [Fast Mode] Injected {file_path} ({len(content)} chars)")
+                except Exception as e:
+                    print(f"⚠️  [Fast Mode] Failed to read {file_path}: {e}")
+
+            if file_contexts:
+                enhanced_topic = f"{topic}\n\n## Context Files\n\n" + "\n\n".join(file_contexts)
+                print(f"🐛 [Fast Mode] Enhanced topic length: {len(enhanced_topic)}")
+        else:
+            # Auto-detect key files when files=None and prompt is too short
+            if len(topic) < 100:
+                print(f"⚠️  [Fast Mode] Short prompt ({len(topic)} chars) with no files - auto-detecting context...")
+                file_contexts = []
+                search_patterns = ['README.md', 'README', '*.py', '*.js', '*.ts', 'package.json']
+                found_files = []
+
+                for pattern in search_patterns:
+                    try:
+                        if '*' in pattern:
+                            import glob
+                            matches = glob.glob(pattern)[:3]  # Limit to 3 files per pattern
+                            found_files.extend(matches)
+                        else:
+                            if Path(pattern).exists():
+                                found_files.append(pattern)
+                    except:
+                        continue
+
+                for file_path in found_files[:5]:  # Max 5 files
+                    try:
+                        content = Path(file_path).read_text(encoding='utf-8', errors='ignore')
+                        # Limit each file to 2000 chars to avoid bloat
+                        if len(content) > 2000:
+                            content = content[:2000] + f"\n... (truncated, {len(content)} total chars)"
+                        file_contexts.append(f"### Auto-detected: {file_path}\n```\n{content}\n```")
+                        print(f"📎 [Fast Mode] Auto-injected {file_path} ({len(content)} chars)")
+                    except Exception as e:
+                        print(f"⚠️  [Fast Mode] Failed to read {file_path}: {e}")
+
+                if file_contexts:
+                    enhanced_topic = f"{topic}\n\n## Auto-detected Context\n\n" + "\n\n".join(file_contexts)
+                    print(f"✓ [Fast Mode] Enhanced topic with auto-context: {len(enhanced_topic)} chars")
+
         # Run single round with stream awareness
         artifacts_refs = []
         for participant in participants:
             print(f"🤖 Invoking {participant}...")
             try:
-                # Build stream-aware prompt
-                aware_prompt = build_stream_aware_prompt(topic, participant, streams_dir)
+                # Build stream-aware prompt with enhanced topic
+                aware_prompt = build_stream_aware_prompt(enhanced_topic, participant, streams_dir)
                 stream_file = streams_dir / f"{participant}.stream"
 
                 # Call agent with streaming

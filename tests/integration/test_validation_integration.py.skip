@@ -1,10 +1,15 @@
 """Integration tests for agent response validation in collab_discuss workflow."""
 
 import pytest
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
-from src.agent_response_validator import AgentResponseValidator
-from src.collab_discuss import parse_agent_response
+
+# 添加scripts到路径
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
+
+from agent_response_validator import AgentResponseValidator
+from collab_discuss import parse_agent_response
 
 
 @pytest.fixture
