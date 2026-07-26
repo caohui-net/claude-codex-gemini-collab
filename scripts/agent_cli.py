@@ -27,6 +27,42 @@ class AgentReply:
     exit_code: int
 
 
+# ========== HTTP & Config Utilities ==========
+
+def _http_post_json(url: str, body: dict, headers: dict, timeout_sec: int = 60) -> tuple[dict, int, str]:
+    """Send HTTP POST request with JSON body.
+
+    Returns: (response_json, status_code, error_message)
+    """
+    import urllib.request
+    import urllib.error
+
+    try:
+        body_bytes = json.dumps(body).encode()
+        req = urllib.request.Request(url, data=body_bytes, headers=headers)
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            response_data = json.loads(resp.read().decode())
+            return response_data, resp.status, ""
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else ""
+        return {}, e.code, f"HTTP {e.code}: {error_body[:200]}"
+    except urllib.error.URLError as e:
+        return {}, 0, f"URL error: {e.reason}"
+    except Exception as e:
+        return {}, 0, f"Request failed: {e}"
+
+
+def _load_json_config(path: Path) -> tuple[dict, str]:
+    """Load JSON config file.
+
+    Returns: (config_dict, error_message)
+    """
+    try:
+        return json.loads(path.read_text()), ""
+    except Exception as e:
+        return {}, f"Failed to load {path}: {e}"
+
+
 def strip_markdown_json(text: str) -> str:
     """Strip markdown JSON code blocks."""
     text = text.strip()
@@ -170,14 +206,14 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
     if files:
         print(f"🐛 [Debug] Files to inject: {len(files)}", file=sys.stderr, flush=True)
 
-    # Load API key
+    # Load API key using utility
     auth_path = Path.home() / ".codex" / "auth.json"
-    try:
-        auth = json.loads(auth_path.read_text())
-        # Try both field names for compatibility
-        api_key = auth.get("api_key", "") or auth.get("OPENAI_API_KEY", "")
-    except Exception as e:
-        return AgentReply("codex", "", {"error": f"auth read failed: {e}"}, "", time.time() - start, 1)
+    auth, auth_err = _load_json_config(auth_path)
+    if auth_err:
+        return AgentReply("codex", "", {"error": auth_err}, "", time.time() - start, 1)
+    api_key = auth.get("api_key", "") or auth.get("OPENAI_API_KEY", "")
+    if not api_key:
+        return AgentReply("codex", "", {"error": "missing api_key in auth.json"}, "", time.time() - start, 1)
 
     # Load base_url and model from config.toml
     config_path = Path.home() / ".codex" / "config.toml"
@@ -216,60 +252,50 @@ def run_codex_api(prompt: str, timeout_sec: int = 60, files: list[str] = None) -
     # System prompt - keep short to avoid API failures with long prompts
     system_prompt = "You are Codex, an expert code reviewer."
 
-    body = json.dumps({
+    # Build request body
+    body = {
         "model": model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": enhanced_prompt}
         ],
-    }).encode()
+    }
 
-    req = urllib.request.Request(url, data=body, headers={
+    headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-    })
+    }
 
+    # Send HTTP request using utility
+    data, status_code, http_err = _http_post_json(url, body, headers, timeout_sec)
+    if http_err:
+        return AgentReply("codex", "", {"error": http_err}, "", time.time() - start, 1)
+
+    print(f"🐛 [Debug] HTTP status: {status_code}", file=sys.stderr, flush=True)
+    print(f"🐛 [Debug] Parsed JSON keys: {list(data.keys())}", file=sys.stderr, flush=True)
+
+    # 打印完整的choices结构来诊断为什么content为空
+    if "choices" in data and len(data["choices"]) > 0:
+        choice = data["choices"][0]
+        print(f"🐛 [Debug] Choice keys: {list(choice.keys())}", file=sys.stderr, flush=True)
+        print(f"🐛 [Debug] Choice structure: {json.dumps(choice, ensure_ascii=False)[:300]}", file=sys.stderr, flush=True)
+
+    # Extract content: prefer content field, fallback to reasoning_content only if content is empty
+    message = data["choices"][0]["message"]
+    reasoning = message.get("reasoning_content")
+    regular = message.get("content", "")
+    content = regular if regular else reasoning
+
+    print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
+    print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
+
+    elapsed = time.time() - start
+    parsed = {}
     try:
-        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
-            raw_response = resp.read().decode()
-            print(f"🐛 [Debug] HTTP status: {resp.status}", file=sys.stderr, flush=True)
-            print(f"🐛 [Debug] Raw response length: {len(raw_response)}", file=sys.stderr, flush=True)
-
-            data = json.loads(raw_response)
-            print(f"🐛 [Debug] Parsed JSON keys: {list(data.keys())}", file=sys.stderr, flush=True)
-
-            # 打印完整的choices结构来诊断为什么content为空
-            if "choices" in data and len(data["choices"]) > 0:
-                choice = data["choices"][0]
-                print(f"🐛 [Debug] Choice keys: {list(choice.keys())}", file=sys.stderr, flush=True)
-                print(f"🐛 [Debug] Choice structure: {json.dumps(choice, ensure_ascii=False)[:300]}", file=sys.stderr, flush=True)
-
-            # Extract content: prefer content field, fallback to reasoning_content only if content is empty
-            # Note: reasoning_content can be null or a short placeholder, content has the actual response
-            message = data["choices"][0]["message"]
-            reasoning = message.get("reasoning_content")
-            regular = message.get("content", "")
-            # Always prefer regular content first, only use reasoning if regular is empty
-            content = regular if regular else reasoning
-
-            print(f"🐛 [Debug] API response content length: {len(content)}", file=sys.stderr, flush=True)
-            print(f"🐛 [Debug] Content preview: {content[:200]}...", file=sys.stderr, flush=True)
-
-            elapsed = time.time() - start
-            parsed = {}
-            try:
-                parsed = json.loads(strip_markdown_json(content))
-            except json.JSONDecodeError:
-                parsed = {"raw": content}
-            return AgentReply("codex", content, parsed, "", elapsed, 0)
-    except urllib.error.HTTPError as e:
-        elapsed = time.time() - start
-        error_body = e.read().decode() if hasattr(e, 'read') else str(e)
-        print(f"🐛 [Debug] HTTP Error {e.code}: {error_body[:200]}", file=sys.stderr, flush=True)
-        return AgentReply("codex", "", {"error": f"http {e.code}: {error_body[:200]}"}, "", elapsed, e.code)
-    except Exception as e:
-        elapsed = time.time() - start
-        return AgentReply("codex", "", {"error": str(e)}, "", elapsed, 1)
+        parsed = json.loads(strip_markdown_json(content))
+    except json.JSONDecodeError:
+        parsed = {"raw": content}
+    return AgentReply("codex", content, parsed, "", elapsed, 0)
 
 
 def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False, reasoning_effort: str = None) -> AgentReply:
@@ -662,7 +688,7 @@ def run_gemini_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
 
     start = time.time()
 
-    # Load ~/.gemini/.env
+    # Load ~/.gemini/.env (manual parsing since it's not JSON)
     env_path = Path.home() / ".gemini" / ".env"
     cfg: dict = {}
     try:
@@ -682,29 +708,25 @@ def run_gemini_api(prompt: str, timeout_sec: int = 60) -> AgentReply:
         return AgentReply("gemini", "", {"error": "missing GOOGLE_GEMINI_BASE_URL or GEMINI_API_KEY"}, "", time.time() - start, 1)
 
     url = f"{base_url}/v1beta/models/{model}:generateContent"
-    body = json.dumps({"contents": [{"parts": [{"text": prompt}], "role": "user"}]}).encode()
-    req = urllib.request.Request(url, data=body, headers={
+    body = {"contents": [{"parts": [{"text": prompt}], "role": "user"}]}
+    headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-    })
+    }
 
+    # Send HTTP request using utility
+    data, status_code, http_err = _http_post_json(url, body, headers, timeout_sec)
+    if http_err:
+        return AgentReply("gemini", "", {"error": http_err}, "", time.time() - start, 1)
+
+    content = data["candidates"][0]["content"]["parts"][0]["text"]
+    elapsed = time.time() - start
+    parsed = {}
     try:
-        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
-            data = json.loads(resp.read().decode())
-            content = data["candidates"][0]["content"]["parts"][0]["text"]
-            elapsed = time.time() - start
-            parsed = {}
-            try:
-                parsed = json.loads(strip_markdown_json(content))
-            except json.JSONDecodeError:
-                parsed = {"raw": content}
-            return AgentReply("gemini", content, parsed, "", elapsed, 0)
-    except urllib.error.HTTPError as e:
-        elapsed = time.time() - start
-        return AgentReply("gemini", "", {"error": f"http {e.code}: {e.read(200).decode()}"}, "", elapsed, e.code)
-    except Exception as e:
-        elapsed = time.time() - start
-        return AgentReply("gemini", "", {"error": str(e)}, "", elapsed, 1)
+        parsed = json.loads(strip_markdown_json(content))
+    except json.JSONDecodeError:
+        parsed = {"raw": content}
+    return AgentReply("gemini", content, parsed, "", elapsed, 0)
 
 
 def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec: int = 180, use_tmux: bool = False, keep_session: bool = False) -> AgentReply:
