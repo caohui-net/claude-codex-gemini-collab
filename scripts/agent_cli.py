@@ -162,6 +162,22 @@ def strip_markdown_json(text: str) -> str:
     return text.strip()
 
 
+def extract_response_content(text: str) -> str:
+    """Extract content between [RESPONSE_START] and [RESPONSE_END] markers.
+
+    Args:
+        text: Raw response text
+
+    Returns:
+        Extracted content, or original text if markers not found
+    """
+    if "[RESPONSE_START]" in text and "[RESPONSE_END]" in text:
+        start_idx = text.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+        end_idx = text.index("[RESPONSE_END]")
+        return text[start_idx:end_idx].strip()
+    return text
+
+
 def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_session: bool = False) -> tuple[str, int]:
     """Execute command in isolated tmux session and return output.
 
@@ -462,12 +478,10 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
                     pass
 
                 # Strategy 2: Extract between markers (most reliable)
-                if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
-                    start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                    end_idx = response.index("[RESPONSE_END]")
-                    response = response[start_idx:end_idx].strip()
+                response = extract_response_content(response)
+
                 # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
-                elif "\ntokens used" in response and "\ncodex\n" in response:
+                if "\ntokens used" in response and "\ncodex\n" in response:
                     tokens_idx = response.index("\ntokens used")
                     last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
                     if last_codex_idx >= 0:
@@ -577,12 +591,10 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
             pass
 
         # Strategy 2: Extract between markers (most reliable)
-        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
-            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = response.index("[RESPONSE_END]")
-            response = response[start_idx:end_idx].strip()
+        response = extract_response_content(response)
+
         # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
-        elif "\ntokens used" in response and "\ncodex\n" in response:
+        if "\ntokens used" in response and "\ncodex\n" in response:
             tokens_idx = response.index("\ntokens used")
             last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
             if last_codex_idx >= 0:
@@ -667,12 +679,10 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
             pass
 
         # Strategy 2: Extract between markers (most reliable)
-        if "[RESPONSE_START]" in response and "[RESPONSE_END]" in response:
-            start_idx = response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-            end_idx = response.index("[RESPONSE_END]")
-            response = response[start_idx:end_idx].strip()
+        response = extract_response_content(response)
+
         # Strategy 3: Extract from CLI format (find LAST "codex\n" before "tokens used")
-        elif "\ntokens used" in response and "\ncodex\n" in response:
+        if "\ntokens used" in response and "\ncodex\n" in response:
             tokens_idx = response.index("\ntokens used")
             last_codex_idx = response[:tokens_idx].rfind("\ncodex\n")
             if last_codex_idx >= 0:
@@ -862,12 +872,7 @@ def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
                     full_response = output.get("response", "")
 
                     # Extract content between markers if present
-                    if "[RESPONSE_START]" in full_response and "[RESPONSE_END]" in full_response:
-                        start_idx = full_response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                        end_idx = full_response.index("[RESPONSE_END]")
-                        response = full_response[start_idx:end_idx].strip()
-                    else:
-                        response = full_response
+                    response = extract_response_content(full_response)
 
                     response = strip_markdown_json(response)
                     try:
