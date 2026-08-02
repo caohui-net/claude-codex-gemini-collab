@@ -3,6 +3,7 @@
 import sys
 import asyncio
 from pathlib import Path
+import pytest
 
 # 添加scripts到路径
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
@@ -10,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from workflow_graph import run_collaboration
 
 
+@pytest.mark.asyncio
 async def test_basic_workflow():
     """测试基本workflow"""
     print("=" * 60)

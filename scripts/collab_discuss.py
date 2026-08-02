@@ -33,6 +33,14 @@ from collab_context_engineering import build_shared_context, inject_context_to_p
 from collab_incremental_implementation import generate_implementation_plan
 
 
+def safe_relative_path(file_path: Path, base_dir: Path) -> str:
+    """Calculate relative path, fall back to absolute if not in subtree."""
+    try:
+        return str(file_path.relative_to(base_dir))
+    except ValueError:
+        return str(file_path)
+
+
 def make_response_id(task_id: str, round_num: int, agent: str) -> str:
     """Build a stable response ID used for cross-response references."""
     safe_agent = agent.lower().strip() or "unknown"
@@ -843,7 +851,7 @@ Artifact: {pre_discuss.get("artifact", "")}
         content += "\n"
 
     context_path.write_text(content, encoding="utf-8")
-    return str(context_path.relative_to(base_dir))
+    return safe_relative_path(context_path, base_dir)
 
 
 def build_discussion_prompt(
@@ -1228,7 +1236,7 @@ def save_artifact(base_dir: Path, task_id: str, round_num: int, agent: str, cont
     artifact_path = artifacts_dir / filename
 
     artifact_path.write_text(content)
-    return str(artifact_path.relative_to(base_dir))
+    return safe_relative_path(artifact_path, base_dir)
 
 
 def dedupe_preserve_order(items: List[str]) -> List[str]:
@@ -1293,7 +1301,8 @@ Agent: claude
         agents=["claude", "codex", "gemini"],
         participants=["claude"]
     )
-    artifact_path = str(file_path.relative_to(base_dir))
+    # Try relative path, fall back to absolute if not in base_dir subtree
+    artifact_path = safe_relative_path(file_path, base_dir)
 
     return {
         "response_id": response_id,
@@ -2207,8 +2216,8 @@ def run_discussion(
                     filename = f"{task_id}-fast-{participant}-{timestamp}.md"
                     artifact_path = fast_artifacts_dir / filename
                     artifact_path.write_text(reply.raw_text)
-                    artifacts_refs.append(str(artifact_path.relative_to(base_dir)))
-                    print(f"   ✓ Artifact: {artifact_path.relative_to(base_dir)}")
+                    artifacts_refs.append(safe_relative_path(artifact_path, base_dir))
+                    print(f"   ✓ Artifact: {safe_relative_path(artifact_path, base_dir)}")
                 elif reply.exit_code != 0:
                     print(f"   ⚠️  {participant} returned no content (exit code: {reply.exit_code})")
             except Exception as e:
@@ -2556,7 +2565,7 @@ def run_discussion(
                         participants=[agent],
                         files=[{"path": f, "purpose": "reference"} for f in (files or [])]
                     )
-                    artifact_path = str(file_path.relative_to(base_dir))
+                    artifact_path = safe_relative_path(file_path, base_dir)
                     artifacts_refs.append(artifact_path)
 
                     # Mark completed

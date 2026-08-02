@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, 'scripts')
 
 from collab_skills import load_skill_prompt, topic_is_vague
-from collab_skills_utils import inject_doubt_driven_hint, generate_prd_from_consensus
+from collab_skills_utils import generate_doubt_driven_prompt, generate_spec_driven_prd
 
 def test_interview_me():
     """测试interview-me技能加载"""
@@ -29,25 +29,30 @@ def test_topic_vague_detection():
 
 def test_doubt_driven():
     """测试doubt-driven提示生成"""
-    hint = inject_doubt_driven_hint(["未明确X边界", "假设Y未验证"])
-    assert "[Doubt-Driven" in hint, "提示格式错误"
-    assert "2 个blocking_issues" in hint, "issues计数错误"
+    hint = generate_doubt_driven_prompt("测试topic", "dissent", ["未明确X边界", "假设Y未验证"])
+    assert "Doubt-Driven" in hint, "提示格式错误"
+    assert "2 个blocking问题" in hint, "issues计数错误"
     print("✓ doubt-driven提示生成成功")
 
     # 空issues应返回空字符串
-    empty = inject_doubt_driven_hint([])
+    empty = generate_doubt_driven_prompt("测试topic", "dissent", [])
     assert empty == "", "空issues应返回空字符串"
     print("✓ doubt-driven空降级正确")
 
 def test_spec_driven():
     """测试spec-driven PRD生成"""
-    prd = generate_prd_from_consensus(
-        decision="P0技能作为阶段增强集成",
-        evidence=["Codex r3证据", "兼容性合同"],
-        action_items=[
+    consensus_detail = {
+        "decision": "P0技能作为阶段增强集成",
+        "evidence": ["Codex r3证据", "兼容性合同"],
+        "action_items": [
             {"owner": "claude", "task": "创建技能加载器"},
             {"owner": "codex", "task": "审查集成点"},
         ]
+    }
+    prd = generate_spec_driven_prd(
+        "测试topic",
+        consensus_detail,
+        ["artifact1.md", "artifact2.md"]
     )
 
     assert "# PRD:" in prd, "PRD标题缺失"

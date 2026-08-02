@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-22T04:17:03.602Z
-> Files: 690 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-08-02T06:54:13.540Z
+> Files: 691 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -882,7 +882,7 @@
 - `audit_logger.py` — 审计日志模块 (~268 tok)
 - `chunker.py` — MarkdownChunker: chunk, chunk_with_metadata, estimate_tokens (~1636 tok)
 - `collab_context_engineering.py` — Agent-Skills P1: Context Engineering - 跨agent上下文共享 (~389 tok)
-- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~30611 tok)
+- `collab_discuss.py` — Discussion orchestration for Claude-Codex-Gemini collaboration. (~33227 tok)
 - `collab_incremental_implementation.py` — Agent-Skills P2: Incremental Implementation - 任务分解与排序 (~607 tok)
 - `collab_init.py` — Initialize Claude-Codex collaboration directory structure. (~694 tok)
 - `collab_memory_bridge.mjs` — collab_memory_bridge.mjs (~529 tok)
@@ -901,19 +901,20 @@
 - `recovery.py` — 错误恢复策略 (~429 tok)
 - `smart_router.py` — 智能路由 - 根据任务类型选择最佳agent (~626 tok)
 - `test_response_validator.py` — 测试响应验证器 (~252 tok)
-- `workflow_graph.py` — CollabState: async_retry, decorator, wrapper, run_agent + 8 more (~1674 tok)
+- `workflow_graph.py` — CollabState: async_retry, decorator, wrapper, run_agent + 8 more (~1688 tok)
 
 ## tests/
 
 - `test_agent_skills_e2e.py` — 端到端测试：验证agent-skills在协作流程中的完整集成 (~849 tok)
-- `test_agent_skills_integration.py` — Agent-skills P0集成测试 (~619 tok)
+- `test_agent_skills_integration.py` — Agent-skills P0集成测试 (~668 tok)
 - `test_context_engineering.py` — P1测试：Context Engineering - 跨agent上下文共享 (~672 tok)
 - `test_incremental_implementation.py` — P2测试：Incremental Implementation - 任务分解与排序 (~638 tok)
 - `test_injection_points.py` — 验证注入点在collab_discuss中的集成 (~545 tok)
-- `test_integration.py` — 集成测试 - 端到端workflow验证 (~381 tok)
+- `test_integration.py` — 集成测试 - 端到端workflow验证 (~391 tok)
 - `test_p0_components.py` — P0组件单元测试 (~678 tok)
+- `test_parallel.py` — 并行执行引擎测试 (~250 tok)
 - `test_template.py` — 测试Jinja2模板渲染 (~326 tok)
 
 ## tests/integration/
 
-- `test_validation_integration.py` — Integration tests for agent response validation in collab_discuss workflow. (~547 tok)
+- `test_validation_integration.py` — Integration tests for agent response validation in collab_discuss workflow. (~569 tok)

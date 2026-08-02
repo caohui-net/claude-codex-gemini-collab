@@ -5,6 +5,7 @@ import sys
 import asyncio
 import tempfile
 from pathlib import Path
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
@@ -12,6 +13,7 @@ from async_hub import AsyncHub
 from hub import HubSnapshot
 
 
+@pytest.mark.asyncio
 async def test_async_hub():
     """测试AsyncHub基础功能"""
     with tempfile.TemporaryDirectory() as tmpdir:
