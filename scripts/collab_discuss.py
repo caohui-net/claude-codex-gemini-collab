@@ -1253,14 +1253,23 @@ def dedupe_preserve_order(items: List[str]) -> List[str]:
 
 
 def normalize_parsed_response(parsed: Dict[str, Any], task_id: str, round_num: int, agent: str) -> Dict[str, Any]:
-    """Normalize a parsed agent response to the Phase 1 protocol shape."""
-    normalized = dict(parsed)
+    """Normalize a parsed agent response to the Phase 1 protocol shape.
+
+    Preserves all original fields and only normalizes the structure of specific fields.
+    """
+    normalized = dict(parsed)  # Start with all original fields
+
+    # Normalize/add required fields
     normalized["id"] = str(normalized.get("id") or make_response_id(task_id, round_num, agent))
     normalized["previous_responses"] = normalize_string_list(normalized.get("previous_responses", []))
     normalized["targeted_challenges"] = normalize_challenges(normalized.get("targeted_challenges", []))
     normalized["blocking_issues"] = normalize_string_list(normalized.get("blocking_issues", []))
     normalized["evidence"] = normalize_string_list(normalized.get("evidence", []))
     normalized["action_items"] = normalize_action_items(normalized.get("action_items", []))
+
+    # Preserve other important fields that were in original parsed response
+    # (decision, reasoning, consensus, dissent, etc. are already in normalized via dict(parsed))
+
     return normalized
 
 
@@ -1940,6 +1949,72 @@ def run_resume(
     )
 
 
+def run_claude_respond(base_dir: Path, task_id: str, round_num: int, response_file: str) -> int:
+    """Submit claude's structured response for a round that is paused and
+    waiting on claude (see run_discussion's "Claude's turn" block), then
+    resume the discussion to continue consensus judging and later rounds.
+    """
+    task_state = load_task_state(base_dir, task_id)
+    if task_state is None:
+        print(f"❌ No state found for {task_id}")
+        return 1
+
+    if round_num < 1 or round_num > len(task_state["rounds"]):
+        print(f"❌ Round {round_num} does not exist for {task_id}")
+        return 1
+
+    response_path = Path(response_file)
+    if not response_path.exists():
+        print(f"❌ Response file not found: {response_file}")
+        return 1
+
+    try:
+        parsed = json.loads(response_path.read_text())
+    except json.JSONDecodeError as e:
+        print(f"❌ Failed to parse response JSON: {e}")
+        return 1
+
+    parsed = normalize_parsed_response(parsed, task_id, round_num, "claude")
+
+    content = f"[RESPONSE_START]\n{json.dumps(parsed, ensure_ascii=False, indent=2)}\n[RESPONSE_END]"
+    file_path = create_discussion_file_with_metadata(
+        project_name=base_dir.name,
+        topic=task_state["topic"],
+        round_num=round_num,
+        author="claude",
+        author_role="participant",
+        content=content,
+        mode="parallel",
+        agents=task_state["participants"],
+        participants=["claude"],
+    )
+    artifact_path = safe_relative_path(file_path, base_dir)
+
+    task_state = complete_participant(task_state, round_num, "claude", artifact_path, parsed)
+    save_task_state(base_dir, task_id, task_state)
+
+    summary = parsed.get("decision", "")[:100] if parsed.get("decision") else content[:100]
+    append_event(
+        base_dir,
+        "discussion_message",
+        "claude",
+        task_id,
+        summary,
+        artifacts=[artifact_path],
+        details=parsed,
+    )
+
+    pending_file = base_dir / ".collab" / "state" / f"{task_id}-r{round_num}-claude-pending.json"
+    if pending_file.exists():
+        pending_file.unlink()
+
+    print(f"✓ [Claude] Response recorded for round {round_num}: {summary[:60]}...")
+    print(f"📁 Artifact: {artifact_path}")
+    print(f"🔄 Resuming discussion...")
+
+    return run_resume(base_dir, task_id)
+
+
 def validate_and_fix_file_paths(files: Optional[List[str]], base_dir: Path) -> List[str]:
     """验证文件路径,尝试从/tmp/复制缺失的文件"""
     if not files:
@@ -2425,7 +2500,25 @@ def run_discussion(
 
         replies = []
 
-        # Prepare agents to execute (exclude claude, skip already completed)
+        # Claude is the running session itself (not an external CLI process).
+        # If claude already submitted a response for this round (via the
+        # `respond` subcommand), fold it into replies like any other agent.
+        if "claude" in participants and round_num <= len(task_state["rounds"]):
+            claude_round_state = task_state["rounds"][round_num - 1]
+            for p in claude_round_state["participants"]:
+                if p["agent"] == "claude" and p["status"] == "completed" and p["parsed_response"]:
+                    replies.append(AgentReply(
+                        agent="claude",
+                        exit_code=0,
+                        raw_text="",
+                        parsed=p["parsed_response"],
+                        artifact_path=p.get("response_file", ""),
+                        elapsed_sec=0
+                    ))
+                    break
+
+        # Prepare agents to execute via CLI (claude is handled separately,
+        # since claude is the running session itself, not an external process)
         agents_to_run = []
         for agent in participants:
             if agent == "claude":
@@ -2541,15 +2634,33 @@ def run_discussion(
                         continue
 
                     # Verify protocol compliance
-                    if "[RESPONSE_START]" not in reply.raw_text or "[RESPONSE_END]" not in reply.raw_text:
-                        print(f"❌ [{agent.capitalize()}] protocol violation: missing markers")
+                    # Relaxed: if raw_text has no markers but parsed is a valid structured dict
+                    # (not {"raw": ...} fallback), accept it anyway (gemini often returns JSON
+                    # without explicit markers but strip_markdown_json+json.loads succeeds)
+                    has_markers = "[RESPONSE_START]" in reply.raw_text and "[RESPONSE_END]" in reply.raw_text
+                    has_valid_structure = (
+                        isinstance(reply.parsed, dict) and
+                        "raw" not in reply.parsed and
+                        "error" not in reply.parsed and
+                        len(reply.parsed) > 0
+                    )
+                    if not has_markers and not has_valid_structure:
+                        print(f"❌ [{agent.capitalize()}] protocol violation: missing markers and no valid structure")
                         task_state = fail_participant(task_state, round_num, agent, "format_error", "missing markers")
                         save_task_state(base_dir, task_id, task_state)
                         continue
 
                     # Save artifact
                     if isinstance(reply.parsed, dict):
+                        # Debug: 检查normalize前的parsed
+                        print(f"🐛 [Debug] Before normalize - {agent} parsed keys: {list(reply.parsed.keys())}")
+                        print(f"🐛 [Debug] Before normalize - {agent} decision: {reply.parsed.get('decision')}")
+
                         reply.parsed = normalize_parsed_response(reply.parsed, task_id, round_num, agent)
+
+                        # Debug: 检查normalize后的parsed
+                        print(f"🐛 [Debug] After normalize - {agent} parsed keys: {list(reply.parsed.keys())}")
+                        print(f"🐛 [Debug] After normalize - {agent} decision: {reply.parsed.get('decision')}")
 
                     # Create discussion file with metadata
                     project_name = base_dir.name
@@ -2593,11 +2704,64 @@ def run_discussion(
                     )
 
                     print(f"✓ [{agent.capitalize()}] {summary[:60]}...")
+
+                    # Debug: 检查parsed内容
+                    if isinstance(reply.parsed, dict):
+                        print(f"🐛 [Debug] {agent} parsed keys: {list(reply.parsed.keys())}")
+                        print(f"🐛 [Debug] {agent} decision: {reply.parsed.get('decision')}")
+                        print(f"🐛 [Debug] {agent} reasoning: {reply.parsed.get('reasoning', '')[:100] if reply.parsed.get('reasoning') else None}")
+
                     replies.append(reply)
 
+        # Claude's turn: if claude is a participant and hasn't completed this
+        # round yet, pause the discussion and hand control back to the human
+        # (running Claude session) to submit a real response via `respond`.
+        if "claude" in participants:
+            claude_completed = any(r.agent == "claude" for r in replies)
+            if not claude_completed:
+                task_state = start_participant(task_state, round_num, "claude")
+                save_task_state(base_dir, task_id, task_state)
+
+                challenges_for_claude = [
+                    c for c in protocol_context["targeted_challenges"]
+                    if c.get("target_agent") == "claude"
+                ]
+                round_replies_summary = []
+                for r in replies:
+                    if isinstance(r.parsed, dict):
+                        round_replies_summary.append({
+                            "agent": r.agent,
+                            "decision": r.parsed.get("decision"),
+                            "reasoning": r.parsed.get("reasoning"),
+                            "blocking_issues": r.parsed.get("blocking_issues", []),
+                            "targeted_challenges": r.parsed.get("targeted_challenges", []),
+                            "dissent": r.parsed.get("dissent"),
+                            "evidence": r.parsed.get("evidence", []),
+                        })
+
+                pending_payload = {
+                    "task_id": task_id,
+                    "round_num": round_num,
+                    "topic": topic,
+                    "challenges_for_claude": challenges_for_claude,
+                    "round_replies": round_replies_summary,
+                    "open_questions": protocol_context["open_questions"],
+                }
+                pending_file = base_dir / ".collab" / "state" / f"{task_id}-r{round_num}-claude-pending.json"
+                pending_file.parent.mkdir(parents=True, exist_ok=True)
+                pending_file.write_text(json.dumps(pending_payload, ensure_ascii=False, indent=2))
+
+                print(f"🟡 [Claude] Your turn to respond in round {round_num}.")
+                print(f"   {len(challenges_for_claude)} targeted challenge(s) addressed to you.")
+                print(f"   Pending file: {safe_relative_path(pending_file, base_dir)}")
+                print(f"   Submit your response with:")
+                print(f"     python3 scripts/collab_discuss.py respond {task_id} --round {round_num} --response-file <path-to-your-json>")
+
+                return 2
+
         # Check if all participants successfully replied
-        expected_participant_count = len([p for p in participants if p != "claude"])
-        failed_agents = [p for p in participants if p != "claude" and p not in [r.agent for r in replies]]
+        expected_participant_count = len(participants)
+        failed_agents = [p for p in participants if p not in [r.agent for r in replies]]
         if failed_agents:
             print(f"⚠️  Partial response: {len(replies)}/{expected_participant_count} agents responded. Failed: {failed_agents}")
         if len(replies) == 0:
@@ -2609,7 +2773,7 @@ def run_discussion(
                 "blocking_issues": blocking,
                 "dissent": "No participants responded.",
                 "agreeing_agents": [],
-                "dissenting_agents": [p for p in participants if p != "claude"],
+                "dissenting_agents": list(participants),
                 "evidence": [],
                 "action_items": [],
             }
@@ -2824,7 +2988,7 @@ if __name__ == "__main__":
     discuss_parser.add_argument("topic", nargs='?', help="Discussion topic (positional, or use --topic)")
     discuss_parser.add_argument("--topic", dest="topic_flag", help="Discussion topic (alternative to positional)")
     discuss_parser.add_argument("--mode", choices=["fast", "full", "parallel"], default="parallel", help="fast: single-round stateless, full: multi-round persistent, parallel: async parallel execution (default)")
-    discuss_parser.add_argument("--participants", default="codex,gemini", help="Comma-separated participants")
+    discuss_parser.add_argument("--participants", default="claude,codex,gemini", help="Comma-separated participants")
     discuss_parser.add_argument("--max-rounds", type=int, default=3, help="Maximum discussion rounds")
     discuss_parser.add_argument("--timeout-sec", type=int, default=180, help="Timeout per agent (seconds)")
     discuss_parser.add_argument("--files", nargs='+', help="Files to inject as context (relative to base-dir)")
@@ -2865,6 +3029,12 @@ if __name__ == "__main__":
     # Dashboard subcommand
     dashboard_parser = subparsers.add_parser("dashboard", help="Show consensus quality metrics dashboard")
     dashboard_parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
+
+    # Respond subcommand (claude submits its response for a pending round)
+    respond_parser = subparsers.add_parser("respond", help="Submit claude's response for a pending round")
+    respond_parser.add_argument("task_id", help="Task ID")
+    respond_parser.add_argument("--round", type=int, required=True, help="Round number")
+    respond_parser.add_argument("--response-file", required=True, help="Path to JSON file with claude's structured response")
 
     args = parser.parse_args()
     # Allow --base-dir after subcommand (e.g. "discuss --base-dir .") — subparser value wins
@@ -2943,6 +3113,8 @@ if __name__ == "__main__":
             sys.exit(run_conclude(base, args.task_id, args.decision))
         elif args.command == "resume":
             sys.exit(run_resume(base, args.task_id, args.retry_failed, consensus_scope=args.scope))
+        elif args.command == "respond":
+            sys.exit(run_claude_respond(base, args.task_id, args.round, args.response_file))
         elif args.command == "discuss":
             # Determine task_id and topic based on input format
             if args.topic_flag:

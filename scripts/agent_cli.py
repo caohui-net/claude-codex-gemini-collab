@@ -131,6 +131,7 @@ def _http_post_json(url: str, body: dict, headers: dict, timeout_sec: int = 60) 
         "generativelanguage.googleapis.com",
         "localhost",
         "127.0.0.1",
+        "dm-fox.rjj.cc",  # codex model_provider "fox" (~/.codex/config.toml)
     ]
 
     try:
@@ -185,6 +186,32 @@ def strip_markdown_json(text: str) -> str:
     return text.strip()
 
 
+def parse_gemini_cli_json(stdout: str) -> dict:
+    """Parse the gemini CLI's JSON payload out of stdout.
+
+    The gemini CLI often prefixes its JSON output with diagnostic noise
+    (e.g. "Ripgrep is not available...", tool errors, Node deprecation
+    warnings), so the JSON object is not necessarily at the start of
+    stdout. json.loads(stdout) fails on that noise and silently discards
+    a valid response into {"raw": stdout}. Scan for the first '{' that
+    starts a parseable JSON object instead of assuming stdout is pure JSON.
+    """
+    first_brace = stdout.find("{")
+    if first_brace == -1:
+        raise json.JSONDecodeError("No JSON object found", stdout, 0)
+
+    # Try raw_decode from the first brace position
+    decoder = json.JSONDecoder()
+    try:
+        obj, _ = decoder.raw_decode(stdout, first_brace)
+        return obj
+    except json.JSONDecodeError:
+        # Fallback: if raw_decode fails (e.g. control characters in nested strings),
+        # extract from first { to end and try json.loads on that substring
+        json_candidate = stdout[first_brace:]
+        return json.loads(json_candidate)
+
+
 def extract_response_content(text: str) -> str:
     """Extract content between [RESPONSE_START] and [RESPONSE_END] markers.
 
@@ -219,24 +246,25 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
 
     session_name = f"taolun-{uuid.uuid4().hex[:8]}"
     marker_file = f"/tmp/taolun-exit-{session_name}"
+    output_file = f"/tmp/taolun-output-{session_name}"
     eof_marker = f"TAOLUN_EOF_{uuid.uuid4().hex}"
 
     try:
-        # Build wrapper script that captures exit code and keeps session alive
+        # Build wrapper script that captures stdout to file and exit code to marker
         quoted_cmd = " ".join(shlex.quote(arg) for arg in cmd)
 
         if keep_session:
             # Keep session alive indefinitely for debugging
             if stdin_data:
-                wrapper = f"cd {shlex.quote(cwd)} && ({quoted_cmd} << '{eof_marker}'\n{stdin_data}\n{eof_marker}\n); echo $? > {marker_file}; exec bash"
+                wrapper = f"cd {shlex.quote(cwd)} && ({quoted_cmd} << '{eof_marker}'\n{stdin_data}\n{eof_marker}\n) > {output_file} 2>/dev/null; echo $? > {marker_file}; exec bash"
             else:
-                wrapper = f"cd {shlex.quote(cwd)} && {quoted_cmd}; echo $? > {marker_file}; exec bash"
+                wrapper = f"cd {shlex.quote(cwd)} && {quoted_cmd} > {output_file} 2>/dev/null; echo $? > {marker_file}; exec bash"
         else:
             # Normal: session exits after sleep
             if stdin_data:
-                wrapper = f"cd {shlex.quote(cwd)} && ({quoted_cmd} << '{eof_marker}'\n{stdin_data}\n{eof_marker}\n); echo $? > {marker_file}; sleep 2"
+                wrapper = f"cd {shlex.quote(cwd)} && ({quoted_cmd} << '{eof_marker}'\n{stdin_data}\n{eof_marker}\n) > {output_file} 2>/dev/null; echo $? > {marker_file}; sleep 2"
             else:
-                wrapper = f"cd {shlex.quote(cwd)} && {quoted_cmd}; echo $? > {marker_file}; sleep 2"
+                wrapper = f"cd {shlex.quote(cwd)} && {quoted_cmd} > {output_file} 2>/dev/null; echo $? > {marker_file}; sleep 2"
 
         # Run in tmux session that auto-exits
         subprocess.run(
@@ -262,20 +290,19 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
             # Timeout - kill session unless keep_session is True
             if not keep_session:
                 subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
-            subprocess.run(["rm", "-f", marker_file], capture_output=True)
+            subprocess.run(["rm", "-f", marker_file, output_file], capture_output=True)
 
             if keep_session:
                 return f"[timeout - session preserved: {session_name}]", 124
             return "", 124
 
-        # Capture output while session is still alive
-        output_result = subprocess.run(
-            ["tmux", "capture-pane", "-t", session_name, "-p", "-S", "-"],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        stdout = output_result.stdout if output_result.returncode == 0 else ""
+        # Read output from file instead of capture-pane
+        stdout = ""
+        try:
+            with open(output_file, 'r') as f:
+                stdout = f.read()
+        except FileNotFoundError:
+            stdout = ""
 
         # Cleanup (conditional on keep_session)
         if keep_session:
@@ -286,14 +313,14 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
             # Normal cleanup
             subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
 
-        subprocess.run(["rm", "-f", marker_file], capture_output=True)
+        subprocess.run(["rm", "-f", marker_file, output_file], capture_output=True)
 
         return stdout, exit_code
 
     except subprocess.TimeoutExpired:
         if not keep_session:
             subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
-        subprocess.run(["rm", "-f", marker_file], capture_output=True)
+        subprocess.run(["rm", "-f", marker_file, output_file], capture_output=True)
 
         if keep_session:
             return f"[TimeoutExpired - session preserved: {session_name}]", 124
@@ -301,6 +328,8 @@ def run_in_tmux(cmd: list, cwd: str, stdin_data: str, timeout_sec: int, keep_ses
     except Exception as e:
         if not keep_session:
             subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+        subprocess.run(["rm", "-f", marker_file, output_file], capture_output=True)
+        raise
         subprocess.run(["rm", "-f", marker_file], capture_output=True)
 
         if keep_session:
@@ -432,7 +461,7 @@ def run_codex(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec:
         file_paths = [str(base_dir / f) for f in files]
         print(f"📎 [Codex] 附加文件: {len(file_paths)}个", file=sys.stderr, flush=True)
 
-    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "api").lower()
+    backend = os.environ.get("TAOLUN_CODEX_BACKEND", "cli").lower()
     print(f"🔍 [Codex] 使用backend模式: {backend}", file=sys.stderr)
     if backend == "api":
         print(f"🔍 [Codex] API模式 timeout={min(timeout_sec, 120)}秒", file=sys.stderr)
@@ -891,19 +920,25 @@ def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
                 parsed = {}
                 full_response = ""
                 try:
-                    output = json.loads(stdout)
-                    full_response = output.get("response", "")
+                    output = parse_gemini_cli_json(stdout)
+                    raw_response = output.get("response", "")
 
                     # Extract content between markers if present
-                    response = extract_response_content(full_response)
+                    response = extract_response_content(raw_response)
 
                     response = strip_markdown_json(response)
                     try:
                         parsed = json.loads(response)
-                    except json.JSONDecodeError:
+                        # Use the clean response as raw_text so collab_discuss.py can see it
+                        full_response = response
+                    except json.JSONDecodeError as e:
+                        print(f"⚠️  [Gemini Daemon] json.loads failed: {e}", file=sys.stderr)
+                        print(f"⚠️  [Gemini Daemon] response preview: {response[:200]}", file=sys.stderr)
                         parsed = {"raw": response}
+                        full_response = raw_response
 
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as e:
+                    print(f"⚠️  [Gemini Daemon] parse_gemini_cli_json failed: {e}", file=sys.stderr)
                     full_response = stdout
                     parsed = {"raw": full_response}
 
@@ -957,21 +992,27 @@ def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
         full_response = ""
         try:
             output = json.loads(stdout)
-            full_response = output.get("response", "")
+            raw_response = output.get("response", "")
 
-            if "[RESPONSE_START]" in full_response and "[RESPONSE_END]" in full_response:
-                start_idx = full_response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                end_idx = full_response.index("[RESPONSE_END]")
-                response = full_response[start_idx:end_idx].strip()
+            if "[RESPONSE_START]" in raw_response and "[RESPONSE_END]" in raw_response:
+                start_idx = raw_response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+                end_idx = raw_response.index("[RESPONSE_END]")
+                response = raw_response[start_idx:end_idx].strip()
             else:
-                response = full_response
+                response = raw_response
 
             response = strip_markdown_json(response)
             try:
                 parsed = json.loads(response)
-            except json.JSONDecodeError:
+                # Use the clean response as raw_text
+                full_response = response
+            except json.JSONDecodeError as e:
+                print(f"⚠️  [Gemini Tmux] json.loads failed: {e}", file=sys.stderr)
+                print(f"⚠️  [Gemini Tmux] response preview: {response[:200]}", file=sys.stderr)
                 parsed = {"raw": response}
-        except json.JSONDecodeError:
+                full_response = raw_response
+        except json.JSONDecodeError as e:
+            print(f"⚠️  [Gemini Tmux] outer json.loads failed: {e}", file=sys.stderr)
             full_response = stdout
             parsed = {"raw": full_response}
 
@@ -1007,25 +1048,31 @@ def run_gemini(prompt: str, base_dir: Path, files: list[str] = None, timeout_sec
         parsed = {}
         full_response = ""
         try:
-            output = json.loads(result.stdout)
-            full_response = output.get("response", "")
+            output = parse_gemini_cli_json(result.stdout)
+            raw_response = output.get("response", "")
 
             # Extract content between markers if present
-            if "[RESPONSE_START]" in full_response and "[RESPONSE_END]" in full_response:
-                start_idx = full_response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
-                end_idx = full_response.index("[RESPONSE_END]")
-                response = full_response[start_idx:end_idx].strip()
+            if "[RESPONSE_START]" in raw_response and "[RESPONSE_END]" in raw_response:
+                start_idx = raw_response.index("[RESPONSE_START]") + len("[RESPONSE_START]")
+                end_idx = raw_response.index("[RESPONSE_END]")
+                response = raw_response[start_idx:end_idx].strip()
             else:
-                response = full_response
+                response = raw_response
 
             # Strip markdown and parse inner JSON
             response = strip_markdown_json(response)
             try:
                 parsed = json.loads(response)
-            except json.JSONDecodeError:
+                # Use the clean response as raw_text
+                full_response = response
+            except json.JSONDecodeError as e:
+                print(f"⚠️  [Gemini CLI] json.loads failed: {e}", file=sys.stderr)
+                print(f"⚠️  [Gemini CLI] response preview: {response[:200]}", file=sys.stderr)
                 parsed = {"raw": response}
+                full_response = raw_response
 
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"⚠️  [Gemini CLI] parse_gemini_cli_json failed: {e}", file=sys.stderr)
             full_response = result.stdout
             parsed = {"raw": full_response}
 
